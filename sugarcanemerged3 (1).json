@@ -1,0 +1,712 @@
+{
+  "crop_name": "Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae)",
+  "general_information": {
+    "significance": "World's most important sugar crop; plays a vital role in Indian economy. Largest processing industry in India next to cotton.",
+    "employment": "Employs nearly 35 million growers & 3,30,000 skilled personnel.",
+    "industry_stats": "About 550 sugar factories in India with 135 milling days.",
+    "origin": "North-East India & New Guinea",
+    "distribution_global": "India, Brazil, Cuba, Mexico, Pakistan, China, Philippines, Thailand",
+    "distribution_india": "UP, TN, Maharashtra, Karnataka. UP stands first with 50% area and 40% production. TN stands first in yield."
+  },
+  "industrial_processing_and_byproducts": {
+    "standard_yield": "100t of cane produces 10t sugar + 4t molasses + 3t filter mud + 0.3t ash + 30t bagasse",
+    "bagasse": "Used as fuel, for making fibre boards and paper (7t bagasse = 1t paper).",
+    "molasses": "Used in distilleries for ethyl alcohol (ethanol), blended with petrol (Gasohol). Used for oxalic, maleic, and citric acid, Rum, and livestock feed additive.",
+    "press_mud": "Rich in organic 'C', 'P', & 'S'; used in vermicomposting as manure.",
+    "green_tops": "Good sources of fodder.",
+    "co_generation": "A plant of 2500 TCD generates 7-8 MW surplus power."
+  },
+  "botanical_classification": {
+    "cultivated_species": [
+      {
+        "species": "Saccharum officinarum",
+        "characteristics": "Thick and juicy cane, good for chewing, indigenous to New Guinea. High sugar %, low fibre, high tonnage. Generally resistant to smut but susceptible to red rot. Tropical areas.",
+        "type": "Noble cane"
+      },
+      {
+        "species": "Saccharum sinense",
+        "characteristics": "Indigenous to N-E India, long thin stalks, broad leaves, low/medium sucrose, early maturity. Zig-zag internodes with prominent nodes."
+      },
+      {
+        "species": "Saccharum barbery",
+        "characteristics": "Indigenous to N-E India, short thin stalks, narrow leaves, low/medium sucrose, early maturing."
+      }
+    ],
+    "wild_species": [
+      "Saccharum spontaneum",
+      "Saccharum robustum"
+    ]
+  },
+  "botany_and_growth": {
+    "plant_type": "Perennial grass growing in tropical regions.",
+    "morphology": "3-4 m height, tillering, unbranching stalk (cane). Stalk has distinct nodes and internodes coated with waxy material. Eye bud at each node protected by leaf sheath.",
+    "tillering": "Produces 20-40 tillers per cane from below soil surface.",
+    "inflorescence": "Called 'arrow', has male and female parts. Produced at 10-12 months (qualitative short day plant).",
+    "root_system": {
+      "sett_roots": "Temporary roots from root primordia at the base of every cane joint; provide initial moisture and nutrients.",
+      "shoot_roots": "Permanent, thick fleshy white roots from lower nodes of the primary shoot; provide anchorage."
+    },
+    "flowering_disadvantages": "Reduces quality (1% Sucrose loss), pithy canes, loss of apical dominance, development of water shoots, shorter leaf blade, low yield (25% loss), high fibre, reduced juice extraction.",
+    "flowering_control": "Withholding water, mechanical defoliation, chemical sprays (Maleic hydrazide - MH, ethephon).",
+    "nobilization": "Crossing wild cane S. spontaneum with S. officinarum, with backcrossing to the noble parent to get thick stalks of good quality."
+  },
+  "climate_and_soil": {
+    "title_kannada": "ಮಣ್ಣಿನ ತಯಾರಿ ಮತ್ತು ಭೂ ನಿರ್ವಹಣೆ",
+    "climate": "Tropical to subtropical. Optimum temperature: 21-35°C (Growth arrests if <20°C or >50°C). Cold stress below 12°C.",
+    "rainfall": "Well distributed annual rainfall of 750-1200 mm is optimum. Total water requirement: 1200-1500 mm.",
+    "sunshine": "Bright sunshine leads to thicker, shorter stems and broader greener leaves. Low sunshine leads to slender, long stems with narrow yellowish leaves.",
+    "day_length": "Short day length decreases tillers and tonnage. Long day produces more dry matter.",
+    "soil_requirements": {
+      "soil_type": "Deep red soil, Black soil; well-drained loamy soils are ideal (ಆಳವಾದ ಕೆಂಪು ಮಣ್ಣು, ಕಪ್ಪು ಮಣ್ಣು).",
+      "soil_pH": "6.0 to 7.5 (Optimum)",
+      "drainage": "Essential — water should not stagnate (ಅತ್ಯಗತ್ಯ — ನೀರು ನಿಲ್ಲಬಾರದು)",
+      "notes": "Saline and alkaline soils are not suitable."
+    }
+  },
+  "varieties_and_seasons": {
+    "recommended_varieties": [
+      {
+        "variety": "Co-419",
+        "duration_months": "12-16",
+        "seed_rate_tonnes": "6.25-8.25",
+        "planting_time": "June-Aug, Sep-Oct, Jan-Feb"
+      },
+      {
+        "variety": "Co-62175",
+        "duration_months": "12-14",
+        "seed_rate_tonnes": "6.50-7.50",
+        "planting_time": "June-Aug, Oct-Nov"
+      },
+      {
+        "variety": "Co-7804",
+        "duration_months": "12-14",
+        "seed_rate_tonnes": "6.50-7.50",
+        "planting_time": "June-Aug, Oct-Nov, Jan-Feb"
+      },
+      {
+        "variety": "CoC-671",
+        "duration_months": "10-11",
+        "seed_rate_tonnes": "6.50-7.50",
+        "planting_time": "June-Aug, Oct-Nov, Jan-Feb"
+      },
+      {
+        "variety": "Co-8371",
+        "duration_months": "12-13",
+        "seed_rate_tonnes": "10.0",
+        "planting_time": "Aug 1st wk, Jan-Feb"
+      },
+      {
+        "variety": "Co-86032",
+        "duration_months": "12-13",
+        "seed_rate_tonnes": "6.50-7.50",
+        "planting_time": "June-Aug, Oct-Nov, Jan-Feb",
+        "notes": "More yield and sugar content, very popular among farmers."
+      },
+      {
+        "variety": "Co-94012",
+        "recommended_region": "Karnataka",
+        "notes": "High yield and sucrose content."
+      },
+      {
+        "variety": "Co-8011",
+        "recommended_region": "Karnataka"
+      },
+      {
+        "variety": "VSI-434",
+        "recommended_region": "Karnataka"
+      }
+    ],
+    "notes": "In coastal areas, Nov to Feb planting can be done.",
+    "varietal_decline_causes": [
+      "Biotic and abiotic stress",
+      "Lack of aeration/reduced oxygen due to compactness",
+      "Soil compaction by heavy implements",
+      "Depletion of trace elements",
+      "Lack of organic matter",
+      "Accumulation of toxic elements",
+      "Pest and diseases (Ratoon stunt disease, mosaic, nematodes, red rot)"
+    ],
+    "varietal_decline_management": "Replacement of varieties, heat therapy before planting, good agronomic management.",
+    "tamil_nadu_regional_recommendations": {
+      "all_districts": {
+        "early_season": ["CO 658", "COC 671", "COC 8201", "COC 91061", "COG 94077", "TNAU SC Si7"],
+        "mid_late_season": ["CO 419", "CO 6304", "COC 771", "COC 8001", "COC 99061", "CO 86032", "TNAU SC Si8"],
+        "special_purpose": ["CO 62175 (Factory)", "CO 62174 (Jaggery)", "CO 62198", "CO 740"]
+      },
+      "local_specialties": [
+        {
+          "region": "Pudukkottai, Vellore, Cuddalore, Villuppuram",
+          "varieties": ["CoV 92102", "CoC 90063", "Co Si(Sc)6", "TNAU SC Si 8"],
+          "features": "Drought tolerance, high yield"
+        },
+        {
+          "region": "Erode, Coimbatore, Tiruvallur",
+          "varieties": ["Co 86032", "CoSi 95071", "Co 86249", "CoC 24"],
+          "features": "Multi-ratooning, high recovery, drought tolerance"
+        },
+        {
+          "region": "Thanjavur, Nagapattinam, Tiruvarur",
+          "varieties": ["Co V 92102", "CoG 93076", "CoG 94077", "TNAU SC Si 8"],
+          "features": "Waterlogging tolerance, good yield"
+        }
+      ]
+    },
+    "key_variety_characteristics_tnau": {
+      "Co 86032": "Universal performer, multi-ratooning, self-detrashing, high sugar recovery.",
+      "CoV 92102": "Non-flowering, thrives in red, clay, and alkaline soils.",
+      "CoC 90063": "Non-lodging, drought and alkaline tolerant, excellent ratooner.",
+      "Co 85019": "Drought tolerant and resistant to Red Rot disease.",
+      "TNAU SC Si 8": "Tolerant to drought and waterlogging; ideal for mechanized cultivation."
+    }
+  },
+  "varietal_performance_data": [
+    { "id": "COC 671", "duration_months": 10, "cane_yield_t_ha": 123.5, "ccs_percent": 14.2, "ccs_t_ha": 17.5 },
+    { "id": "COC 771", "duration_months": 10, "cane_yield_t_ha": 140.0, "ccs_percent": 13.1, "ccs_t_ha": 18.3 },
+    { "id": "COC 772", "duration_months": 10, "cane_yield_t_ha": 143.3, "ccs_percent": 14.0, "ccs_t_ha": 20.0 },
+    { "id": "COC 773", "duration_months": 10, "cane_yield_t_ha": 97.5, "ccs_percent": 13.2, "ccs_t_ha": 12.6 },
+    { "id": "COC 8001 (C 66191)", "duration_months": "10 - 11", "cane_yield_t_ha": 102.9, "ccs_percent": 13.2, "ccs_t_ha": 13.5 },
+    { "id": "COC 774", "duration_months": 11, "cane_yield_t_ha": 159.8, "ccs_percent": 11.9, "ccs_t_ha": 17.9 },
+    { "id": "COC 775", "duration_months": 11, "cane_yield_t_ha": 122.5, "ccs_percent": 13.4, "ccs_t_ha": 16.4 },
+    { "id": "COC 776", "duration_months": 11, "cane_yield_t_ha": 112.3, "ccs_percent": 14.0, "ccs_t_ha": 15.5 },
+    { "id": "COC 777", "duration_months": 12, "cane_yield_t_ha": 171.3, "ccs_percent": 11.8, "ccs_t_ha": 20.0 },
+    { "id": "COC 778", "duration_months": 12, "cane_yield_t_ha": 165.5, "ccs_percent": 11.0, "ccs_t_ha": 18.1 },
+    { "id": "COC 779", "duration_months": 12, "cane_yield_t_ha": 204.6, "ccs_percent": 11.8, "ccs_t_ha": 24.0 },
+    { "id": "CO 419", "duration_months": 12, "cane_yield_t_ha": 112.5, "ccs_percent": 10.5, "ccs_t_ha": 11.8 },
+    { "id": "CO 6304", "duration_months": 12, "cane_yield_t_ha": 115.0, "ccs_percent": 13.5, "ccs_t_ha": 15.5 },
+    { "id": "COC 85061", "duration_months": "10 - 11", "cane_yield_t_ha": 128.5, "ccs_percent": 12.9, "ccs_t_ha": 16.6 },
+    { "id": "COC 86062", "duration_months": "10 - 11", "cane_yield_t_ha": 133.5, "ccs_percent": 12.6, "ccs_t_ha": 16.8 },
+    { "id": "COSi 86071", "duration_months": "10 - 11", "cane_yield_t_ha": 131.7, "ccs_percent": 12.2, "ccs_t_ha": 16.0 },
+    { "id": "COC 90063", "duration_months": "10 - 11", "cane_yield_t_ha": 124.0, "ccs_percent": 12.3, "ccs_t_ha": 15.4 },
+    { "id": "CO 8021", "duration_months": "10 - 11", "cane_yield_t_ha": 137.7, "ccs_percent": 11.0, "ccs_t_ha": 14.6 },
+    { "id": "COC 91061", "duration_months": "10 - 11", "cane_yield_t_ha": 131.0, "ccs_percent": 11.3, "ccs_t_ha": 15.6 },
+    { "id": "COC 92061", "duration_months": "8 - 11", "cane_yield_t_ha": 132.7, "ccs_percent": 12.76, "ccs_t_ha": 16.05 },
+    { "id": "CO 8362", "duration_months": "11 - 12", "cane_yield_t_ha": 124.3, "ccs_percent": 12.4, "ccs_t_ha": 15.4 },
+    { "id": "COG 93076", "duration_months": "11 - 12", "cane_yield_t_ha": 132.0, "ccs_percent": 13.2, "ccs_t_ha": 17.4 },
+    { "id": "CO 8208", "duration_months": "11 - 13", "cane_yield_t_ha": 141.5, "ccs_percent": 11.07, "ccs_t_ha": 15.28 },
+    { "id": "COG 94077", "duration_months": 11, "cane_yield_t_ha": 133.2, "ccs_percent": 13.5, "ccs_t_ha": 17.6 },
+    { "id": "COG 95076", "duration_months": "10 - 11", "cane_yield_t_ha": 108.2, "ccs_percent": 11.5, "ccs_t_ha": 12.4 },
+    { "id": "CO 85019", "duration_months": 12, "cane_yield_t_ha": 134.5, "ccs_percent": 12.5, "ccs_t_ha": 16.8 },
+    { "id": "COSi 95071", "duration_months": 10, "cane_yield_t_ha": 152.0, "ccs_percent": 12.9, "ccs_t_ha": 21.0 },
+    { "id": "COSi 96071", "duration_months": 10, "cane_yield_t_ha": 145.0, "ccs_percent": 11.9, "ccs_t_ha": 17.3 },
+    { "id": "CO 86010", "duration_months": "10 - 12", "cane_yield_t_ha": 146.1, "ccs_percent": 10.78, "ccs_t_ha": 15.64 },
+    { "id": "COC 98061", "duration_months": "10 - 11", "cane_yield_t_ha": 120.0, "ccs_percent": 11.6, "ccs_t_ha": 13.8 },
+    { "id": "COSi 98071", "duration_months": 12, "cane_yield_t_ha": 144.7, "ccs_percent": 12.3, "ccs_t_ha": 17.7 },
+    { "id": "CO 86249", "duration_months": "10 - 12", "cane_yield_t_ha": 128.7, "ccs_percent": 11.3, "ccs_t_ha": 14.3 },
+    { "id": "COC 99061", "duration_months": "10 - 12", "cane_yield_t_ha": 130.3, "ccs_percent": 11.9, "ccs_t_ha": 15.6 },
+    { "id": "CO 86032", "duration_months": "10 - 12", "cane_yield_t_ha": 110.0, "ccs_percent": 13.0, "ccs_t_ha": 14.3 },
+    { "id": "COC (SC) 22", "duration_months": "10 - 12", "cane_yield_t_ha": 135.9, "ccs_percent": 12.1, "ccs_t_ha": 16.5 },
+    { "id": "CO Si (SC) 6", "duration_months": "10 - 11", "cane_yield_t_ha": 142.0, "ccs_percent": 13.1, "ccs_t_ha": 18.6 },
+    { "id": "COG (SC) 5", "duration_months": "11 - 12", "cane_yield_t_ha": 115.0, "ccs_percent": 12.7, "ccs_t_ha": 14.6 },
+    { "id": "CoC 23", "duration_months": "10 - 11", "cane_yield_t_ha": 133.0, "ccs_percent": 12.95, "ccs_t_ha": 17.23 },
+    { "id": "CoC 24", "duration_months": "10 - 11", "cane_yield_t_ha": 133.0, "ccs_percent": 12.82, "ccs_t_ha": 17.05 },
+    { "id": "TNAU SC Si 7", "duration_months": "10 - 11", "cane_yield_t_ha": 156.0, "ccs_percent": 13.4, "ccs_t_ha": 20.9 },
+    { "id": "TNAU SC Si 8", "duration_months": "11 - 12", "cane_yield_t_ha": 146.0, "ccs_percent": 12.9, "ccs_t_ha": 18.0 }
+  ],
+  "seed_rate": {
+    "acre_basis": {
+      "line_sowing": "10,000 to 12,000 three-budded setts/acre",
+      "notes": "Select disease-free setts from an 8-10 month old healthy nursery crop. For wide row spacing, 7,000-8,000 setts are sufficient."
+    },
+    "hectare_basis": {
+      "standard": "25,000-30,000 setts (5-7 t) per hectare",
+      "notes": "Use 3 eye bud setts."
+    }
+  },
+  "spacing": {
+    "imperial_units": {
+      "line_sowing": "3 ft (Standard) OR 5-6 ft (Wide Row/Mechanized)",
+      "notes": "For wide row spacing (5-6 ft), plant setts in a zig-zag pattern on both sides of the furrow. This saves 20% on seed material and allows easy inter-cropping."
+    },
+    "metric_units": {
+      "standard": "90 X 30 cm",
+      "specific": "75 X 30 cm for CoC-671",
+      "paired_row": "60-120-60 X 30 cm pair (60 cm two rows, 120 cm gap)"
+    }
+  },
+  "planting_practices": {
+    "seed_rate": {
+      "standard": "25,000-30,000 setts (5-7 t) per hectare",
+      "notes": "Use 3 eye bud setts."
+    },
+    "spacing": {
+      "standard": "90 X 30 cm",
+      "specific": "75 X 30 cm for CoC-671",
+      "paired_row": "60-120-60 X 30 cm pair (60 cm two rows, 120 cm gap)"
+    },
+    "land_preparation": {
+      "process": "30-40 cm deep ploughing (ಆಳವಾದ ಉಳುಮೆ) followed by two cross harrowings to make the soil smooth.",
+      "manure": "Apply 8-10 tonnes of Farmyard Manure (FYM) or Compost per acre before planting."
+    },
+    "planting_seasons": [
+      {
+        "season": "Adsali",
+        "timing": "June-August",
+        "duration": "18 months"
+      },
+      {
+        "season": "Autumn",
+        "timing": "Oct-Nov",
+        "duration": "14-16 months"
+      },
+      {
+        "season": "Eksali (ವಸಂತ ಕಾಲ)",
+        "timing": "Jan-Feb (ವಸಂತ ಕಾಲ) or Feb-March",
+        "duration": "10-12 months"
+      },
+      {
+        "season": "Sharad (ಶರದ್ ಕಾಲ)",
+        "timing": "Oct-Nov",
+        "duration": "14-16 months"
+      }
+    ],
+    "planting_methods": [
+      {
+        "method": "Furrow planting",
+        "details": "15-20 cm deep furrows across slope at 90 cm spacing. Setts placed with buds facing sideward and covered with soil. In ridges/furrows, setts planted half way through ridge."
+      },
+      {
+        "method": "Flat bed planting",
+        "details": "Shallow furrows 8-10 cm depth at 90 cm apart. 3 eye budded setts planted at 30 cm distance. Covered by running wooden plank and irrigated by flooding."
+      },
+      {
+        "method": "Trench method",
+        "details": "Trenches 2-3 m long, 25-30 cm deep, 40 cm wide at 90 cm spacing. Suitable for coastal areas (prevents lodging) and stiff clays/sloppy lands."
+      },
+      {
+        "method": "Pit method",
+        "details": "Square pits 40-60 cm dug at 90 cm apart. Trenches dug after every 3 rows to store water. Suitable for low rainfall areas. Two setts planted per pit (>5 cm depth)."
+      },
+      {
+        "method": "Paired row / Wide row",
+        "details": "90 cm row spacing with 30 cm plant spacing. 120 cm gap can be used for mechanized farming or intercropping."
+      }
+    ],
+    "seed_treatment": [
+      {
+        "method": "Disease Protection (Sett Dipping)",
+        "details": "Dip the sugarcane setts in a 0.1% Carbendazim 50 WP solution (1 g/L water) for 10-15 minutes before planting to prevent Pineapple disease (ಅನಾನಸ್ ರೋಗ) and soil-borne fungal infections."
+      },
+      {
+        "method": "Hot Water Treatment (Yellow Leaf/Smut Protection)",
+        "details": "Treat setts in moist hot air/water at 52°C for 1 hour to eliminate internal viruses and smut before nursery planting."
+      }
+    ]
+  },
+  "nutrient_management": {
+    "regional_profiles": [
+      {
+        "region": "Mandya",
+        "N": 250,
+        "P": 100,
+        "K": 125,
+        "unit": "kg/ha"
+      },
+      {
+        "region": "Bhadra command area",
+        "N": 250,
+        "P": 75,
+        "K": 75,
+        "unit": "kg/ha"
+      },
+      {
+        "region": "Coastal area",
+        "N": 186,
+        "P": 125,
+        "K": 125,
+        "unit": "kg/ha"
+      },
+      {
+        "region": "Vanivilas command area",
+        "N": 250,
+        "P": 100,
+        "K": 125,
+        "unit": "kg/ha"
+      },
+      {
+        "region": "Karnataka (General Recommended)",
+        "N": 120,
+        "P": 60,
+        "K": 60,
+        "unit": "kg/acre",
+        "micronutrients": {
+          "zinc_sulphate": "10 kg/acre for higher yield"
+        },
+        "bio_fertilizer": "Azospirillum + Phosphobacteria (reduces chemical need by 20-25%)"
+      }
+    ],
+    "general_profiles": [
+      {
+        "variety": "All Varieties",
+        "season": "Year-round",
+        "N": 100,
+        "P": 40,
+        "K": 50,
+        "unit": "kg/acre",
+        "application_schedule": [
+          {
+            "stage": "Basal (At Planting)",
+            "N_percent": 10,
+            "P_percent": 100,
+            "K_percent": 100,
+            "notes": "Apply 10 tons of FYM/Compost 2-3 weeks before planting. Apply 10% N, full P, and full K in the furrows at planting."
+          },
+          {
+            "stage": "Top-dressing 1 (45 Days)",
+            "N_percent": 20,
+            "P_percent": 0,
+            "K_percent": 0,
+            "notes": "Apply 20% of the Nitrogen dose."
+          },
+          {
+            "stage": "Top-dressing 2 (75 Days)",
+            "N_percent": 30,
+            "P_percent": 0,
+            "K_percent": 0,
+            "notes": "Apply 30% of the Nitrogen dose."
+          },
+          {
+            "stage": "Top-dressing 3 (105 Days)",
+            "N_percent": 40,
+            "P_percent": 0,
+            "K_percent": 0,
+            "notes": "Apply the final 40% of the Nitrogen dose during inter-cultivation and earth up the soil."
+          }
+        ]
+      }
+    ],
+    "application_schedule_detailed": [
+      {
+        "stage": "Basal (At Planting)",
+        "N_percent": 10,
+        "P_percent": 100,
+        "K_percent": 100,
+        "notes": "Apply 10 tons of FYM/Compost 2-3 weeks before planting. Apply 10% N, full P, and full K in the furrows at planting."
+      },
+      {
+        "stage": "Top-dressing 1 (45 Days)",
+        "N_percent": 20,
+        "P_percent": 0,
+        "K_percent": 0,
+        "notes": "Apply 20% of the Nitrogen dose."
+      },
+      {
+        "stage": "Top-dressing 2 (75 Days)",
+        "N_percent": 30,
+        "P_percent": 0,
+        "K_percent": 0,
+        "notes": "Apply 30% of the Nitrogen dose."
+      },
+      {
+        "stage": "Top-dressing 3 (105 Days)",
+        "N_percent": 40,
+        "P_percent": 0,
+        "K_percent": 0,
+        "notes": "Apply the final 40% of the Nitrogen dose during inter-cultivation and earth up the soil."
+      }
+    ],
+    "application_schedule_general": [
+      {
+        "stage": "Basal (At Planting)",
+        "N_percent": 10,
+        "P_percent": 100,
+        "K_percent": 100,
+        "notes": "Apply 25 t/ha FYM. Apply 10% nitrogen and full P&K."
+      },
+      {
+        "stage": "Top-dressing",
+        "notes": "Remaining nitrogen should be given in 3 split doses on the 6th, 10th, and 14th week."
+      }
+    ],
+    "nutrient_specifics": {
+      "high_nitrogen_effects": "Increases pest and disease problem, pithyness, delays ripening, reduces juice quality and sugar recovery, increases water/non-milleable shoots.",
+      "silicon_importance": "Sugarcane is siliciferous. Silicon maintains turgidity, reduces lodging, ensures better water utilization, provides resistance to pest/diseases, and improves sugar recovery. Calcium-magnesium silicate can be used."
+    },
+    "micronutrients_and_biofertilizers": [
+      {
+        "element": "Bio-fertilizers (ಜೈವಿಕ ಗೊಬ್ಬರಗಳು)",
+        "dosage": "1 kg Azotobacter + 4 kg PSB",
+        "notes": "Mix Azotobacter/Azospirillum (1kg) and PSB like Bacillus megaterium (4kg) with FYM and apply to the soil."
+      },
+      {
+        "element": "Bio-fertilizers",
+        "dosage": "Azotobacter 2.5 kg/ha, Bacillus megaterium, Agrobacterium radiobacter, Aspergillus awamorii: 10 kg/ha"
+      }
+    ]
+  },
+  "irrigation_schedule": [
+    {
+      "stage": "General",
+      "notes": "Irrigate once every 8 days in sandy loam soils and once every 15 days in black soils. In summer, apply 3 tons of sugarcane trash mulch per acre to conserve moisture."
+    },
+    {
+      "stage": "General",
+      "notes": "Irrigate once in 8 days in red sandy soils and once in 15 days in black soils. Total water requirement is 250 cm. Less water first 3 months, more water later."
+    },
+    {
+      "stage": "General / Karnataka Advice",
+      "water_per_week_mm": 45,
+      "summer_interval_days": 6,
+      "winter_interval_days": 11,
+      "drip_irrigation": "Saves 35% water; highly recommended.",
+      "stop_before_harvest": "Stop irrigation 30 days before harvest to increase sugar content.",
+      "critical_stages": [
+        "Germination (ಮೊಳಕೆ ಹಂತ)",
+        "Stalk growth (ಕಾಂಡ ಬೆಳವಣಿಗೆ)",
+        "Milk stage (ಹಾಲು ತುಂಬುವ ಹಂತ)"
+      ]
+    },
+    {
+      "stage": "Critical Stages",
+      "notes": "Tillering & grand growth stages are highly critical for irrigation."
+    }
+  ],
+  "weed_management": [
+    {
+      "stage": "Pre-emergence",
+      "chemical": "Atrazine 50 WP OR Metribuzin 70 WP OR Diuron 80 WP",
+      "chemical_kannada": "ಅಟ್ರಾಜಿನ್ 50 ಡಬ್ಲ್ಯೂ.ಪಿ ಅಥವಾ ಮೆಟ್ರಿಬುಜಿನ್ 70 ಡಬ್ಲ್ಯೂ.ಪಿ ಅಥವಾ ಡೈಯುರಾನ್ 80 ಡಬ್ಲ್ಯೂ.ಪಿ",
+      "dosage": "1 kg/acre (Atrazine/Diuron) OR 600 g/acre (Metribuzin) in 300L water",
+      "notes": "Spray within 2-3 days of planting."
+    },
+    {
+      "stage": "Post-emergence",
+      "chemical": "2,4-D Sodium Salt 80 WP",
+      "chemical_kannada": "2,4-ಡಿ ಸೋಡಿಯಂ ಸಾಲ್ಟ್ 80 ಡಬ್ಲ್ಯೂ.ಪಿ",
+      "dosage": "1 kg/acre in 300L water",
+      "notes": "Spray at 25 days after planting to control broad-leaved weeds and sedges."
+    },
+    {
+      "stage": "General",
+      "weeds_targeted": "Sorghum halepense, Cynodon dactylon, Ipomoea spp., Cyperus rotundus",
+      "chemical": "Atrazine OR Diuron OR Metribuzin",
+      "dosage": "2.5 kg Atrazine OR 2.5 kg Diuron OR 1.5 kg Metribuzin in 750 litres",
+      "notes": "Pre-emergent application. Manual hoeing after 2-3 weeks of planting gives better control."
+    },
+    {
+      "stage": "Manual Weeding",
+      "timing": "30 and 60 days after planting",
+      "notes": "Hand weeding (ಕೈಯಿಂದ ಕಳೆ ತೆಗೆಯುವಿಕೆ) is essential for 30-40% yield increase. Mulching also helps."
+    }
+  ],
+  "pest_management": [
+    {
+      "name": "Early Shoot Borer (ಆದಿ ಸುಳಿ ಕೊರೆಯುವ ಹುಳು)",
+      "recommendations": [
+        {
+          "chemical": "Chlorpyrifos 20 EC",
+          "chemical_kannada": "ಕ್ಲೋರಪೈರಿಫಾಸ್ 20 ಇ.ಸಿ",
+          "dosage": "2.0 ml/L or 600 ml/acre",
+          "notes": "Spray using 300L water/acre when shoots start drying up."
+        },
+        {
+          "chemical": "Bio-control (Trichogramma)",
+          "chemical_kannada": "ಟ್ರೈಕೋಗ್ರಾಮ ಪರತಂತ್ರ ಜೀವಿ",
+          "dosage": "6000 wasps/acre",
+          "notes": "Release Trichogramma chilonis egg parasitoids starting from the 4th week of planting, once a week for 5 weeks."
+        }
+      ]
+    },
+    {
+      "name": "Top Shoot Borer (ಮೇಲಿನ ಸುಳಿ ಕೊರಕ)",
+      "recommendations": [
+        {
+          "chemical": "Bio-control (Trichogramma)",
+          "chemical_kannada": "ಟ್ರೈಕೋಗ್ರಾಮ ಪರತಂತ್ರ ಜೀವಿ",
+          "dosage": "6000 wasps/acre",
+          "notes": "Release 90 days after planting, once a week for 5 weeks. Collect and destroy egg masses."
+        }
+      ]
+    },
+    {
+      "name": "Termites (ಗೆದ್ದಲು)",
+      "recommendations": [
+        {
+          "chemical": "Chlorantraniliprole 0.4 G OR Fipronil 0.3 G",
+          "chemical_kannada": "ಕ್ಲೋರಾಂಟ್ರಾನಿಲಿಪ್ರೋಲ್ 0.4 ಜಿ ಅಥವಾ ಫಿಪ್ರೋನಿಲ್ 0.3 ಜಿ",
+          "dosage": "9 kg/acre (Chlorantraniliprole) OR 10 kg/acre (Fipronil)",
+          "notes": "Apply granular insecticide at the time of planting or at 60 days to prevent roots/setts from being eaten."
+        }
+      ]
+    },
+    {
+      "name": "White Woolly Aphid (ಬಿಳಿ ಉಣ್ಣೆ ಹೇನು)",
+      "recommendations": [
+        {
+          "chemical": "Chlorpyrifos 20 EC OR Dimethoate 30 EC",
+          "chemical_kannada": "ಕ್ಲೋರಪೈರಿಫಾಸ್ 20 ಇ.ಸಿ ಅಥವಾ ಡೈಮಿಥೋಯೇಟ್ 30 ಇ.ಸಿ",
+          "dosage": "2.0 ml/L (Chlorpyrifos) OR 1.7 ml/L (Dimethoate)",
+          "notes": "Strip dry leaves and spray using 300L water/acre. For bio-control, release Micromus igorotus predators (500-1000/acre)."
+        }
+      ]
+    },
+    {
+      "name": "Root Borer (ಬೇರು ಕೊರಕ)",
+      "recommendations": [
+        {
+          "chemical": "Phorate 10G OR Carbofuran 3G",
+          "chemical_kannada": "ಫೋರೇಟ್ 10ಜಿ ಅಥವಾ ಕಾರ್ಬೋಫ್ಯೂರಾನ್ 3ಜಿ",
+          "notes": "Apply in the furrows at 45 days. Survey every 15 days (15 ದಿನಕ್ಕೊಮ್ಮೆ ಸಮೀಕ್ಷೆ)."
+        }
+      ]
+    }
+  ],
+  "disease_management": [
+    {
+      "name": "Pineapple Disease / Sett Rot (ಅನಾನಸ್ ರೋಗ)",
+      "recommendations": [
+        {
+          "chemical": "Carbendazim 50 WP",
+          "chemical_kannada": "ಕಾರ್ಬೆಂಡೈಜಿಮ್ 50 ಡಬ್ಲ್ಯೂ.ಪಿ",
+          "dosage": "1 g/L or 500 g/acre",
+          "notes": "Mandatory 15-minute sett dip before planting. Prevents setts from rotting and smelling like ripe pineapple."
+        }
+      ]
+    },
+    {
+      "name": "Leaf Spot (ಎಲೆ ಚುಕ್ಕೆ ರೋಗ)",
+      "recommendations": [
+        {
+          "chemical": "Copper Oxychloride 50 WP OR Mancozeb 75 WP",
+          "chemical_kannada": "ತಾಮ್ರದ ಆಕ್ಸಿಕ್ಲೋರೈಡ್ ಅಥವಾ ಮ್ಯಾಂಕೋಜೆಬ್",
+          "dosage": "2.5 g/L (COC) OR 2 g/L (Mancozeb)",
+          "notes": "Spray using 300L water/acre when long brown/red spots appear. Grow resistant varieties like Co 62175."
+        }
+      ]
+    },
+    {
+      "name": "Yellow Leaf Disease (YLD) (ಹಳದಿ ನಂಜು ರೋಗ)",
+      "recommendations": [
+        {
+          "chemical": "Cultural Control",
+          "chemical_kannada": "ಸಮಗ್ರ ನಿರ್ವಹಣೆ",
+          "dosage": "N/A",
+          "notes": "Uproot and burn infected plants. Use tissue-cultured disease-free seedlings for planting."
+        }
+      ]
+    },
+    {
+      "name": "Smut (ಕಾಡಿಗೆ ರೋಗ)",
+      "recommendations": [
+        {
+          "chemical": "Cultural Control",
+          "chemical_kannada": "ಸಸ್ಯ ನಿರ್ಮೂಲನೆ",
+          "dosage": "N/A",
+          "notes": "Uproot and burn clumps producing the long, black whip-like smut structure instead of a normal shoot."
+        }
+      ]
+    },
+    {
+      "name": "Wilt / Grassy Shoot / Red Rot (ಕೆಂಪು ಕೊಳೆ / ಸಸಿ ಕುಂಠಿತ)",
+      "recommendations": [
+        {
+          "chemical": "Copper Oxychloride",
+          "chemical_kannada": "ತಾಮ್ರದ ಆಕ್ಸಿಕ್ಲೋರೈಡ್",
+          "dosage": "3 g/L",
+          "notes": "Pre-treatment with Carbendazim 0.1% for 10 min is crucial. Rotate crops (ಬೆಳೆ ಪರಿವರ್ತನೆ)."
+        }
+      ]
+    }
+  ],
+  "intercultivation_and_cropping_systems": {
+    "earthing_up": "Done after last top dressing of nitrogen and after each top dressing to give support to the main plant and tillers.",
+    "wrapping_and_propping": "Wrapping: Tying stalks of same clump with lower/dried leaves. Propping: Giving support with bamboo or tying wrapped canes to adjacent rows.",
+    "intercropping": "French bean & soybean (Variety: KB-79) or pulse/legumes.",
+    "sequenced_crops": "Potato, Rice, Wheat, Cotton, Sorghum, Chickpea, Groundnut."
+  },
+  "harvesting_and_seed_production": {
+    "maturity_indicators": "12-14 months after planting. Withered lower leaves & few green leaves at top, metallic sound of stem, hand refractometer reading (Brix) between 18-20.",
+    "harvesting_method": "Manual cutting at ground level (ನೆಲಮಟ್ಟದಲ್ಲಿ ಕತ್ತರಿಸುವುದು). Detrashing and cutting the green top. Transport to factory within 24 hours to prevent sucrose loss.",
+    "seed_cane_production": "Seed cane should be free from pests/diseases, high in moisture, rich in invert sugars/soluble nitrogen. Top 2/3rd portion is suitable due to apical dominance."
+  },
+  "ratooning": {
+    "definition": "Allowing the stubble to regrow after the harvest of the main crop.",
+    "advantages": "Shorter crop cycle, reduces seed cost (25-30%), better utilization of climate.",
+    "disadvantages": "Lower yields due to poor sprouting/soil compaction, build-up of pests/diseases, early run-out of commercial varieties.",
+    "management_practices": {
+      "trash_burning": "Advised if plant crop is infested with scales/mealy bugs, termites, rodents, or excess moisture affecting sprouting.",
+      "stubble_shaving": "Cutting protruding stubbles to ground level with a spade to facilitate healthy underground bud sprouting and deep root system.",
+      "off_barring": "Breaking/cutting ridges on either side to loosen soil between rows, reducing compaction and aiding root development.",
+      "gap_filling": "Crucial if gaps >20%. Done using pre-germinated single eye bud setts or excess sprouts. Fill gaps with new seedlings.",
+      "fertilizer_management": "Entire P and 1/3 N&K applied soon after stubble shaving. 25% extra Nitrogen is recommended for ratoon crops.",
+      "yield_notes": "Ratoon yield is typically 15-20% lower than main crop. Recommended for maximum 2 cycles (ಎರಡನೇ ರಾಟೂನ್ ಗಿಂತ ಹೆಚ್ಚು ಬೇಡ)."
+    }
+  },
+  "specialty_canes_and_sugars": {
+    "fibre_cane": {
+      "description": "Bred for fibre or bagasse for paper industries. Less sugar, high biomass, more tillers.",
+      "varieties": "S. robustum varieties Co-421, Co-423, Co-426"
+    },
+    "energy_cane": {
+      "description": "Bred for high molasses production for bio-fuel. Grown with closer spacing & high nitrogen. High biomass and total sugars.",
+      "varieties": "PR-980, CP 65-357 (Yields 4000-6000 L alcohol/ha)"
+    },
+    "artificial_sugars": {
+      "description": "Low calorie alternatives for health/lifestyle.",
+      "types": [
+        "Saccharin (300x sweeter, bitter aftertaste)",
+        "Aspartame (180x sweeter)",
+        "Acesulfame-K (110x sweeter)",
+        "Hydrogenated glucose syrup",
+        "Isomalt",
+        "Xylitol",
+        "High Fructose Corn Syrup (HFCS) - replaces sugar up to 10% in soft drinks."
+      ]
+    }
+  },
+  "intercropping_details": {
+    "title": "ಮಿಶ್ರ ಬೆಳೆ (Intercropping)",
+    "content": "ಕಬ್ಬಿನ ಜೊತೆ ಮಿಶ್ರ ಬೆಳೆ ಮಾಡುವುದರಿಂದ ಹೆಚ್ಚುವರಿ ಆದಾಯ ಬರುತ್ತದೆ ಮತ್ತು ಮಣ್ಣಿನ ಫಲವತ್ತತೆ ಹೆಚ್ಚುತ್ತದೆ. ಸೂಕ್ತ ಮಿಶ್ರ ಬೆಳೆಗಳೆಂದರೆ ಈರುಳ್ಳಿ, ಆಲೂಗೆಡ್ಡೆ, ಕೊತ್ತಂಬರಿ, ಮೆಂತ್ಯ ಮತ್ತು ಅವರೆಕಾಳು. ಕಬ್ಬಿನ ಆರಂಭಿಕ 3 ತಿಂಗಳು ಮಿಶ್ರ ಬೆಳೆ ಬೆಳೆಯಲು ಸೂಕ್ತ ಸಮಯ. ದ್ವಿದಳ ಧಾನ್ಯ ಬೆಳೆ ಮಿಶ್ರ ಮಾಡಿದರೆ ಮಣ್ಣಿನ ಸಾರಜನಕ ಹೆಚ್ಚುತ್ತದೆ. ಮಿಶ್ರ ಬೆಳೆ ಕಬ್ಬಿನ ಮುಖ್ಯ ಬೆಳೆಗೆ ಸ್ಪರ್ಧೆ ನೀಡಬಾರದು.",
+    "suitable_intercrops": [
+      "ಈರುಳ್ಳಿ (Onion)",
+      "ಆಲೂಗೆಡ್ಡೆ (Potato)",
+      "ಕೊತ್ತಂಬರಿ (Coriander)",
+      "ಮೆಂತ್ಯ (Fenugreek)",
+      "ಅವರೆಕಾಳು (Cowpea)"
+    ],
+    "benefits": {
+      "income": "Extra ₹5,000-10,000 per acre",
+      "soil": "Legumes fix nitrogen in the soil."
+    },
+    "timing": "First 3 months"
+  },
+  "government_schemes": {
+    "title": "ಸರ್ಕಾರಿ ಯೋಜನೆಗಳು ಮತ್ತು ಸಹಾಯಧನ",
+    "schemes": [
+      {
+        "name": "PM-KISAN",
+        "benefit": "₹6,000 annual support",
+        "description": "Annual direct benefit transfer to farmers."
+      },
+      {
+        "name": "Drip Irrigation Subsidy",
+        "benefit": "50-75% subsidy",
+        "description": "Financial aid for installing drip systems."
+      },
+      {
+        "name": "Crop Insurance",
+        "name_local": "ರಾಷ್ಟ್ರೀಯ ಕೃಷಿ ವಿಮಾ ಯೋಜನೆ",
+        "description": "Insurance against crop loss."
+      }
+    ],
+    "services": {
+      "soil_test": "Free soil test at Raita Samparka Kendra (ರೈತ ಸಂಪರ್ಕ ಕೇಂದ್ರ)",
+      "price_control": "FRP (Fair and Remunerative Price) decided by Central Government"
+    }
+  },
+  "weather_and_seasonal_advice": {
+    "title": "ಹವಾಮಾನ ಮತ್ತು ಋತು ಸಲಹೆ",
+    "optimal_range": "21-35°C with bright sunshine.",
+    "seasonal_risks": {
+      "monsoon": "Drainage is crucial; risk of root rot.",
+      "summer": "Increase irrigation intervals; use trash mulch.",
+      "winter": "Growth slows down below 12°C.",
+      "hailstorm": "Spray fungicide immediately if hailstorms occur."
+    },
+    "annual_rainfall_needed": "1200-1500 mm"
+  },
+  "metadata": {
+    "last_updated": "2025",
+    "region": "Karnataka",
+    "localized": true
+  }
+}

@@ -1,0 +1,17 @@
+# Environments
+venv/
+env/
+.env
+
+# Python Caches
+__pycache__/
+*.pyc
+
+# Local Data Artifacts
+qdrant_sugarcane_db/
+sugarcane_vector_db/
+sugarcanemerged3.json
+
+# Logs
+server.log
+*.log

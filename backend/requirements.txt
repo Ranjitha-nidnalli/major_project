@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+motor
+qdrant-client
+FlagEmbedding
+sentence-transformers
+tavily-python
+ollama
+pydantic
+python-dotenv
+rouge-score
+sacrebleu
