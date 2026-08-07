@@ -55,7 +55,7 @@ async def root():
 async def chat_endpoint(request: ChatRequest):
     try:
         # Calls the logic that handles Retrieval + LLM + Saving to Mongo
-        result = await get_sugarcane_answer(request.query, request.session_id)
+        result = await get_sugarcane_answer(request.query, request.session_id, interactive=True)
         return ChatResponse(
             answer=result.get("answer", ""),
             search_score=result.get("search_score", 0.0),
