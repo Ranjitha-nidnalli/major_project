@@ -18,7 +18,8 @@ from chat_db import save_chat_message, get_chat_history
 GENERATION_MODEL = os.getenv("GENERATION_MODEL", "gemma4:e4b")
 INTERACTIVE_MAX_PREDICT = int(os.getenv("INTERACTIVE_MAX_PREDICT", 250))
 EVAL_MAX_PREDICT = int(os.getenv("EVAL_MAX_PREDICT", 500))
-INTERACTIVE_TIMEOUT = int(os.getenv("INTERACTIVE_TIMEOUT", 45))
+# INCREASED TIMEOUT TO PREVENT CPU-BOUND TIMEOUTS
+INTERACTIVE_TIMEOUT = int(os.getenv("INTERACTIVE_TIMEOUT", 120))
 
 HARD_REFUSAL_THRESHOLD = 0.35  # Hybrid search score, not cosine sim
 CONFIDENT_SEARCH_THRESHOLD = 0.5
@@ -42,9 +43,9 @@ SYSTEM_INSTRUCTION = (
     "If the answer is not there, say: \"ಕ್ಷಮಿಸಿ, ಈ ಮಾಹಿತಿ ನಮ್ಮ ಡೇಟಾಬೇಸ್ನಲ್ಲಿ ಲಭ್ಯವಿಲ್ಲ.\""
 )
 
-HARD_REFUSAL_MESSAGE = "ಕ್ಷಮಿಸಿ, ನಿಮ್ಮ ಪ್ರಶ್ನೆಗೆ ಸಂಬಂಧಿಸಿದ ಮಾಹಿತಿ ಲಭ್ಯವಿಲ್ಲ. ದಯವಿಟ್ಟು ಬೇರೆ ರೀತಿಯಲ್ಲಿ ಕೇಳಿ ಪ್ರಯತ್ನಿಸಿ. ಹೆಚ್ಚಿನ ಸಹಾಯಕ್ಕಾಗಿ, ನಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸಿ: [email protected] or XXX-XXXX-XXXX."
+HARD_REFUSAL_MESSAGE = "ಕ್ಷಮಿಸಿ, ನಿಮ್ಮ ಪ್ರಶ್ನೆಗೆ ಸಂಬಂಧಿಸಿದ ಮಾಹಿತಿ ಲಭ್ಯವಿಲ್ಲ. ದಯವಿಟ್ಟು ಬೇರೆ ರೀತಿಯಲ್ಲಿ ಕೇಳಿ ಪ್ರಯತ್ನಿಸಿ. ಹೆಚ್ಚಿನ ಸಹಾಯಕ್ಕಾಗಿ, ಕಿಸಾನ್ ಕಾಲ್ ಸೆಂಟರ್ಗೆ ಕರೆ ಮಾಡಿ: 1800-180-1551."
 TIMEOUT_MESSAGE = "ಕ್ಷಮಿಸಿ, ಉತ್ತರವನ್ನು ನೀಡಲು ಹೆಚ್ಚು ಸಮಯ ತೆಗೆದುಕೊಳ್ಳುತ್ತಿದೆ. ದಯವಿಟ್ಟು ಸ್ವಲ್ಪ ಸಮಯದ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ."
-ESCALATION_MESSAGE = "\n\nಹೆಚ್ಚಿನ ಸಹಾಯಕ್ಕಾಗಿ, ನಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸಿ: [email protected] or XXX-XXXX-XXXX."
+ESCALATION_MESSAGE = "\n\nಹೆಚ್ಚಿನ ಸಹಾಯಕ್ಕಾಗಿ, ಕಿಸಾನ್ ಕಾಲ್ ಸೆಂಟರ್ಗೆ ಕರೆ ಮಾಡಿ: 1800-180-1551."
 
 
 EMPTY_ANSWER_FALLBACK_MESSAGE = "ಕ್ಷಮಿಸಿ, ಅಗತ್ಯಮಾಧ್ಯಮ ಮಾಹಿತಿ ಇಲ್ಲದ ಕಾರಣ ಸೂಕ್ತ ಉತ್ತರವನ್ನು ನೀಡಲಾಗುತ್ತಿಲ್ಲ. ಹೆಚ್ಚಿನ ಸಹಾಯಕ್ಕೆ ಕರೆಮಾಡಿ: ರೈತ ಸಹಾಯ ಕೇಂದ್ರ — 1800-180-1551"

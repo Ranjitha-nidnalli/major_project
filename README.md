@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Krishi Mitra
 
 A Kannada-language RAG chatbot that answers sugarcane farming questions for Karnataka farmers. FastAPI backend, Next.js frontend, Qdrant hybrid (dense + sparse) vector store, BGE-M3 embeddings, a BGE cross-encoder reranker, and MongoDB for chat history. All generation runs on a local Ollama model — **no hosted LLM API keys required**.
@@ -146,7 +145,4 @@ A 3-model generation comparison (`gemma4:e4b` vs `llama3.1:8b` vs `gaganyatri/sa
 
 - The eval harness (`evaluate_accuracy.py`, `test_bleu.py`, `test_rag.py`) is not covered by this setup guide — it's being reworked separately and currently has stale imports from the pre-Ollama version of `rag_service.py`.
 - `GENERATION_MODEL` is swappable via env var (see table above).
-=======
-# major_project
-major project of engineering degree
->>>>>>> ecf123358491458c83f068fe5759bb696d1d979a
+
