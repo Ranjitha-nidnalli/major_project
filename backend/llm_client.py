@@ -23,6 +23,7 @@ env_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path=env_path, override=True)
 
 LLM_BACKEND = os.getenv("LLM_BACKEND", "groq").lower()
+GENERATION_MODEL = os.getenv("GENERATION_MODEL", "llama-3.1-8b-instant")
 
 # --- Groq path ---
 _groq_client = None
