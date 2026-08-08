@@ -18,20 +18,22 @@ from chat_db import save_chat_message, get_chat_history
 GENERATION_MODEL = os.getenv("GENERATION_MODEL", "gemma4:e4b")
 INTERACTIVE_MAX_PREDICT = int(os.getenv("INTERACTIVE_MAX_PREDICT", 250))
 EVAL_MAX_PREDICT = int(os.getenv("EVAL_MAX_PREDICT", 500))
-# INCREASED TIMEOUT TO PREVENT CPU-BOUND TIMEOUTS
 INTERACTIVE_TIMEOUT = int(os.getenv("INTERACTIVE_TIMEOUT", 120))
 
-HARD_REFUSAL_THRESHOLD = 0.35  # Hybrid search score, not cosine sim
+HARD_REFUSAL_THRESHOLD = 0.35
 CONFIDENT_SEARCH_THRESHOLD = 0.5
+# NEW: faithfulness gate — answers below this are rejected
+FAITHFULNESS_GATE_THRESHOLD = 0.50
 
-# Hard backstop timeout for the Ollama client itself
-ollama_client = AsyncOllamaClient(host=os.getenv("OLLAMA_HOST", "http://localhost:11434"), timeout=300)
+ollama_client = AsyncOllamaClient(
+    host=os.getenv("OLLAMA_HOST", "http://localhost:11434"), timeout=300
+)
 
 ENABLE_WEB_FALLBACK = os.getenv("ENABLE_WEB_FALLBACK", "false").lower() == "true"
 tavily_client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY")) if ENABLE_WEB_FALLBACK else None
 
 ENABLE_RERANKER = os.getenv("ENABLE_RERANKER", "false").lower() == "true"
-RERANK_THRESHOLD = 0.5  # sigmoid probability cutoff for relevance
+RERANK_THRESHOLD = 0.5
 
 # --- System Prompts & Messages ---
 SYSTEM_INSTRUCTION = (
@@ -43,15 +45,32 @@ SYSTEM_INSTRUCTION = (
     "If the answer is not there, say: \"ಕ್ಷಮಿಸಿ, ಈ ಮಾಹಿತಿ ನಮ್ಮ ಡೇಟಾಬೇಸ್ನಲ್ಲಿ ಲಭ್ಯವಿಲ್ಲ.\""
 )
 
-HARD_REFUSAL_MESSAGE = "ಕ್ಷಮಿಸಿ, ನಿಮ್ಮ ಪ್ರಶ್ನೆಗೆ ಸಂಬಂಧಿಸಿದ ಮಾಹಿತಿ ಲಭ್ಯವಿಲ್ಲ. ದಯವಿಟ್ಟು ಬೇರೆ ರೀತಿಯಲ್ಲಿ ಕೇಳಿ ಪ್ರಯತ್ನಿಸಿ. ಹೆಚ್ಚಿನ ಸಹಾಯಕ್ಕಾಗಿ, ಕಿಸಾನ್ ಕಾಲ್ ಸೆಂಟರ್ಗೆ ಕರೆ ಮಾಡಿ: 1800-180-1551."
-TIMEOUT_MESSAGE = "ಕ್ಷಮಿಸಿ, ಉತ್ತರವನ್ನು ನೀಡಲು ಹೆಚ್ಚು ಸಮಯ ತೆಗೆದುಕೊಳ್ಳುತ್ತಿದೆ. ದಯವಿಟ್ಟು ಸ್ವಲ್ಪ ಸಮಯದ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ."
-ESCALATION_MESSAGE = "\n\nಹೆಚ್ಚಿನ ಸಹಾಯಕ್ಕಾಗಿ, ಕಿಸಾನ್ ಕಾಲ್ ಸೆಂಟರ್ಗೆ ಕರೆ ಮಾಡಿ: 1800-180-1551."
+HARD_REFUSAL_MESSAGE = (
+    "ಕ್ಷಮಿಸಿ, ನಿಮ್ಮ ಪ್ರಶ್ನೆಗೆ ಸಂಬಂಧಿಸಿದ ಮಾಹಿತಿ ಲಭ್ಯವಿಲ್ಲ. "
+    "ದಯವಿಟ್ಟು ಬೇರೆ ರೀತಿಯಲ್ಲಿ ಕೇಳಿ ಪ್ರಯತ್ನಿಸಿ. "
+    "ಹೆಚ್ಚಿನ ಸಹಾಯಕ್ಕಾಗಿ, ಕಿಸಾನ್ ಕಾಲ್ ಸೆಂಟರ್ಗೆ ಕರೆ ಮಾಡಿ: 1800-180-1551."
+)
 
+TIMEOUT_MESSAGE = (
+    "ಕ್ಷಮಿಸಿ, ಉತ್ತರವನ್ನು ನೀಡಲು ಹೆಚ್ಚು ಸಮಯ ತೆಗೆದುಕೊಳ್ಳುತ್ತಿದೆ. "
+    "ದಯವಿಟ್ಟು ಸ್ವಲ್ಪ ಸಮಯದ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ."
+)
 
-EMPTY_ANSWER_FALLBACK_MESSAGE = "ಕ್ಷಮಿಸಿ, ಅಗತ್ಯಮಾಧ್ಯಮ ಮಾಹಿತಿ ಇಲ್ಲದ ಕಾರಣ ಸೂಕ್ತ ಉತ್ತರವನ್ನು ನೀಡಲಾಗುತ್ತಿಲ್ಲ. ಹೆಚ್ಚಿನ ಸಹಾಯಕ್ಕೆ ಕರೆಮಾಡಿ: ರೈತ ಸಹಾಯ ಕೇಂದ್ರ — 1800-180-1551"
+ESCALATION_MESSAGE = (
+    "\n\nಹೆಚ್ಚಿನ ಸಹಾಯಕ್ಕಾಗಿ, ಕಿಸಾನ್ ಕಾಲ್ ಸೆಂಟರ್ಗೆ ಕರೆ ಮಾಡಿ: 1800-180-1551."
+)
+
+EMPTY_ANSWER_FALLBACK_MESSAGE = (
+    "ಕ್ಷಮಿಸಿ, ಅಗತ್ಯಮಾಧ್ಯಮ ಮಾಹಿತಿ ಇಲ್ಲದ ಕಾರಣ ಸೂಕ್ತ ಉತ್ತರವನ್ನು ನೀಡಲಾಗುತ್ತಿಲ್ಲ. "
+    "ಹೆಚ್ಚಿನ ಸಹಾಯಕ್ಕೆ ಕರೆಮಾಡಿ: ರೈತ ಸಹಾಯ ಕೇಂದ್ರ — 1800-180-1551"
+)
+
+# Safety-critical categories where low confidence MUST refuse
+SAFETY_CRITICAL_CATEGORIES = {"pest", "disease", "fertilizer"}
 
 
 import json
+
 
 async def calculate_faithfulness(context: str, answer: str, judge_model: str = None) -> float:
     if not answer or not context:
@@ -68,7 +87,7 @@ async def calculate_faithfulness(context: str, answer: str, judge_model: str = N
             model=judge_model or GENERATION_MODEL,
             messages=[{"role": "system", "content": prompt}, {"role": "user", "content": user_msg}],
             format="json",
-            options={"temperature": 0.0, "num_predict": 100} # Keep judge prompt short
+            options={"temperature": 0.0, "num_predict": 100}
         )
         data = json.loads(res.message.content.strip())
         return float(data.get("score", 0.0))
@@ -105,8 +124,7 @@ async def generate_from_context(
             options={"temperature": 0.0, "num_predict": max_tokens}
         )
         ans = final_response.message.content.strip()
-        
-        # Fallback for empty model output
+
         if not ans:
             print("⚠️ Model returned empty answer. Using fallback.")
             ans = EMPTY_ANSWER_FALLBACK_MESSAGE
@@ -124,14 +142,14 @@ async def generate_from_context(
 
 async def get_sugarcane_answer(user_query: str, session_id: str, return_context: bool = False, interactive: bool = True):
     # ==========================================
-    # 1. THE SWITCHBOARD (Router) - Unchanged
+    # 1. THE SWITCHBOARD (Router)
     # ==========================================
     router_prompt = (
         "Classify the user query into: 'price', 'disease', 'pest', 'fertilizer', or 'general'.\n"
         "Also translate the query to English keywords for web search purposes.\n"
         "Format: CATEGORY | ENGLISH_KEYWORDS"
     )
-    
+
     try:
         routing_response = await ollama_client.chat(
             model=GENERATION_MODEL,
@@ -145,10 +163,10 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
         category, english_search_query = "general", user_query
 
     # ==========================================
-    # 2. RETRIEVAL WITH BGE-M3 HYBRID - Unchanged
+    # 2. RETRIEVAL WITH BGE-M3 HYBRID
     # ==========================================
     print(f"🔍 Searching DB for: {user_query}")
-    
+
     async def get_vectors(q_text):
         output = await asyncio.to_thread(embed_model.encode, [q_text], return_dense=True, return_sparse=True)
         dense_vec = output['dense_vecs'][0].tolist()
@@ -175,56 +193,68 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
         return fused, hits[0].score if hits else 0.0
 
     top_chunks, best_fused_score = await execute_weighted_search(dense_vec, sparse_indices, sparse_values)
-    
-    FUSION_SCORE_THRESHOLD = 1.0 / 70
-    if best_fused_score < FUSION_SCORE_THRESHOLD and category != "general":
-        # Query Expansion logic remains the same
-        pass
 
     # ==========================================
-    # 3. SAFETY & CONFIDENCE CHECKS (NEW)
+    # 3. SAFETY & CONFIDENCE CHECKS
     # ==========================================
     docs = [p["payload"]["text"] for p in top_chunks]
     search_score = top_chunks[0]['score'] if top_chunks else 0.0
-    
+
     is_low_confidence = not docs or search_score < HARD_REFUSAL_THRESHOLD
     is_medium_confidence = search_score < CONFIDENT_SEARCH_THRESHOLD
+    is_safety_critical = category in SAFETY_CRITICAL_CATEGORIES
 
-    # Hard Refusal: If vector search score is very low, don't even try to generate.
-    print(f"DEBUG: For query '{user_query}', retrieved chunks are: {top_chunks}")
+    # Hard Refusal: low retrieval confidence
     if is_low_confidence:
         print(f"🟥 Hard Refusal: Low confidence score ({search_score:.2f}).")
         return {
             "answer": HARD_REFUSAL_MESSAGE,
             "search_score": search_score,
-            "accuracy_score": 0.0
+            "accuracy_score": 0.0,
+            "context": "\n\n".join(docs) if return_context else None,
+        }
+
+    # NEW: For safety-critical categories, require higher confidence
+    if is_safety_critical and is_medium_confidence:
+        print(f"🟧 Safety Refusal: {category} query with medium confidence ({search_score:.2f}).")
+        return {
+            "answer": HARD_REFUSAL_MESSAGE,
+            "search_score": search_score,
+            "accuracy_score": 0.0,
+            "context": "\n\n".join(docs) if return_context else None,
         }
 
     print(f"🟢 DB Hit! Best Score: {search_score:.2f}")
-    context_text = "\n\n".join([f"<doc>{doc}</doc>" for doc in docs])
-
-    # Web fallback logic remains, but we can simplify it for now
-    # ...
+    context_text = "\n\n".join([f"{doc}" for doc in docs])
 
     # ==========================================
-    # 4. MEMORY & GENERATION (UPDATED)
+    # 4. MEMORY & GENERATION
     # ==========================================
     ans = ""
     accuracy_score = 0.0
     try:
-        timeout = INTERACTIVE_TIMEOUT if interactive else 900 # Longer for eval
+        timeout = INTERACTIVE_TIMEOUT if interactive else 900
         max_tokens = INTERACTIVE_MAX_PREDICT if interactive else EVAL_MAX_PREDICT
 
         gen_result = await asyncio.wait_for(
-            generate_from_context(user_query, context_text, session_id, run_judge=interactive, max_predict_tokens=max_tokens),
+            generate_from_context(
+                user_query, context_text, session_id,
+                run_judge=interactive, max_predict_tokens=max_tokens
+            ),
             timeout=timeout
         )
         ans = gen_result["answer"]
         accuracy_score = gen_result.get("accuracy_score", 0.0)
 
-        # Append escalation line if confidence is not high
-        if is_medium_confidence and ans:
-            ans += ESCALATION_MESSAGE
+        # NEW: Faithfulness gate — reject hallucinated answers
+        if accuracy_score is not None and accuracy_score < FAITHFULNESS_GATE_THRESHOLD:
+            print(f"🟨 Faithfulness gate triggered ({accuracy_score:.2f} < {FAITHFULNESS_GATE_THRESHOLD}). Returning refusal.")
+            ans = HARD_REFUSAL_MESSAGE
+            accuracy_score = 0.0
+        else:
+            # Append escalation line if confidence is not high
+            if is_medium_confidence and ans:
+                ans += ESCALATION_MESSAGE
 
     except asyncio.TimeoutError:
         print(f"⏰ Timeout error after {timeout}s!")
@@ -238,7 +268,7 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
     response_data = {
         "answer": ans,
         "search_score": search_score,
-        "accuracy_score": accuracy_score
+        "accuracy_score": accuracy_score,
     }
 
     if return_context:

@@ -1,12 +1,25 @@
-fastapi
-uvicorn
-motor
-qdrant-client
-FlagEmbedding
-sentence-transformers
-tavily-python
-ollama
-pydantic
-python-dotenv
-rouge-score
-sacrebleu
+# Core backend
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+python-dotenv>=1.0.0
+
+# Vector DB & Embeddings
+qdrant-client>=1.8.0
+FlagEmbedding>=1.2.0
+sentence-transformers>=2.5.0
+
+# LLM (local Ollama)
+ollama>=0.1.7
+
+# Database
+motor>=3.3.0
+
+# Web fallback (optional)
+tavily-python>=0.3.0
+
+# Evaluation
+sacrebleu>=2.4.0
+numpy>=1.26.0
+
+# Dev
+pytest>=8.0.0
