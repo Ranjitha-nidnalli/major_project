@@ -40,11 +40,12 @@ def _get_groq_client():
 
 
 def _groq_chat_sync(messages, model, max_tokens, temperature):
+    m = model or "llama-3.1-8b-instant"
     client = _get_groq_client()
     start = time.time()
     try:
         res = client.chat.completions.create(
-            model=model,
+            model=m,
             messages=messages,
             temperature=temperature,
             max_tokens=max_tokens,
@@ -75,11 +76,12 @@ def _get_ollama_client():
 
 
 async def _ollama_chat_async(messages, model, max_tokens, temperature):
+    m = model or "llama3.1:8b"
     client = _get_ollama_client()
     start = time.time()
     try:
         res = await client.chat(
-            model=model,
+            model=m,
             messages=messages,
             options={"temperature": temperature, "num_predict": max_tokens}
         )
@@ -104,7 +106,7 @@ async def _ollama_chat_async(messages, model, max_tokens, temperature):
 
 
 # --- Public API ---
-async def call_llm(messages, model=None, max_tokens=500, temperature=0.0):
+async def call_llm(messages, model="llama-3.1-8b-instant", max_tokens=500, temperature=0.0):
     """
     Unified LLM call. Backend selected by LLM_BACKEND env var.
     Returns the generated text string, or None on failure.
