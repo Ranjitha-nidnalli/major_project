@@ -1,6 +1,16 @@
 # Krishi Mitra
 
-A Kannada-language RAG chatbot that answers sugarcane farming questions for Karnataka farmers. FastAPI backend, Next.js frontend, Qdrant hybrid (dense + sparse) vector store, BGE-M3 embeddings, a BGE cross-encoder reranker, and MongoDB for chat history. All generation runs on a local Ollama model — **no hosted LLM API keys required**.
+A Kannada-language RAG chatbot that answers sugarcane farming questions for Karnataka farmers. FastAPI backend, Next.js frontend, Qdrant hybrid (dense + sparse) vector store, BGE-M3 embeddings, a BGE cross-encoder reranker, and MongoDB for chat history.
+
+## Architecture & LLM Backend
+
+The system is designed around a fully local stack: **FastAPI** backend, **Next.js** frontend, **Qdrant** hybrid (dense + sparse) vector store, **BGE-M3** embeddings, and **MongoDB** for chat history. Retrieval and embedding run entirely on the local machine with no external dependencies.
+
+**LLM Generation:** The system was originally implemented against local **Ollama** models for zero-cost, offline operation. Ollama's Python client (v0.6.2) proved unstable in our environment (Windows 11, Python 3.13), crashing on every generation call with a response-parsing error (`'NoneType' object is not subscriptable`). After extensive debugging (safe response extraction, model switching, client updates), local inference could not be restored in the project timeline.
+
+For the prototype evaluation and live demo, generation was switched to **Groq's hosted Llama 3.1 API**. This requires a `GROQ_API_KEY` and internet connectivity. Restoring fully local inference via Ollama is future work, not a currently live code path.
+
+**Request flow:** query → LLM router (category + English gloss) → BGE-M3 hybrid retrieval (dense + sparse, fused with Reciprocal Rank Fusion) → query-expansion retry on weak matches → optional BGE cross-encoder reranks/filters → Groq generates a Kannada answer strictly from context → Groq judges faithfulness → **faithfulness gate blocks low-score answers** → answer + `search_score` + `accuracy_score` saved to MongoDB and returned.
 
 See [CLAUDE.md](./CLAUDE.md) for a deeper architecture walkthrough (file-by-file responsibilities, request flow).
 
