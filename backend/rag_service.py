@@ -1,6 +1,5 @@
 import os
 import asyncio
-import traceback
 from dotenv import load_dotenv
 
 # --- Environment Setup ---
@@ -8,16 +7,16 @@ env_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path=env_path, override=True)
 
 import torch
-from groq import Groq
 from tavily import TavilyClient
 
 from qdrant_client import models
 from vector_db import db_client, COLLECTION_NAME, embed_model, reranker_model
 from chat_db import save_chat_message, get_chat_history
+from llm_client import call_llm  # NEW: unified LLM abstraction
 
 # --- Configuration ---
 GENERATION_MODEL = os.getenv("GENERATION_MODEL", "llama-3.1-8b-instant")
-INTERACTIVE_MAX_PREDICT = int(os.getenv("INTERACTIVE_MAX_PREDICT", 150))
+INTERACTIVE_MAX_PREDICT = int(os.getenv("INTERACTIVE_MAX_PREDICT", 250))
 EVAL_MAX_PREDICT = int(os.getenv("EVAL_MAX_PREDICT", 500))
 INTERACTIVE_TIMEOUT = int(os.getenv("INTERACTIVE_TIMEOUT", 120))
 
@@ -25,13 +24,7 @@ HARD_REFUSAL_THRESHOLD = 0.35
 CONFIDENT_SEARCH_THRESHOLD = 0.5
 FAITHFULNESS_GATE_THRESHOLD = 0.50
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-if not GROQ_API_KEY:
-    raise ValueError("GROQ_API_KEY not set in .env")
-
-groq_client = Groq(api_key=GROQ_API_KEY)
-
-print(f"[Krishi Mitra] Loaded with GENERATION_MODEL={GENERATION_MODEL} (Groq)")
+print(f"[Krishi Mitra] Loaded with GENERATION_MODEL={GENERATION_MODEL}")
 
 ENABLE_WEB_FALLBACK = os.getenv("ENABLE_WEB_FALLBACK", "false").lower() == "true"
 tavily_client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY")) if ENABLE_WEB_FALLBACK else None
@@ -76,59 +69,6 @@ import json
 import time
 
 
-def _groq_chat(messages, model=None, max_tokens=500, temperature=0.0):
-    """
-    Synchronous Groq call.
-    """
-    m = model or GENERATION_MODEL
-    kwargs = {
-        "model": m,
-        "messages": messages,
-        "temperature": temperature,
-        "max_tokens": max_tokens,
-    }
-
-    start = time.time()
-    try:
-        res = groq_client.chat.completions.create(**kwargs)
-        elapsed = time.time() - start
-        print(f"⏱️  Groq ({m}) took {elapsed:.2f}s")
-        if res is None:
-            print("⚠️ Groq returned None response object")
-            return None
-        if not res.choices:
-            print("⚠️ Groq returned empty choices")
-            return None
-        msg = res.choices[0].message
-        if msg is None:
-            print("⚠️ Groq returned None message")
-            return None
-        return msg.content
-    except Exception as e:
-        elapsed = time.time() - start
-        print(f"⚠️ Groq failed ({m}) after {elapsed:.2f}s: {e}")
-        traceback.print_exc()
-        return None
-
-
-async def safe_groq_chat(messages, model=None, max_tokens=500, temperature=0.0):
-    """Async wrapper around sync Groq client."""
-    try:
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(
-            None,
-            _groq_chat,
-            messages,
-            model,
-            max_tokens,
-            temperature
-        )
-    except Exception as e:
-        print(f"⚠️ safe_groq_chat wrapper failed: {e}")
-        traceback.print_exc()
-        return None
-
-
 async def calculate_faithfulness(context: str, answer: str, judge_model: str = None) -> float:
     if not answer or not context:
         return 0.0
@@ -138,7 +78,7 @@ async def calculate_faithfulness(context: str, answer: str, judge_model: str = N
         "Return ONLY a number between 0.0 and 1.0. Nothing else."
     )
     user_msg = f"Context:\n{context}\n\nAnswer:\n{answer}"
-    content = await safe_groq_chat(
+    content = await call_llm(
         messages=[{"role": "system", "content": prompt}, {"role": "user", "content": user_msg}],
         model=judge_model or GENERATION_MODEL,
         max_tokens=50,
@@ -147,12 +87,9 @@ async def calculate_faithfulness(context: str, answer: str, judge_model: str = N
     if content is None:
         return 0.0
     try:
-        # Extract first float-like thing from the response
         content = content.strip()
-        # Try to parse as float directly
         return float(content)
     except ValueError:
-        # Try to extract a number from the text
         import re
         match = re.search(r"(\d+\.\d+|\d+)", content)
         if match:
@@ -183,8 +120,8 @@ async def generate_from_context(
 
         final_prompt = f"History:\n{history_text}\n\nContext:\n{context_text}\n\nQuestion: {user_query}"
 
-        print("🔄 Calling Groq for generation...")
-        content = await safe_groq_chat(
+        print("🔄 Calling LLM for generation...")
+        content = await call_llm(
             messages=[
                 {"role": "system", "content": SYSTEM_INSTRUCTION},
                 {"role": "user", "content": final_prompt}
@@ -193,10 +130,10 @@ async def generate_from_context(
             max_tokens=max_tokens,
             temperature=0.0
         )
-        print(f"🔄 Groq generation result: {content[:50] if content else 'None'}...")
+        print(f"🔄 LLM generation result: {content[:50] if content else 'None'}...")
 
         if content is None:
-            print("⚠️ Groq returned None. Using fallback refusal.")
+            print("⚠️ LLM returned None. Using fallback refusal.")
             ans = EMPTY_ANSWER_FALLBACK_MESSAGE
         elif not content.strip():
             print("⚠️ Model returned empty answer. Using fallback.")
@@ -210,13 +147,14 @@ async def generate_from_context(
 
         accuracy_score = None
         if run_judge:
-            print("🔄 Calling Groq for faithfulness judge...")
+            print("🔄 Calling LLM for faithfulness judge...")
             accuracy_score = await calculate_faithfulness(context_text, ans, judge_model=judge_model)
             print(f"🔄 Judge score: {accuracy_score}")
 
         return {"answer": ans, "accuracy_score": accuracy_score}
     except Exception as e:
         print(f"❌ ERROR inside generate_from_context: {e}")
+        import traceback
         traceback.print_exc()
         raise
 
@@ -231,7 +169,7 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
         "Format: CATEGORY | ENGLISH_KEYWORDS"
     )
 
-    route_content = await safe_groq_chat(
+    route_content = await call_llm(
         messages=[{"role": "system", "content": router_prompt}, {"role": "user", "content": user_query}],
         max_tokens=100,
         temperature=0.0
@@ -323,7 +261,7 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
         gen_result = await asyncio.wait_for(
             generate_from_context(
                 user_query, context_text, session_id,
-                run_judge=False, max_predict_tokens=max_tokens
+                run_judge=interactive, max_predict_tokens=max_tokens
             ),
             timeout=timeout
         )
@@ -347,6 +285,7 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
         accuracy_score = 0.0
     except Exception as e:
         print(f"❌ Unexpected pipeline error: {e}")
+        import traceback
         traceback.print_exc()
         ans = HARD_REFUSAL_MESSAGE
         accuracy_score = 0.0
