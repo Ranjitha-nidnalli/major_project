@@ -51,13 +51,13 @@ def _groq_chat_sync(messages, model, max_tokens, temperature):
             max_tokens=max_tokens,
         )
         elapsed = time.time() - start
-        print(f"⏱️  Groq ({model}) took {elapsed:.2f}s")
+        print(f"⏱️  Groq ({m}) took {elapsed:.2f}s")
         if res is None or not res.choices or res.choices[0].message is None:
             return None
         return res.choices[0].message.content
     except Exception as e:
         elapsed = time.time() - start
-        print(f"⚠️ Groq failed ({model}) after {elapsed:.2f}s: {e}")
+        print(f"⚠️ Groq failed ({m}) after {elapsed:.2f}s: {e}")
         return None
 
 
@@ -86,7 +86,7 @@ async def _ollama_chat_async(messages, model, max_tokens, temperature):
             options={"temperature": temperature, "num_predict": max_tokens}
         )
         elapsed = time.time() - start
-        print(f"⏱️  Ollama ({model}) took {elapsed:.2f}s")
+        print(f"⏱️  Ollama ({m}) took {elapsed:.2f}s")
         # Safe extraction — handles dict or object responses
         if res is None:
             return None
@@ -101,7 +101,7 @@ async def _ollama_chat_async(messages, model, max_tokens, temperature):
         return None
     except Exception as e:
         elapsed = time.time() - start
-        print(f"⚠️ Ollama failed ({model}) after {elapsed:.2f}s: {e}")
+        print(f"⚠️ Ollama failed ({m}) after {elapsed:.2f}s: {e}")
         return None
 
 
