@@ -8,8 +8,11 @@ qdrant-client>=1.8.0
 FlagEmbedding>=1.2.0
 sentence-transformers>=2.5.0
 
-# LLM (local Ollama)
-ollama>=0.1.7
+# LLM (current: Groq hosted)
+groq>=0.9.0
+
+# LLM (optional local backend — currently untested on Windows+Python 3.13)
+# ollama>=0.1.7
 
 # Database
 motor>=3.3.0
