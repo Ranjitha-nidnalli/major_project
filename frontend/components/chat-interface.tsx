@@ -17,6 +17,7 @@ import {
   Wheat,
   CloudRain,
 } from "lucide-react";
+import ChatMessage from "./ChatMessage";  // NEW: import ChatMessage
 
 interface Message {
   id: string;
@@ -25,6 +26,7 @@ interface Message {
   timestamp: Date;
   searchScore?: number;
   accuracyScore?: number;
+  sources?: string[];  // NEW: sources from backend
 }
 
 interface ChatSession {
@@ -59,13 +61,6 @@ const suggestedQuestions = [
     text: "ಕಬ್ಬಿಗೆ ಸಾರಜನಕ ಪ್ರಮಾಣ ಎಷ್ಟು ಕೊಡಬೇಕು?",
   },
 ];
-
-function getMatchStrength(searchScore?: number) {
-  if (searchScore === undefined) return null;
-  if (searchScore >= 0.02) return { label: "ಬಲವಾದ ಹೊಂದಾಣಿಕೆ", className: "text-primary" };
-  if (searchScore >= 0.008) return { label: "ಮಧ್ಯಮ ಹೊಂದಾಣಿಕೆ", className: "text-amber-600 dark:text-amber-400" };
-  return { label: "ದುರ್ಬಲ ಹೊಂದಾಣಿಕೆ", className: "text-muted-foreground" };
-}
 
 export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -205,6 +200,7 @@ export function ChatInterface() {
         timestamp: new Date(),
         searchScore: data.search_score,
         accuracyScore: data.accuracy_score,
+        sources: data.sources,  // NEW: pass sources from backend
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -436,67 +432,16 @@ export function ChatInterface() {
             </div>
           ) : (
             <div className="mx-auto max-w-3xl px-4 py-6">
+              {/* NEW: Use ChatMessage component instead of inline rendering */}
               {messages.map((message) => (
-                <div
+                <ChatMessage
                   key={message.id}
-                  className={cn(
-                    "mb-6 flex gap-4",
-                    message.role === "user" ? "flex-row-reverse" : ""
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
-                      message.role === "assistant"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-secondary text-secondary-foreground"
-                    )}
-                  >
-                    {message.role === "assistant" ? (
-                      <Leaf className="h-4 w-4" />
-                    ) : (
-                      <span className="text-sm font-medium">ನಾ</span>
-                    )}
-                  </div>
-                  <div
-                    className={cn(
-                      "max-w-[80%] rounded-2xl px-4 py-3",
-                      message.role === "assistant"
-                        ? "bg-card border border-border text-card-foreground"
-                        : "bg-primary text-primary-foreground"
-                    )}
-                  >
-                    <p className="text-sm leading-relaxed">{message.content}</p>
-                    {message.role === "assistant" && message.accuracyScore !== undefined && (
-                      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                        <span>
-                          ವಿಶ್ವಾಸಾರ್ಹತೆ: {Math.round(message.accuracyScore * 100)}%
-                        </span>
-                        {getMatchStrength(message.searchScore) && (
-                          <>
-                            <span aria-hidden="true">·</span>
-                            <span className={getMatchStrength(message.searchScore)!.className}>
-                              {getMatchStrength(message.searchScore)!.label}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    )}
-                    <p
-                      className={cn(
-                        "mt-2 text-xs",
-                        message.role === "assistant"
-                          ? "text-muted-foreground"
-                          : "text-primary-foreground/70"
-                      )}
-                    >
-                      {message.timestamp.toLocaleTimeString("kn-IN", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
-                </div>
+                  role={message.role}
+                  content={message.content}
+                  searchScore={message.searchScore}
+                  accuracyScore={message.accuracyScore}
+                  sources={message.sources}
+                />
               ))}
 
               {isTyping && (
