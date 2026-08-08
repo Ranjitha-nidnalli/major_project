@@ -20,6 +20,7 @@ import asyncio
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from rag_service import get_sugarcane_answer
+from chat_db import connect_db, close_db  # NEW: import DB connection
 
 QUESTIONS_PATH = os.path.join(os.path.dirname(__file__), "questions.json")
 GOLD_PATH = os.path.join(os.path.dirname(__file__), "gold.jsonl")
@@ -43,6 +44,9 @@ def is_refusal(answer: str) -> bool:
 
 
 async def main():
+    # NEW: Connect to MongoDB before running tests
+    connect_db()
+
     with open(QUESTIONS_PATH, "r", encoding="utf-8") as f:
         questions = {q["id"]: q for q in json.load(f)}
     with open(GOLD_PATH, "r", encoding="utf-8") as f:
@@ -51,6 +55,7 @@ async def main():
     unanswerable = [qid for qid, g in gold.items() if g["unanswerable"]]
     if not unanswerable:
         print("No unanswerable questions found in gold.jsonl — add some (e.g. price-1).")
+        close_db()
         return
 
     print(f"Testing {len(unanswerable)} unanswerable question(s): {unanswerable}\n")
@@ -97,6 +102,9 @@ async def main():
         for r in results:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
     print(f"\nWrote detailed results to {RESULTS_PATH}")
+
+    # NEW: Close DB connection
+    close_db()
 
 
 if __name__ == "__main__":

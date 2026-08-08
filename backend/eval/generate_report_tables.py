@@ -21,7 +21,16 @@ CONFIG_ORDER = [
     "hybrid", "hybrid+rerank",
 ]
 
-METRICS = ["recall@1", "recall@3", "recall@5", "recall@10", "mrr", "ndcg@5"]
+# Keys that actually exist in retrieval_results.jsonl
+METRICS = ["recall@1", "recall@3", "recall@5", "recall@10", "reciprocal_rank", "ndcg@5"]
+METRIC_DISPLAY = {
+    "recall@1": "recall@1",
+    "recall@3": "recall@3",
+    "recall@5": "recall@5",
+    "recall@10": "recall@10",
+    "reciprocal_rank": "MRR",
+    "ndcg@5": "nDCG@5",
+}
 
 
 def mean_std_ci(values):
@@ -56,13 +65,15 @@ def main():
     for r in raw:
         cfg = r["config"]
         for m in METRICS:
-            per_config[cfg][m].append(r[m])
+            if m in r:
+                per_config[cfg][m].append(r[m])
         per_config_lat[cfg].append(r["latency_seconds"])
 
     # --- Markdown table for report ---
     print("\n## Retrieval Ablation Results\n")
-    print("| Config | recall@1 | recall@3 | recall@5 | recall@10 | MRR | nDCG@5 | Latency (mean / p95) |")
-    print("|--------|----------|----------|----------|-----------|-----|--------|----------------------|")
+    header = "| Config | " + " | ".join(METRIC_DISPLAY[m] for m in METRICS) + " | Latency (mean / p95) |"
+    print(header)
+    print("|" + "|".join(["-" * len(cell.strip()) for cell in header.split("|") if cell]) + "|")
 
     for cfg in CONFIG_ORDER:
         if cfg not in per_config:
@@ -70,8 +81,11 @@ def main():
         vals = per_config[cfg]
         cells = []
         for m in METRICS:
-            mean, _, ci95, n = mean_std_ci(vals[m])
-            cells.append(f"{mean:.3f}±{ci95:.3f}")
+            if m in vals:
+                mean, _, ci95, n = mean_std_ci(vals[m])
+                cells.append(f"{mean:.3f}±{ci95:.3f}")
+            else:
+                cells.append("—")
         lats = per_config_lat[cfg]
         lat_mean = statistics.mean(lats)
         lat_p95 = percentile(lats, 0.95)
@@ -92,7 +106,9 @@ def main():
         print("| Config | recall@5 | RR | nDCG@5 | Latency |")
         print("|--------|----------|----|--------|---------|")
         for r in by_q[qid]:
-            print(f"| {r['config']} | {r['recall@5']:.0f} | {r['reciprocal_rank']:.3f} | {r['ndcg@5']:.3f} | {r['latency_seconds']:.2f}s |")
+            rr = r.get('reciprocal_rank', '—')
+            rr_str = f"{rr:.3f}" if isinstance(rr, float) else rr
+            print(f"| {r['config']} | {r['recall@5']:.0f} | {rr_str} | {r['ndcg@5']:.3f} | {r['latency_seconds']:.2f}s |")
 
 
 if __name__ == "__main__":

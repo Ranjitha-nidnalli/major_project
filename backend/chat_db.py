@@ -22,6 +22,9 @@ def close_db():
         print("MongoDB connection closed.")
 
 async def save_chat_message(session_id: str, role: str, content: str):
+    if db_config.db is None:
+        print("⚠️ MongoDB not connected, skipping save")
+        return
     message = {
         "session_id": session_id,
         "role": role,
@@ -31,11 +34,14 @@ async def save_chat_message(session_id: str, role: str, content: str):
     await db_config.db["messages"].insert_one(message)
 
 async def get_chat_history(session_id: str, limit: int = 50):
+    if db_config.db is None:
+        print("⚠️ MongoDB not connected, returning empty history")
+        return []
     # Sort by -1 to get the MOST RECENT messages first
     cursor = db_config.db["messages"].find(
         {"session_id": session_id}, {"_id": 0}
     ).sort("timestamp", -1).limit(limit)
-    
+
     docs = [doc async for doc in cursor]
     # Reverse the list so the LLM reads them in normal chronological order
     docs.reverse()
