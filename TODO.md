@@ -65,6 +65,12 @@ Items already completed are listed at the top for reference and not repeated bel
 | 34 | WhatsApp channel | 2 — future work section only |
 | 35 | Image-based pest/disease diagnosis from photo | 2 — future work section only |
 | 36 | Live tool-calling integration (Agmarknet mandi prices, IMD weather) | 2 — future work section only |
+| 37 | **Web fallback is dead code, not just disabled** — `tavily_client` is instantiated in `rag_service.py` when `ENABLE_WEB_FALLBACK=true`, but no `.search()` call exists anywhere in the file. Same "built but not wired in" bug as `llm_client.py`/`ChatMessage.tsx` before those were fixed. Either wire in a real call (e.g. price queries when retrieval confidence is low) or remove the dead client instantiation for hygiene | 1 |
+| 38 | Wire Qdrant payload filtering by category — the router already classifies queries (disease/pest/fertilizer/general) but this is never used to filter/boost retrieval, only vector similarity is. Another instance of the "built but not wired in" pattern | 1 (if time) / 2 |
+| 39 | Document `temperature=0.0` as an explicit design choice in the report (deterministic outputs, reduces eval variance, intentional trade-off vs. natural phrasing) — one paragraph | 1 |
+| 40 | Structured extraction for safety-critical numeric fields (chemical name/dose/unit as a validated schema) rather than free-text generation — a stronger version of the numeric faithfulness checker (#5); note as an extension/upgrade path even if #5 ships first | 2 |
+| 41 | One-line report mention of PII/prompt-injection handling as a named, deliberately out-of-scope limitation | 1 |
+| 42 | Add a **"Production Readiness"** section to the report explicitly naming known, deliberately-deferred ops gaps (auth, rate limiting, structured logging beyond `print()`, CI/CD) — shows awareness of the prototype/production delta rather than leaving it unaddressed | 1 |
 
 ---
 
@@ -85,9 +91,14 @@ Items already completed are listed at the top for reference and not repeated bel
 10. BM25 bucketed evaluation (#10)
 11. Manual failure-mode review (#11)
 12. GitHub Action for refusal test (#12)
-13. Start chunking rebuild if time allows (#13) — better to leave clean for Track 2 than rush it
+13. Fix or remove dead `tavily_client` (#37)
+14. Document temperature=0.0 as a design choice (#39)
+15. PII/prompt-injection limitation note (#41)
+16. Production Readiness section in the report (#42)
+17. Start chunking rebuild if time allows (#13) — better to leave clean for Track 2 than rush it
+18. Category payload filtering if time remains (#38)
 
-*Cut first if squeezed: streaming (#15), query condensation (#14).*
+*Cut first if squeezed: streaming (#15), query condensation (#14), category filtering (#38).*
 
 ## Track 2 — month before paper
 
@@ -103,6 +114,8 @@ Items already completed are listed at the top for reference and not repeated bel
 - Statistical significance testing (#22)
 - Human eval with documented process (#23)
 - Restore Ollama, resolve sarvam (#28, #29)
+- Structured extraction for dosage fields, upgrading the regex-based numeric checker (#40)
+- Category payload filtering if not done in Track 1 (#38)
 
 **Week 4 — packaging**
 - Reproducibility package (#24)
