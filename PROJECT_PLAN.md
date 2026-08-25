@@ -250,6 +250,42 @@ its cost on an Indic-language corpus" is a distinction.
 
 ---
 
+## Addendum — "trivial but overlooked" pass
+
+Checked against the same blind spot that caused the original BM25 mistake (measuring a
+technique in isolation instead of using it for its actual purpose). Four real, verified
+gaps found by inspecting the live repo — small effort, real cost if skipped:
+
+- **No `.env.example`.** Anyone cloning the repo (a teammate, an examiner, future-you in
+  six months) has no record of which env vars exist (`GROQ_API_KEY`, `OPENROUTER_API_KEY`,
+  `GENERATION_MODEL`, `ENABLE_RERANKER`, `LLM_BACKEND`, etc.) or their expected values/
+  defaults. Add a checked-in `.env.example` with placeholder values and one-line comments.
+  Costs ten minutes; the whole project doesn't run without it if the real `.env` is lost.
+- **Confidence thresholds are unjustified magic numbers.** `HARD_REFUSAL_THRESHOLD = 0.35`
+  and `RERANK_THRESHOLD = 0.5` are hardcoded with no comment explaining where they came
+  from. Given `gold.jsonl` already exists, run a **cheap threshold sweep**: score
+  search_score across the gold set and pick the threshold that actually separates
+  answerable from unanswerable questions, rather than a guessed constant. This is the exact
+  same category of mistake as the original BM25 ask — using a number without confirming it's
+  doing the job it's meant to do.
+- **No data provenance note for `sugarcanemerged3.json`.** The corpus is gitignored with
+  zero documentation of where it came from, when it was collected, or whether it's a
+  KSDA/UAS Package of Practices excerpt or something else. This matters for both the
+  report (an examiner will ask) and the paper (a reviewer will ask, and reproducibility
+  requires it). One paragraph in the README closes this.
+- **BM25 bucketed-by-query-type evaluation** (from this session): don't just add BM25 as a
+  4th flat ablation row — split the gold eval set into **exact-term** queries (chemical/
+  brand names, dosage lookups) vs. **semantic/general** queries, and report recall/MRR
+  per bucket. This is where BM25 is actually expected to win, and a flat aggregate number
+  will wash that signal out. If it wins on exact-term queries, wire it into the production
+  hybrid fusion in `vector_db.py`/`rag_service.py` — don't leave it as a report-only stat.
+
+Not added, deliberately: full unit-test suite beyond `refusal_test.py`, LICENSE file,
+`pip freeze`-pinned lockfile. Real, but lower leverage than the four above relative to
+remaining time — candidates for Track 2 if there's slack.
+
+---
+
 ## Open questions — answer these and the plan gets sharper
 
 1. **How many chunks are in the Qdrant collection?** (Post-fix, after the stale-42/clean-40 bug.)
