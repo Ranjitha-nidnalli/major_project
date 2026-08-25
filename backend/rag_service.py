@@ -7,15 +7,15 @@ env_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path=env_path, override=True)
 
 import torch
-from tavily import TavilyClient
 
 from qdrant_client import models
 from vector_db import db_client, COLLECTION_NAME, embed_model, reranker_model
 from chat_db import save_chat_message, get_chat_history
 from llm_client import call_llm  # NEW: unified LLM abstraction
+from eval.numeric_faithfulness import check_numeric_faithfulness  # #5
 
 # --- Configuration ---
-GENERATION_MODEL = os.getenv("GENERATION_MODEL", "llama-3.1-8b-instant")
+GENERATION_MODEL = os.getenv("GENERATION_MODEL")  # No fallback — must be set in .env
 INTERACTIVE_MAX_PREDICT = int(os.getenv("INTERACTIVE_MAX_PREDICT", 250))
 EVAL_MAX_PREDICT = int(os.getenv("EVAL_MAX_PREDICT", 500))
 INTERACTIVE_TIMEOUT = int(os.getenv("INTERACTIVE_TIMEOUT", 120))
@@ -26,8 +26,10 @@ FAITHFULNESS_GATE_THRESHOLD = 0.50
 
 print(f"[Krishi Mitra] Loaded with GENERATION_MODEL={GENERATION_MODEL}")
 
-ENABLE_WEB_FALLBACK = os.getenv("ENABLE_WEB_FALLBACK", "false").lower() == "true"
-tavily_client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY")) if ENABLE_WEB_FALLBACK else None
+# #37: Tavily web fallback removed — was dead code (instantiated but never called).
+# If web fallback is needed in future, re-implement with a real search call,
+# not an orphaned client instantiation.
+ENABLE_WEB_FALLBACK = False
 
 ENABLE_RERANKER = os.getenv("ENABLE_RERANKER", "false").lower() == "true"
 RERANK_THRESHOLD = 0.5
@@ -63,6 +65,9 @@ EMPTY_ANSWER_FALLBACK_MESSAGE = (
 )
 
 SAFETY_CRITICAL_CATEGORIES = {"pest", "disease", "fertilizer"}
+
+# Categories that actually exist as payload fields in Qdrant
+STORED_CATEGORIES = {"disease", "pest", "soil", "fertilizer", "general"}
 
 
 import json
@@ -188,17 +193,24 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
     # ==========================================
     print(f"🔍 Searching DB for: {user_query}")
 
-    async def get_vectors(q_text):
-        output = await asyncio.to_thread(embed_model.encode, [q_text], return_dense=True, return_sparse=True)
-        dense_vec = output['dense_vecs'][0].tolist()
-        lex_weights = output['lexical_weights'][0]
-        sp_indices = [int(k) for k in lex_weights.keys()]
-        sp_values = [float(v) for v in lex_weights.values()]
-        return dense_vec, sp_indices, sp_values
+    # Use embed_query wrapper for Indic NLP normalization before embedding
+    from vector_db import embed_query
+    dense_vec, sparse_indices, sparse_values = await asyncio.to_thread(embed_query, user_query)
 
-    dense_vec, sparse_indices, sparse_values = await get_vectors(user_query)
+    # #38: Build category payload filter if the routed category exists in our corpus
+    query_filter = None
+    if category in STORED_CATEGORIES:
+        query_filter = models.Filter(
+            must=[
+                models.FieldCondition(
+                    key="category",
+                    match=models.MatchValue(value=category)
+                )
+            ]
+        )
+        print(f"🔖 Applying category filter: {category}")
 
-    async def execute_weighted_search(d_vec, s_idx, s_val):
+    async def execute_weighted_search(d_vec, s_idx, s_val, filt=None):
         response = await asyncio.to_thread(
             db_client.query_points,
             collection_name=COLLECTION_NAME,
@@ -208,12 +220,13 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
             ],
             query=models.FusionQuery(fusion=models.Fusion.RRF),
             limit=5,
+            query_filter=filt,
         )
         hits = response.points
         fused = [{"score": h.score, "payload": h.payload} for h in hits]
         return fused, hits[0].score if hits else 0.0
 
-    top_chunks, best_fused_score = await execute_weighted_search(dense_vec, sparse_indices, sparse_values)
+    top_chunks, best_fused_score = await execute_weighted_search(dense_vec, sparse_indices, sparse_values, filt=query_filter)
 
     # ==========================================
     # 3. SAFETY & CONFIDENCE CHECKS
@@ -253,6 +266,8 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
     # ==========================================
     ans = ""
     accuracy_score = 0.0
+    numeric_score = 1.0
+    numeric_violations = []
     try:
         timeout = INTERACTIVE_TIMEOUT if interactive else 900
         max_tokens = INTERACTIVE_MAX_PREDICT if interactive else EVAL_MAX_PREDICT
@@ -269,9 +284,26 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
         ans = gen_result["answer"]
         accuracy_score = gen_result.get("accuracy_score", 0.0)
 
-        # Faithfulness gate — reject hallucinated answers
-        if accuracy_score is not None and accuracy_score < FAITHFULNESS_GATE_THRESHOLD:
-            print(f"🟨 Faithfulness gate triggered ({accuracy_score:.2f} < {FAITHFULNESS_GATE_THRESHOLD}). Returning refusal.")
+        # #5: Numeric faithfulness check — cross-reference numbers in answer against context
+        if ans and ans != EMPTY_ANSWER_FALLBACK_MESSAGE and ans != HARD_REFUSAL_MESSAGE:
+            print("🔄 Running numeric faithfulness check...")
+            numeric_score, numeric_violations = check_numeric_faithfulness(context_text, ans, strict=True)
+            print(f"🔄 Numeric score: {numeric_score}, violations: {len(numeric_violations)}")
+            if numeric_violations:
+                for v in numeric_violations:
+                    print(f"   ⚠️  Numeric violation: {v['answer_number']} {v['unit']} (severity: {v['severity']})")
+
+        # Combined gate: semantic OR numeric failure triggers refusal
+        semantic_fail = accuracy_score is not None and accuracy_score < FAITHFULNESS_GATE_THRESHOLD
+        numeric_fail = numeric_score < 1.0
+
+        if semantic_fail or numeric_fail:
+            reason = []
+            if semantic_fail:
+                reason.append(f"semantic ({accuracy_score:.2f} < {FAITHFULNESS_GATE_THRESHOLD})")
+            if numeric_fail:
+                reason.append(f"numeric ({len(numeric_violations)} violation(s))")
+            print(f"🟨 Faithfulness gate triggered ({', '.join(reason)}). Returning refusal.")
             ans = HARD_REFUSAL_MESSAGE
             accuracy_score = 0.0
         else:
@@ -296,6 +328,12 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
         "accuracy_score": accuracy_score,
     }
 
+    # Include numeric check details in debug/return mode
     if return_context:
         response_data["context"] = context_text
+        response_data["numeric_faithfulness"] = {
+            "score": numeric_score,
+            "violations": numeric_violations,
+        }
+
     return response_data
