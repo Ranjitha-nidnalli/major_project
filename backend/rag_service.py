@@ -197,18 +197,20 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
     from vector_db import embed_query
     dense_vec, sparse_indices, sparse_values = await asyncio.to_thread(embed_query, user_query)
 
-    # #38: Build category payload filter if the routed category exists in our corpus
+    # #38: Category boost — use 'should' (ranking boost) not 'must' (hard exclusion).
+    # If router misclassifies, relevant chunks in other categories are still found,
+    # just ranked slightly lower. This is safer than a hard filter.
     query_filter = None
     if category in STORED_CATEGORIES:
         query_filter = models.Filter(
-            must=[
+            should=[
                 models.FieldCondition(
                     key="category",
                     match=models.MatchValue(value=category)
                 )
             ]
         )
-        print(f"🔖 Applying category filter: {category}")
+        print(f"🔖 Applying category boost: {category}")
 
     async def execute_weighted_search(d_vec, s_idx, s_val, filt=None):
         response = await asyncio.to_thread(

@@ -1,3 +1,4 @@
+
 """
 indic_preprocess.py
 
@@ -27,17 +28,11 @@ try:
 except ImportError:
     _INDIC_NLP_AVAILABLE = False
 
-# Kannada Unicode range
-_KANNADA_RANGE = re.compile(r'[ಀ-೿]+')
-
 # Common Kannada normalization issues (fallback regex-based)
-# These handle the most frequent Unicode normalization problems
 _KANNADA_ISSUES = [
     # Zero-width joiner/non-joiner artifacts
-    (re.compile(r'‍'), ''),   # ZWJ
-    (re.compile(r'‌'), ''),   # ZWNJ
-    # Extra spaces around Kannada characters
-    (re.compile(r'(?<=ಀ-೿)\s+(?=ಀ-೿)'), ''),
+    (re.compile(r'\u200D'), ''),   # ZWJ
+    (re.compile(r'\u200C'), ''),   # ZWNJ
     # Multiple spaces → single space
     (re.compile(r'\s+'), ' '),
     # Kannada danda (।) spacing
@@ -46,24 +41,13 @@ _KANNADA_ISSUES = [
 
 
 def _fallback_normalize(text: str) -> str:
-    """
-    Lightweight regex-based Kannada normalizer.
-    Runs when indic-nlp-library is not installed.
-    """
-    # Unicode NFC normalization (combines decomposed characters)
+    """Lightweight regex-based Kannada normalizer."""
     text = unicodedata.normalize('NFC', text)
-
-    # Apply regex fixes
     for pattern, replacement in _KANNADA_ISSUES:
         text = pattern.sub(replacement, text)
-
-    # Strip leading/trailing whitespace
-    text = text.strip()
-
-    return text
+    return text.strip()
 
 
-# Cache the normalizer instance
 _normalizer = None
 
 def _get_normalizer():
@@ -75,26 +59,12 @@ def _get_normalizer():
 
 
 def normalize_kannada(text: str) -> str:
-    """
-    Normalize Kannada text for embedding.
-
-    If indic-nlp-library is installed, uses its full normalizer.
-    Otherwise falls back to regex-based normalization.
-
-    Args:
-        text: Raw text (may contain Kannada, English, numbers, mixed)
-
-    Returns:
-        Normalized text ready for chunking/embedding.
-    """
+    """Normalize Kannada text for embedding."""
     if not text:
         return text
-
     if _INDIC_NLP_AVAILABLE:
-        normalizer = _get_normalizer()
-        return normalizer.normalize(text)
-    else:
-        return _fallback_normalize(text)
+        return _get_normalizer().normalize(text)
+    return _fallback_normalize(text)
 
 
 def normalize_batch(texts: list) -> list:
@@ -102,27 +72,14 @@ def normalize_batch(texts: list) -> list:
     return [normalize_kannada(t) for t in texts]
 
 
-def demo():
-    """Demonstrate normalization on sample Kannada text."""
+if __name__ == "__main__":
     samples = [
-        # Mixed text with potential normalization issues
         "ಕಬ್ಬಿನ  ಸೆಟ್ಸ್‌ಗಳಲ್ಲಿ   ಅನಾನಸ್ ರೋಗ",
         "ಕಬ್ಬಿಗೆ ಸಾರಜನಕವನ್ನು ಎಷ್ಟು ಕಂತುಗಳಲ್ಲಿ ಹಾಕಬೇಕು?",
-        # Text with ZWJ/ZWNJ artifacts (simulated)
-        "ಕಾರ್ಬೆಂಡೈಜಿಮ್‍ 50 ಡಬ್ಲ್ಯೂ.ಪಿ",
+        "ಕಾರ್ಬೆಂಡೈಜಿಮ್\u200D 50 ಡಬ್ಲ್ಯೂ.ಪಿ",
     ]
-
-    print("Indic NLP Preprocessing Demo")
-    print("=" * 60)
     print(f"indic-nlp-library available: {_INDIC_NLP_AVAILABLE}")
-    print("-" * 60)
-
     for s in samples:
-        normalized = normalize_kannada(s)
         print(f"IN:  {s!r}")
-        print(f"OUT: {normalized!r}")
+        print(f"OUT: {normalize_kannada(s)!r}")
         print()
-
-
-if __name__ == "__main__":
-    demo()
