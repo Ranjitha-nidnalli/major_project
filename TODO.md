@@ -125,3 +125,15 @@ Items already completed are listed at the top for reference and not repeated bel
 - Unit tests, LICENSE, lockfile if time allows (#30, #31)
 - Future-work section: voice, multi-crop, WhatsApp, image diagnosis, live data (#32–36) —
   write about them, don't build them
+
+  | # | Item                                                        | Why It's Future Work                                                               | Effort if Pursued                             |
+| - | ----------------------------------------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------- |
+| 1 | **Multi-crop expansion** (ragi, tomato, paddy)              | Single-crop RAG is a toy example; multi-crop shows generalization                  | 2–3 weeks (data collection + re-labeling)     |
+| 2 | **Real farmer queries from Kisan Call Centre (KCC)**        | Synthetic questions are too clean; real queries have typos, code-mixing, vagueness | 1–2 weeks (dataset access + cleaning)         |
+| 3 | **Temporal metadata** (season, crop stage, validity period) | "How much fertilizer?" depends on germination vs maturity stage                    | 1 week (schema design + data annotation)      |
+| 4 | **Regional metadata** (soil type, district, climate zone)   | North Karnataka red soil vs coastal black soil needs different advice              | 1 week (geotagging existing data)             |
+| 5 | **Structured + unstructured mixed corpus**                  | Tables (dosages) + paragraphs (advisory) + images (symptoms)                       | 2–3 weeks (OCR + image captioning)            |
+| 6 | **Multiple acceptable answers per question**                | Chemical vs biological control — both valid, eval should accept either             | 2–3 days (schema + code update)               |
+| 7 | **Human evaluation panel**                                  | Farmer + agronomist ratings of answer quality and safety                           | 1–2 weeks (recruitment + annotation)          |
+| 8 | **Active learning from farmer feedback**                    | Thumbs up/down on answers to improve retrieval over time                           | 2–3 weeks (feedback UI + retraining pipeline) |
+
