@@ -881,34 +881,26 @@ def build_database(
     Build the Qdrant database using adaptive structure-aware chunks.
     """
 
-    if db_client.collection_exists(
-        COLLECTION_NAME
-    ):
-        print("🧹 Clearing old database...")
+# Delete the old collection completely before rebuilding
+if db_client.collection_exists(COLLECTION_NAME):
+    print(f"Deleting existing collection: {COLLECTION_NAME}")
+    db_client.delete_collection(COLLECTION_NAME)
 
-        db_client.delete_collection(
-            collection_name=COLLECTION_NAME
+# Create a fresh collection
+db_client.create_collection(
+    collection_name=COLLECTION_NAME,
+    vectors_config={
+        "dense": models.VectorParams(
+            size=DENSE_VECTOR_SIZE,
+            distance=models.Distance.COSINE,
         )
+    },
+    sparse_vectors_config={
+        "sparse": models.SparseVectorParams()
+    },
+)
 
-    db_client.create_collection(
-        collection_name=COLLECTION_NAME,
-
-        vectors_config={
-            "dense": models.VectorParams(
-                size=1024,
-                distance=models.Distance.COSINE
-            )
-        },
-
-        sparse_vectors_config={
-            "sparse": models.SparseVectorParams()
-        }
-    )
-
-    print("📖 Processing JSON...")
-    print(
-        "🧩 Using adaptive structure-aware chunking..."
-    )
+print(f"Created fresh collection: {COLLECTION_NAME}")
 
     chunk_objs = load_and_chunk_data(
         data_file,
