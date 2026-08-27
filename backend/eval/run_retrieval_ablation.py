@@ -1,23 +1,28 @@
+
 """
 P1.2 - retrieval-only ablation scored with proper IR metrics against gold
-chunk labels (backend/eval/gold.jsonl), replacing the P0-era chrF/embedding-
-similarity proxy.
+chunk labels (backend/eval/gold.jsonl).
 
-**Updated:** Adds BM25 as a standalone and fused config, plus bucketed
-analysis by query type (exact-term vs semantic) per architect review.
+**CORRECTED VERSION** — Fixes three evaluation methodology issues:
+  1. Query preprocessing now matches production (normalize_kannada before embed)
+  2. recall@k is TRUE RECALL (fraction of gold chunks found), not binary hit rate
+  3. hit_rate@k reported separately as binary success metric
+  4. Manual query_type labels in questions.json replace broken regex classifier
+  5. Bucketed analysis uses manual labels, not heuristic regex
 
 For each config (dense / sparse / hybrid / bm25 / bm25+dense / bm25+hybrid,
 each with/without reranker), computes per answerable question:
-  - recall@k for k = 1, 3, 5, 10
+  - hit_rate@k for k = 1, 3, 5, 10  (binary: at least one gold found)
+  - true_recall@k for k = 1, 3, 5, 10  (fraction of all gold chunks found)
   - reciprocal rank (for MRR)
   - nDCG@5 (binary relevance)
   - latency
 
-Bucketed analysis splits questions into:
-  - exact-term: queries with chemical names, dosages, or specific numbers
-  - semantic: general descriptive queries
-
-Reports mean, std, and 95% CI half-width alongside n for every metric.
+Bucketed analysis uses MANUAL query_type from questions.json:
+  - semantic: general descriptive questions
+  - entity-specific: asks about specific pests/diseases/chemicals by name
+  - quantity-specific: asks about dosage, amount, timing
+  - procedural: asks about steps, schedule, method
 
 Requires exclusive access to the local Qdrant store - stop main.py first.
 """
@@ -27,7 +32,6 @@ import json
 import math
 import time
 import statistics
-import re
 from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -36,59 +40,34 @@ import torch
 from qdrant_client import models
 
 from vector_db import db_client, COLLECTION_NAME, embed_model, reranker_model
+from indic_preprocess import normalize_kannada  # FIX #1: Match production preprocessing
 from bm25_retriever import BM25Retriever, load_chunks_from_qdrant_upsert
 
 QUESTIONS_PATH = os.path.join(os.path.dirname(__file__), "questions.json")
 GOLD_PATH = os.path.join(os.path.dirname(__file__), "gold.jsonl")
 RESULTS_PATH = os.path.join(os.path.dirname(__file__), "retrieval_results.jsonl")
 
-# Original dense/sparse/hybrid configs
+# All configs to test
 BASE_CONFIGS = [
     ("dense", False), ("dense", True),
     ("sparse", False), ("sparse", True),
     ("hybrid", False), ("hybrid", True),
 ]
-
-# BM25 configs: standalone and fused with dense/hybrid
 BM25_CONFIGS = [
     ("bm25", False),
     ("bm25+dense", False),
     ("bm25+hybrid", False),
 ]
-
 ALL_CONFIGS = BASE_CONFIGS + BM25_CONFIGS
 RECALL_KS = [1, 3, 5, 10]
 
-# Known chemical/pesticide names for exact-term classification
-_CHEMICAL_NAMES = {
-    "ಕಾರ್ಬೆಂಡೈಜಿಮ್", "ಕ್ಲೋರಪೈರಿಫಾಸ್", "ಡೈಮಿಥೋಯೇಟ್", "ಫೋರೇಟ್", "ಕಾರ್ಬೋಫ್ಯೂರಾನ್",
-    "ಕ್ಲೋರಾಂಟ್ರಾನಿಲಿಪ್ರೋಲ್", "ಫಿಪ್ರೋನಿಲ್", "ಅಜಟೊಬ್ಯಾಕ್ಟರ್",
-    "carbendazim", "chlorpyrifos", "dimethoate", "phorate", "carbofuran",
-    "chlorantraniliprole", "fipronil", "azotobacter",
-}
-
-# Number+unit pattern for dosage queries
-_NUM_UNIT_RE = re.compile(r"[0-9]+(?:\.[0-9]+)?\s*(?:ಗ್ರಾಂ|gram|ಕೆಜಿ|kg|ಲೀಟರ್|litre|ಮಿಲಿ|ml|ಎಕರೆ|acre|%)\b")
-
-
-def classify_query_type(question: str) -> str:
-    """
-    Classify a query as 'exact-term' or 'semantic'.
-    exact-term: contains a known chemical name or a dosage/quantity pattern.
-    semantic: everything else.
-    """
-    q_lower = question.lower()
-    # Check for chemical names
-    for chem in _CHEMICAL_NAMES:
-        if chem.lower() in q_lower:
-            return "exact-term"
-    # Check for dosage/quantity patterns
-    if _NUM_UNIT_RE.search(question):
-        return "exact-term"
-    return "semantic"
-
 
 def get_vectors(q_text):
+    """
+    FIX #1: Match production preprocessing.
+    Production uses embed_query() which calls normalize_kannada() first.
+    """
+    q_text = normalize_kannada(q_text)
     out = embed_model.encode([q_text], return_dense=True, return_sparse=True)
     dense_vec = out["dense_vecs"][0].tolist()
     lex_weights = out["lexical_weights"][0]
@@ -127,16 +106,14 @@ def retrieve(mode, d_vec, s_idx, s_val, limit=15):
 def retrieve_ordered_ids(mode, use_reranker, d_vec, s_idx, s_val, query_text, bm25=None):
     """
     Retrieve ordered chunk IDs for a given config.
-    For bm25 modes, uses the BM25 retriever.
+    NOTE: Reranker only reorders top-15 candidates; cannot discover new chunks.
     """
-    # BM25 standalone
     if mode == "bm25":
         if bm25 is None:
             raise ValueError("BM25 retriever required for bm25 mode")
         results = bm25.search(query_text, top_k=15)
         return [cid for cid, _ in results]
 
-    # BM25 + dense fusion
     if mode == "bm25+dense":
         if bm25 is None:
             raise ValueError("BM25 retriever required for bm25+dense mode")
@@ -146,7 +123,6 @@ def retrieve_ordered_ids(mode, use_reranker, d_vec, s_idx, s_val, query_text, bm
         fused = bm25.rrf_fuse(bm25_results, dense_results, other_weight=1.0, top_k=15)
         return [cid for cid, _ in fused]
 
-    # BM25 + hybrid fusion
     if mode == "bm25+hybrid":
         if bm25 is None:
             raise ValueError("BM25 retriever required for bm25+hybrid mode")
@@ -156,7 +132,6 @@ def retrieve_ordered_ids(mode, use_reranker, d_vec, s_idx, s_val, query_text, bm
         fused = bm25.rrf_fuse(bm25_results, hybrid_results, other_weight=1.0, top_k=15)
         return [cid for cid, _ in fused]
 
-    # Original modes
     hits = retrieve(mode, d_vec, s_idx, s_val, limit=15)
     if use_reranker and hits:
         pairs = [[query_text, h.payload["text"]] for h in hits]
@@ -165,8 +140,26 @@ def retrieve_ordered_ids(mode, use_reranker, d_vec, s_idx, s_val, query_text, bm
     return [str(h.id) for h in hits]
 
 
-def recall_at_k(retrieved_ids, gold_ids, k):
+# FIX #2: True recall (fraction of gold chunks found) + separate hit rate
+def hit_rate_at_k(retrieved_ids, gold_ids, k):
+    """
+    Binary: 1.0 if at least one gold chunk appears in top-k, else 0.0.
+    This is what the old recall_at_k() was actually computing.
+    """
     return 1.0 if set(retrieved_ids[:k]) & set(gold_ids) else 0.0
+
+
+def true_recall_at_k(retrieved_ids, gold_ids, k):
+    """
+    TRUE RECALL: fraction of all gold chunks that appear in top-k.
+    For single-gold questions, identical to hit_rate.
+    For multi-gold questions, shows if ALL relevant chunks were found.
+    """
+    gold_set = set(gold_ids)
+    if not gold_set:
+        return 0.0
+    retrieved_set = set(retrieved_ids[:k])
+    return len(retrieved_set & gold_set) / len(gold_set)
 
 
 def reciprocal_rank(retrieved_ids, gold_ids):
@@ -203,7 +196,7 @@ def percentile(values, p):
 
 
 def print_config_summary(config_name, metrics_dict, latencies, n):
-    metric_names = [f"recall@{k}" for k in RECALL_KS] + ["mrr", "ndcg@5"]
+    metric_names = [f"hit@{k}" for k in RECALL_KS] + [f"recall@{k}" for k in RECALL_KS] + ["mrr", "ndcg@5"]
     print(f"\n{config_name}:")
     for m in metric_names:
         mean, std, ci95, _ = mean_std_ci(metrics_dict[m])
@@ -232,7 +225,7 @@ def main():
     per_config_metrics = defaultdict(lambda: defaultdict(list))
     per_config_latency = defaultdict(list)
 
-    # Bucketed metrics
+    # Bucketed metrics using MANUAL query_type from questions.json
     per_config_per_bucket_metrics = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
     per_config_per_bucket_latency = defaultdict(lambda: defaultdict(list))
 
@@ -240,7 +233,9 @@ def main():
         q = questions[qid]
         gold_ids = gold[qid]["gold_chunk_ids"]
         d_vec, s_idx, s_val = get_vectors(q["question"])
-        query_type = classify_query_type(q["question"])
+
+        # FIX #3: Use manual query_type from questions.json
+        query_type = q.get("query_type", "semantic")
 
         for mode, use_reranker in ALL_CONFIGS:
             config_name = f"{mode}{'+rerank' if use_reranker else ''}"
@@ -248,19 +243,23 @@ def main():
             retrieved_ids = retrieve_ordered_ids(mode, use_reranker, d_vec, s_idx, s_val, q["question"], bm25=bm25)
             latency = time.time() - t0
 
-            recalls = {k: recall_at_k(retrieved_ids, gold_ids, k) for k in RECALL_KS}
+            # Both metrics
+            hit_rates = {k: hit_rate_at_k(retrieved_ids, gold_ids, k) for k in RECALL_KS}
+            true_recalls = {k: true_recall_at_k(retrieved_ids, gold_ids, k) for k in RECALL_KS}
             rr = reciprocal_rank(retrieved_ids, gold_ids)
             ndcg5 = ndcg_at_5(retrieved_ids, gold_ids)
 
             for k in RECALL_KS:
-                per_config_metrics[config_name][f"recall@{k}"].append(recalls[k])
+                per_config_metrics[config_name][f"hit@{k}"].append(hit_rates[k])
+                per_config_metrics[config_name][f"recall@{k}"].append(true_recalls[k])
             per_config_metrics[config_name]["mrr"].append(rr)
             per_config_metrics[config_name]["ndcg@5"].append(ndcg5)
             per_config_latency[config_name].append(latency)
 
             # Bucketed
             for k in RECALL_KS:
-                per_config_per_bucket_metrics[config_name][query_type][f"recall@{k}"].append(recalls[k])
+                per_config_per_bucket_metrics[config_name][query_type][f"hit@{k}"].append(hit_rates[k])
+                per_config_per_bucket_metrics[config_name][query_type][f"recall@{k}"].append(true_recalls[k])
             per_config_per_bucket_metrics[config_name][query_type]["mrr"].append(rr)
             per_config_per_bucket_metrics[config_name][query_type]["ndcg@5"].append(ndcg5)
             per_config_per_bucket_latency[config_name][query_type].append(latency)
@@ -269,12 +268,13 @@ def main():
                 "config": config_name, "id": qid, "category": q["category"],
                 "query_type": query_type,
                 "retrieved_chunk_ids": retrieved_ids, "gold_chunk_ids": gold_ids,
-                **{f"recall@{k}": recalls[k] for k in RECALL_KS},
+                **{f"hit@{k}": hit_rates[k] for k in RECALL_KS},
+                **{f"recall@{k}": true_recalls[k] for k in RECALL_KS},
                 "reciprocal_rank": rr, "ndcg@5": ndcg5, "latency_seconds": latency,
             }
             raw_results.append(record)
             print(
-                f"[{config_name}] {qid} ({query_type}): recall@5={recalls[5]:.0f} recall@10={recalls[10]:.0f} "
+                f"[{config_name}] {qid} ({query_type}): hit@5={hit_rates[5]:.0f} recall@5={true_recalls[5]:.2f} "
                 f"RR={rr:.3f} nDCG@5={ndcg5:.3f} latency={latency:.2f}s",
                 flush=True,
             )
@@ -286,24 +286,28 @@ def main():
     print("\n" + "=" * 70)
     print("=== Retrieval Ablation Summary (IR metrics, gold-labeled) ===")
     print("=" * 70)
+    print("\nNOTE: recall@k = TRUE RECALL (fraction of gold chunks found)")
+    print("      hit@k = binary success (at least one gold chunk found)")
+    print("      Reranker only reorders top-15 candidates from initial retrieval")
+    print("=" * 70)
     for mode, use_reranker in ALL_CONFIGS:
         config_name = f"{mode}{'+rerank' if use_reranker else ''}"
         n = len(per_config_metrics[config_name]["mrr"])
         print_config_summary(config_name, per_config_metrics[config_name], per_config_latency[config_name], n)
 
     print("\n" + "=" * 70)
-    print("=== Bucketed Analysis: Exact-Term vs Semantic Queries ===")
+    print("=== Bucketed Analysis (Manual query_type labels) ===")
     print("=" * 70)
     for mode, use_reranker in ALL_CONFIGS:
         config_name = f"{mode}{'+rerank' if use_reranker else ''}"
-        for bucket in ["exact-term", "semantic"]:
+        for bucket in ["semantic", "entity-specific", "quantity-specific", "procedural"]:
             bucket_metrics = per_config_per_bucket_metrics[config_name][bucket]
             bucket_latencies = per_config_per_bucket_latency[config_name][bucket]
             if not bucket_metrics.get("mrr"):
                 continue
             n = len(bucket_metrics["mrr"])
             print(f"\n{config_name} | {bucket} (n={n}):")
-            metric_names = [f"recall@{k}" for k in RECALL_KS] + ["mrr", "ndcg@5"]
+            metric_names = [f"hit@{k}" for k in RECALL_KS] + [f"recall@{k}" for k in RECALL_KS] + ["mrr", "ndcg@5"]
             for m in metric_names:
                 mean, std, ci95, _ = mean_std_ci(bucket_metrics[m])
                 print(f"  {m:<12s} mean={mean:.3f}  std={std:.3f}  95% CI=+/-{ci95:.3f}")
