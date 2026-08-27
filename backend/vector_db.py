@@ -718,11 +718,6 @@ def build_database(
             collection_name=COLLECTION_NAME
         )
 
-    if db_client.collection_exists(COLLECTION_NAME):
-        raise RuntimeError(
-            f"Failed to delete collection: {COLLECTION_NAME}"
-        )
-
     db_client.create_collection(
         collection_name=COLLECTION_NAME,
         vectors_config={
