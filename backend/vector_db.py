@@ -1,149 +1,3 @@
-
-Tuesday 1:48 PM
-i keep forgeting to add commit msg
-
-
-
-but i do have env file here
-
-
-Pasted text(20260826-061602).txt
-Document
-
-
-Pasted text(20260826-062003).txt
-Document
-
-
-Pasted text(20260826-062637).txt
-Document
-
-d0461069-ab32-4e9a-b3d3-269fcd4033f0.png
-
-
-Pasted text(20260826-070443).txt
-Document
-
-Today 10:16 PM
-
-Pasted text(20260827-164643).txt
-Document
-
-
-Pasted text(20260827-183042).txt
-Document
-
-
-Pasted text(20260827-183233).txt
-Document
-this one right
-
-
-Pasted markdown.md
-File
-
-That is from the block I told you to insert — it has been pasted with the wrong indentation. Don’t try to fix line 735 manually. We’re now stacking patches onto a file that needs one clean correction.
-
-Please send me your current vector_db.py file (upload it or paste it). I’ll fix the indentation and return the complete corrected file, with:
-
-adaptive structure-aware chunking
-
-sugarcanemerged3.json
-
-clean Qdrant reset
-
-correct point-count verification
-
-duplicate protection
-
-no stale collection issue
-
-Right now, fixing only line 735 risks leaving other incorrectly indented blocks behind.
-
-
-
-Pasted text(20260827-192458).txt
-Document
-
-I found the exact problem. It is just an indentation error in the collection reset block.
-
-Lines 710–729 are outside build_database(), while line 735 resumes with 4 spaces. That's why Python throws IndentationError. 
-
-
-Replace lines 707–729 with this exact block:
-
-    # --------------------------------------------------------
-    # CRITICAL: ALWAYS REBUILD THE COLLECTION FROM SCRATCH
-    # --------------------------------------------------------
-
-    print(
-        f"🧹 Recreating collection from scratch: "
-        f"{COLLECTION_NAME}"
-    )
-
-    db_client.recreate_collection(
-        collection_name=COLLECTION_NAME,
-
-        vectors_config={
-            "dense": models.VectorParams(
-                size=DENSE_VECTOR_SIZE,
-                distance=models.Distance.COSINE
-            )
-        },
-
-        sparse_vectors_config={
-            "sparse": models.SparseVectorParams()
-        }
-    )
-Important: Every line in that block starts with 4 spaces, because it is inside:
-
-def build_database(...):
-Then run:
-
-python vector_db.py
-The old error happened because your file currently effectively has this:
-
-def build_database(...):
-    ...
-    
-print(...)              # ← wrongly outside the function
-db_client.recreate_collection(...)  # ← wrongly outside
-
-    print(...)          # ← then suddenly back inside
-After this correction, send me the new output. We should first verify whether:
-
-Total generated chunks = Total stored points
-before touching anything else.
-
-
-why dont you just give entire code correctly
-
-You're right. I should have given you the complete corrected file instead of repeatedly asking you to patch individual blocks.
-
-I took the exact vector_db.py you uploaded, fixed the malformed indentation around the collection reset, and corrected the stored-point count check. Your uploaded file uses sugarcanemerged3.json, adaptive structure-aware chunking, duplicate removal, and the existing Qdrant setup. 
-
-
-Replace your entire backend/vector_db.py with this file:
-
-Download the corrected vector_db.py
-
-I also syntax-checked the complete 1050-line file, so the IndentationError is fixed.
-
-Then run:
-
-python vector_db.py
-Send me the full output after that. We should resolve the 37 generated vs stored count mismatch before touching BM25 or ablation. 
-
-
-vector_db.py
-Code
-
-
-Library
-/
-vector_db.py
-
-
 import json
 import os
 import uuid
@@ -864,6 +718,11 @@ def build_database(
             collection_name=COLLECTION_NAME
         )
 
+    if db_client.collection_exists(COLLECTION_NAME):
+        raise RuntimeError(
+            f"Failed to delete collection: {COLLECTION_NAME}"
+        )
+
     db_client.create_collection(
         collection_name=COLLECTION_NAME,
         vectors_config={
@@ -876,6 +735,15 @@ def build_database(
             "sparse": models.SparseVectorParams()
         }
     )
+
+    fresh_info = db_client.get_collection(
+        collection_name=COLLECTION_NAME
+    )
+
+    if fresh_info.points_count != 0:
+        raise RuntimeError(
+            "Fresh collection is not empty."
+        )
 
     # --------------------------------------------------------
     # GENERATE EMBEDDINGS
