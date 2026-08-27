@@ -712,7 +712,7 @@ print(
         f"{COLLECTION_NAME}"
     )
 
-    db_client.recreate_collection(
+db_client.recreate_collection(
         collection_name=COLLECTION_NAME,
 
         vectors_config={
