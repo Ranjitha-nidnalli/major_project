@@ -708,24 +708,24 @@ def build_database(
     # CRITICAL: ALWAYS REBUILD THE COLLECTION FROM SCRATCH
     # --------------------------------------------------------
 print(
-    f"🧹 Recreating collection from scratch: "
-    f"{COLLECTION_NAME}"
-)
+        f"🧹 Recreating collection from scratch: "
+        f"{COLLECTION_NAME}"
+    )
 
-db_client.recreate_collection(
-    collection_name=COLLECTION_NAME,
+    db_client.recreate_collection(
+        collection_name=COLLECTION_NAME,
 
-    vectors_config={
-        "dense": models.VectorParams(
-            size=DENSE_VECTOR_SIZE,
-            distance=models.Distance.COSINE
-        )
-    },
+        vectors_config={
+            "dense": models.VectorParams(
+                size=DENSE_VECTOR_SIZE,
+                distance=models.Distance.COSINE
+            )
+        },
 
-    sparse_vectors_config={
-        "sparse": models.SparseVectorParams()
-    }
-)
+        sparse_vectors_config={
+            "sparse": models.SparseVectorParams()
+        }
+    )
     
 
     # --------------------------------------------------------
