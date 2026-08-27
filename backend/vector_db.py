@@ -707,39 +707,26 @@ def build_database(
     # --------------------------------------------------------
     # CRITICAL: ALWAYS REBUILD THE COLLECTION FROM SCRATCH
     # --------------------------------------------------------
+print(
+    f"🧹 Recreating collection from scratch: "
+    f"{COLLECTION_NAME}"
+)
 
-    if db_client.collection_exists(
-        COLLECTION_NAME
-    ):
+db_client.recreate_collection(
+    collection_name=COLLECTION_NAME,
 
-        print(
-            f"🧹 Deleting existing collection: "
-            f"{COLLECTION_NAME}"
+    vectors_config={
+        "dense": models.VectorParams(
+            size=DENSE_VECTOR_SIZE,
+            distance=models.Distance.COSINE
         )
+    },
 
-        db_client.delete_collection(
-            collection_name=COLLECTION_NAME
-        )
-
-    print(
-        f"🆕 Creating fresh collection: "
-        f"{COLLECTION_NAME}"
-    )
-
-    db_client.create_collection(
-        collection_name=COLLECTION_NAME,
-
-        vectors_config={
-            "dense": models.VectorParams(
-                size=DENSE_VECTOR_SIZE,
-                distance=models.Distance.COSINE
-            )
-        },
-
-        sparse_vectors_config={
-            "sparse": models.SparseVectorParams()
-        }
-    )
+    sparse_vectors_config={
+        "sparse": models.SparseVectorParams()
+    }
+)
+    
 
     # --------------------------------------------------------
     # GENERATE EMBEDDINGS
