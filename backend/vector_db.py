@@ -1,8 +1,8 @@
 import json
 import os
-import sys
 import uuid
-from typing import Any, Dict, List
+import sys
+from collections import Counter
 
 from qdrant_client import QdrantClient, models
 from FlagEmbedding import BGEM3FlagModel
@@ -10,33 +10,22 @@ from sentence_transformers import CrossEncoder
 
 from indic_preprocess import normalize_kannada
 
-
 # ============================================================
 # 1. CONFIGURATION
 # ============================================================
 
 qdrant_path = "./qdrant_sugarcane_db"
 
+COLLECTION_NAME = "sugarcane_knowledge"
+DATA_FILE = "sugarcanemerged3.json"
+
+DENSE_VECTOR_SIZE = 1024
+
 model_name = os.getenv("EMBEDDING_MODEL", "BAAI/bge-m3")
 reranker_model_name = os.getenv(
     "RERANKER_MODEL",
     "BAAI/bge-reranker-v2-m3"
 )
-
-DATA_FILE = os.getenv(
-    "SUGARCANE_DATA_FILE",
-    "sugarcanemerged3.json"
-)
-
-COLLECTION_NAME = "sugarcane_knowledge"
-
-# A soft upper bound, not a reason to cut through a record.
-DEFAULT_MAX_CHUNK_CHARS = 1400
-
-
-# ============================================================
-# 2. LOAD MODELS
-# ============================================================
 
 print(f"Loading {model_name}...")
 embed_model = BGEM3FlagModel(
@@ -45,15 +34,14 @@ embed_model = BGEM3FlagModel(
 )
 
 print(f"Loading {reranker_model_name}...")
-reranker_model = CrossEncoder(reranker_model_name)
-
-
-# ============================================================
-# 3. QDRANT CLIENT
-# ============================================================
+reranker_model = CrossEncoder(
+    reranker_model_name
+)
 
 try:
-    db_client = QdrantClient(path=qdrant_path)
+    db_client = QdrantClient(
+        path=qdrant_path
+    )
 
 except Exception as e:
     err_str = str(e)
@@ -65,9 +53,14 @@ except Exception as e:
     ):
         print("\n" + "=" * 70)
         print("!!! QDRANT DB SERVER IS LOCKED! !!!")
-        print("Local mode requires exclusive access.")
-        print("Please stop main.py before running tests.")
-        print("Run `python unlock_db.py` to kill zombie processes.")
+        print(
+            "Local mode requires exclusive access. "
+            "Please stop main.py before running this."
+        )
+        print(
+            "Run `python unlock_db.py` "
+            "to kill zombie processes."
+        )
         print("=" * 70 + "\n")
 
         sys.exit(1)
@@ -76,134 +69,13 @@ except Exception as e:
 
 
 # ============================================================
-# 4. HELPERS
+# 2. HELPER FUNCTIONS
 # ============================================================
 
-def pretty_key(key: Any) -> str:
+def flatten_value(value, indent=0):
     """
-    Convert JSON keys into readable labels.
-
-    Example:
-        nutrient_management -> Nutrient Management
-    """
-    return str(key).replace("_", " ").strip().title()
-
-
-def is_scalar(value: Any) -> bool:
-    return not isinstance(value, (dict, list))
-
-
-def normalize_text(text: str) -> str:
-    """
-    Normalize Kannada while also removing excessive blank lines.
-    """
-    text = normalize_kannada(str(text))
-
-    lines = [
-        line.rstrip()
-        for line in text.splitlines()
-    ]
-
-    cleaned = []
-    previous_blank = False
-
-    for line in lines:
-        blank = not line.strip()
-
-        if blank and previous_blank:
-            continue
-
-        cleaned.append(line)
-        previous_blank = blank
-
-    return "\n".join(cleaned).strip()
-
-
-# ============================================================
-# 5. CATEGORY INFERENCE
-# ============================================================
-
-def _infer_category(section_key: str) -> str:
-    """
-    Infer broad retrieval category from the top-level dataset section.
-    """
-
-    cat_lower = section_key.lower()
-
-    if any(
-        word in cat_lower
-        for word in [
-            "disease",
-            "rot",
-            "smut",
-            "wilt",
-            "pathogen"
-        ]
-    ):
-        return "disease"
-
-    if any(
-        word in cat_lower
-        for word in [
-            "pest",
-            "borer",
-            "bug",
-            "insect",
-            "aphid",
-            "termite"
-        ]
-    ):
-        return "pest"
-
-    if any(
-        word in cat_lower
-        for word in [
-            "soil",
-            "land",
-            "climate"
-        ]
-    ):
-        return "soil"
-
-    if any(
-        word in cat_lower
-        for word in [
-            "fertilizer",
-            "nutrient",
-            "manure",
-            "micronutrient"
-        ]
-    ):
-        return "fertilizer"
-
-    if "weed" in cat_lower:
-        return "weed"
-
-    if any(
-        word in cat_lower
-        for word in [
-            "irrigation",
-            "water"
-        ]
-    ):
-        return "irrigation"
-
-    return "general"
-
-
-# ============================================================
-# 6. STRUCTURE-AWARE RENDERING
-# ============================================================
-
-def render_value(
-    value: Any,
-    indent: int = 0
-) -> str:
-    """
-    Render JSON recursively without losing field names.
-
-    This is used only after the chunk boundary has already been
-    chosen structurally.
+    Recursively render nested dictionaries and lists
+    as readable text.
     """
 
     prefix = " " * indent
@@ -211,51 +83,56 @@ def render_value(
 
     if isinstance(value, dict):
 
-        for key, child in value.items():
+        for key, item in value.items():
 
-            label = pretty_key(key)
+            label = (
+                str(key)
+                .replace("_", " ")
+                .title()
+            )
 
-            if is_scalar(child):
-                lines.append(
-                    f"{prefix}{label}: {child}"
-                )
+            if isinstance(item, (dict, list)):
 
-            else:
                 lines.append(
                     f"{prefix}{label}:"
                 )
 
-                child_text = render_value(
-                    child,
-                    indent + 2
+                lines.append(
+                    flatten_value(
+                        item,
+                        indent + 1
+                    )
                 )
 
-                if child_text:
-                    lines.append(child_text)
+            else:
+
+                lines.append(
+                    f"{prefix}{label}: {item}"
+                )
 
     elif isinstance(value, list):
 
         for item in value:
 
-            if is_scalar(item):
+            if isinstance(item, (dict, list)):
+
+                lines.append(
+                    flatten_value(
+                        item,
+                        indent
+                    )
+                )
+
+                lines.append("")
+
+            else:
+
                 lines.append(
                     f"{prefix}- {item}"
                 )
 
-            else:
-                item_text = render_value(
-                    item,
-                    indent + 2
-                )
-
-                lines.append(
-                    f"{prefix}-"
-                )
-
-                if item_text:
-                    lines.append(item_text)
-
     else:
+
         lines.append(
             f"{prefix}{value}"
         )
@@ -263,555 +140,64 @@ def render_value(
     return "\n".join(lines)
 
 
-# ============================================================
-# 7. DETECT STRUCTURAL RECORDS
-# ============================================================
-
-def looks_like_entity_record(value: Any) -> bool:
+def _infer_category(section_key: str) -> str:
     """
-    Decide whether a dictionary represents one independent,
-    retrievable unit.
-
-    Examples likely to return True:
-        - one pest
-        - one disease
-        - one variety
-        - one regional nutrient profile
-        - one chemical recommendation
-        - one irrigation stage
-        - one application stage
-
-    The function deliberately does not depend on exact field names
-    because the dataset contains different schemas across sections.
+    Infer a retrieval category from the JSON section name.
     """
 
-    if not isinstance(value, dict):
-        return False
+    cat_lower = section_key.lower()
 
-    if not value:
-        return False
+    if (
+        "disease" in cat_lower
+        or "rot" in cat_lower
+        or "smut" in cat_lower
+        or "wilt" in cat_lower
+    ):
+        return "disease"
 
-    keys = {
-        str(k).lower()
-        for k in value.keys()
-    }
+    elif (
+        "pest" in cat_lower
+        or "borer" in cat_lower
+        or "bug" in cat_lower
+    ):
+        return "pest"
 
-    identity_keys = {
-        "name",
-        "variety",
-        "region",
-        "stage",
-        "season",
-        "chemical",
-        "element",
-        "title",
-        "type"
-    }
+    elif (
+        "soil" in cat_lower
+        or "land" in cat_lower
+        or "climate" in cat_lower
+    ):
+        return "soil"
 
-    if keys & identity_keys:
-        return True
+    elif (
+        "fertilizer" in cat_lower
+        or "nutrient" in cat_lower
+        or "manure" in cat_lower
+    ):
+        return "fertilizer"
 
-    # A compact dictionary consisting mainly of scalar fields
-    # is also likely to be a meaningful record.
-    scalar_count = sum(
-        1
-        for v in value.values()
-        if is_scalar(v)
-    )
+    elif "weed" in cat_lower:
+        return "weed"
 
-    return (
-        scalar_count >= 2
-        and scalar_count >= len(value) * 0.6
-    )
+    elif (
+        "irrigation" in cat_lower
+        or "water" in cat_lower
+    ):
+        return "irrigation"
+
+    return "general"
 
 
 # ============================================================
-# 8. STRUCTURE-AWARE CHUNKING
+# 3. LEGACY CHUNKING FUNCTIONS
+#    Kept for compatibility with evaluation/BM25 code
 # ============================================================
 
-def make_chunk(
-    crop_name: str,
-    topic: str,
-    category: str,
-    body: str,
-    metadata: Dict[str, Any] = None
-) -> Dict[str, Any]:
+def load_and_clean_data(file_path):
     """
-    Construct one final chunk with stable contextual information.
-    """
+    Original flat document loader.
 
-    header = (
-        f"Crop: {crop_name} | "
-        f"Topic: {topic}"
-    )
-
-    text = f"{header}\n{body}".strip()
-
-    text = normalize_text(text)
-
-    payload = {
-        "text": text,
-        "category": category,
-        "topic": topic,
-        "crop": crop_name
-    }
-
-    if metadata:
-        for key, value in metadata.items():
-            if value is not None:
-                payload[key] = value
-
-    return payload
-
-
-def split_large_record(
-    crop_name: str,
-    topic: str,
-    category: str,
-    record: Dict[str, Any],
-    max_chunk_chars: int
-) -> List[Dict[str, Any]]:
-    """
-    Split a genuinely large record only at child boundaries.
-
-    Important:
-    We never slice raw text by character position.
-    """
-
-    full_body = render_value(record)
-
-    if len(full_body) <= max_chunk_chars:
-        return [
-            make_chunk(
-                crop_name,
-                topic,
-                category,
-                full_body
-            )
-        ]
-
-    chunks = []
-
-    # Keep scalar fields as shared context.
-    scalar_context = {}
-
-    # Complex children are potential chunk boundaries.
-    complex_children = []
-
-    for key, value in record.items():
-
-        if is_scalar(value):
-            scalar_context[key] = value
-
-        else:
-            complex_children.append(
-                (key, value)
-            )
-
-    # If there is nothing meaningful to split,
-    # preserve the whole record rather than cutting arbitrarily.
-    if not complex_children:
-        return [
-            make_chunk(
-                crop_name,
-                topic,
-                category,
-                full_body
-            )
-        ]
-
-    for key, value in complex_children:
-
-        subrecord = dict(scalar_context)
-        subrecord[key] = value
-
-        sub_body = render_value(subrecord)
-
-        # If one child is itself too large,
-        # split lists into record-sized units.
-        if (
-            len(sub_body) > max_chunk_chars
-            and isinstance(value, list)
-        ):
-            for item in value:
-
-                item_record = dict(scalar_context)
-                item_record[key] = [item]
-
-                item_body = render_value(
-                    item_record
-                )
-
-                chunks.append(
-                    make_chunk(
-                        crop_name,
-                        topic,
-                        category,
-                        item_body
-                    )
-                )
-
-        else:
-            chunks.append(
-                make_chunk(
-                    crop_name,
-                    topic,
-                    category,
-                    sub_body
-                )
-            )
-
-    return chunks
-
-
-def chunk_section(
-    crop_name: str,
-    section_key: str,
-    content: Any,
-    max_chunk_chars: int
-) -> List[Dict[str, Any]]:
-    """
-    Adaptive structure-aware chunking for one top-level JSON section.
-
-    Strategy:
-
-    1. A list of entity records:
-       one chunk per entity.
-
-    2. A dictionary containing lists of entity records:
-       one chunk per record.
-
-    3. Compact dictionaries:
-       keep together.
-
-    4. Large dictionaries:
-       split at child field boundaries.
-
-    5. Never split by arbitrary character windows.
-    """
-
-    category = _infer_category(section_key)
-
-    topic = pretty_key(section_key)
-
-    chunks = []
-
-    # --------------------------------------------------------
-    # CASE 1: TOP-LEVEL LIST
-    # --------------------------------------------------------
-
-    if isinstance(content, list):
-
-        scalar_items = []
-
-        for item in content:
-
-            if isinstance(item, dict):
-
-                if scalar_items:
-                    body = render_value(
-                        scalar_items
-                    )
-
-                    chunks.append(
-                        make_chunk(
-                            crop_name,
-                            topic,
-                            category,
-                            body
-                        )
-                    )
-
-                    scalar_items = []
-
-                chunks.extend(
-                    split_large_record(
-                        crop_name,
-                        topic,
-                        category,
-                        item,
-                        max_chunk_chars
-                    )
-                )
-
-            else:
-                scalar_items.append(item)
-
-        if scalar_items:
-
-            body = render_value(
-                scalar_items
-            )
-
-            chunks.append(
-                make_chunk(
-                    crop_name,
-                    topic,
-                    category,
-                    body
-                )
-            )
-
-        return chunks
-
-    # --------------------------------------------------------
-    # CASE 2: TOP-LEVEL DICTIONARY
-    # --------------------------------------------------------
-
-    if isinstance(content, dict):
-
-        # First preserve top-level scalar fields as section context.
-        section_scalars = {
-            key: value
-            for key, value in content.items()
-            if is_scalar(value)
-        }
-
-        complex_children = [
-            (key, value)
-            for key, value in content.items()
-            if not is_scalar(value)
-        ]
-
-        # Compact section: keep everything together.
-        full_body = render_value(content)
-
-        if len(full_body) <= max_chunk_chars:
-
-            return [
-                make_chunk(
-                    crop_name,
-                    topic,
-                    category,
-                    full_body
-                )
-            ]
-
-        # Large section with no complex children:
-        # preserve it intact instead of arbitrary slicing.
-        if not complex_children:
-
-            return [
-                make_chunk(
-                    crop_name,
-                    topic,
-                    category,
-                    full_body
-                )
-            ]
-
-        # Split each meaningful child.
-        for child_key, child_value in complex_children:
-
-            child_topic = (
-                f"{topic} - "
-                f"{pretty_key(child_key)}"
-            )
-
-            # --------------------------------------------
-            # LIST OF RECORDS
-            # --------------------------------------------
-
-            if isinstance(child_value, list):
-
-                # If the list contains independent records,
-                # one chunk per record.
-                dict_items = [
-                    item
-                    for item in child_value
-                    if isinstance(item, dict)
-                ]
-
-                if dict_items:
-
-                    for item in child_value:
-
-                        if isinstance(item, dict):
-
-                            record = dict(
-                                section_scalars
-                            )
-
-                            # Keep the child label visible.
-                            record[child_key] = item
-
-                            chunks.extend(
-                                split_large_record(
-                                    crop_name,
-                                    child_topic,
-                                    category,
-                                    record,
-                                    max_chunk_chars
-                                )
-                            )
-
-                        else:
-                            body_record = dict(
-                                section_scalars
-                            )
-
-                            body_record[child_key] = item
-
-                            chunks.append(
-                                make_chunk(
-                                    crop_name,
-                                    child_topic,
-                                    category,
-                                    render_value(
-                                        body_record
-                                    )
-                                )
-                            )
-
-                else:
-                    # List of scalar values stays together.
-                    record = dict(
-                        section_scalars
-                    )
-
-                    record[child_key] = child_value
-
-                    chunks.append(
-                        make_chunk(
-                            crop_name,
-                            child_topic,
-                            category,
-                            render_value(record)
-                        )
-                    )
-
-            # --------------------------------------------
-            # NESTED DICTIONARY
-            # --------------------------------------------
-
-            elif isinstance(child_value, dict):
-
-                # If it already looks like one independent
-                # entity/record, keep it together.
-                if looks_like_entity_record(
-                    child_value
-                ):
-
-                    record = dict(
-                        section_scalars
-                    )
-
-                    record[child_key] = child_value
-
-                    chunks.extend(
-                        split_large_record(
-                            crop_name,
-                            child_topic,
-                            category,
-                            record,
-                            max_chunk_chars
-                        )
-                    )
-
-                else:
-
-                    # Examine nested children.
-                    nested_split = False
-
-                    for nested_key, nested_value in child_value.items():
-
-                        if (
-                            isinstance(
-                                nested_value,
-                                list
-                            )
-                            and nested_value
-                            and all(
-                                isinstance(x, dict)
-                                for x in nested_value
-                            )
-                        ):
-
-                            nested_split = True
-
-                            for item in nested_value:
-
-                                record = dict(
-                                    section_scalars
-                                )
-
-                                record[child_key] = {
-                                    nested_key: item
-                                }
-
-                                chunks.extend(
-                                    split_large_record(
-                                        crop_name,
-                                        child_topic,
-                                        category,
-                                        record,
-                                        max_chunk_chars
-                                    )
-                                )
-
-                    if not nested_split:
-
-                        record = dict(
-                            section_scalars
-                        )
-
-                        record[child_key] = child_value
-
-                        chunks.extend(
-                            split_large_record(
-                                crop_name,
-                                child_topic,
-                                category,
-                                record,
-                                max_chunk_chars
-                            )
-                        )
-
-        # Add purely scalar section context if it exists.
-        # This prevents scalar-only information from disappearing
-        # when a large section is split into child chunks.
-        if section_scalars:
-
-            scalar_body = render_value(
-                section_scalars
-            )
-
-            chunks.insert(
-                0,
-                make_chunk(
-                    crop_name,
-                    topic,
-                    category,
-                    scalar_body
-                )
-            )
-
-        return chunks
-
-    # --------------------------------------------------------
-    # CASE 3: SCALAR
-    # --------------------------------------------------------
-
-    return [
-        make_chunk(
-            crop_name,
-            topic,
-            category,
-            str(content)
-        )
-    ]
-
-
-# ============================================================
-# 9. LOAD DATA USING ADAPTIVE CHUNKING
-# ============================================================
-
-def load_and_chunk_data(
-    file_path: str,
-    max_chunk_chars: int = DEFAULT_MAX_CHUNK_CHARS
-) -> List[Dict[str, Any]]:
-    """
-    Load the JSON corpus and apply adaptive structure-aware chunking.
+    Kept for backward compatibility with evaluation scripts.
     """
 
     with open(
@@ -819,15 +205,379 @@ def load_and_chunk_data(
         "r",
         encoding="utf-8"
     ) as f:
+
         data = json.load(f)
+
+    documents = []
 
     crop_main = data.get(
         "crop_name",
         "Sugarcane"
     )
 
-    crop_main = normalize_text(
-        crop_main
+    for section_key, content in data.items():
+
+        if section_key == "crop_name":
+            continue
+
+        category = _infer_category(
+            section_key
+        )
+
+        header = (
+            f"Crop: {crop_main} | "
+            f"Topic: "
+            f"{section_key.replace('_', ' ').title()}\n"
+        )
+
+        body = (
+            flatten_value(content)
+            + "\n"
+        )
+
+        documents.append(
+            {
+                "text": header + body,
+                "category": category
+            }
+        )
+
+    return documents
+
+
+def create_overlapping_chunks(
+    documents,
+    max_chars=1000,
+    overlap_chars=200
+):
+    """
+    Original sliding-window chunker.
+
+    Kept for backward compatibility.
+    """
+
+    final_chunks = []
+
+    for doc_obj in documents:
+
+        document = doc_obj["text"]
+        category = doc_obj["category"]
+
+        if len(document) <= max_chars:
+
+            final_chunks.append(
+                {
+                    "text": document,
+                    "category": category
+                }
+            )
+
+            continue
+
+        start = 0
+
+        while start < len(document):
+
+            end = start + max_chars
+
+            chunk = document[start:end]
+
+            final_chunks.append(
+                {
+                    "text": chunk,
+                    "category": category
+                }
+            )
+
+            if end >= len(document):
+                break
+
+            start += (
+                max_chars
+                - overlap_chars
+            )
+
+    return final_chunks
+
+
+# ============================================================
+# 4. ADAPTIVE STRUCTURE-AWARE CHUNKING
+# ============================================================
+
+def _make_chunk(
+    text,
+    category,
+    topic
+):
+    """
+    Normalize and create a chunk dictionary.
+    """
+
+    text = normalize_kannada(
+        text.strip()
+    )
+
+    return {
+        "text": text,
+        "category": category,
+        "topic": topic
+    }
+
+
+def _split_large_text(
+    text,
+    max_chunk_chars
+):
+    """
+    Split oversized text conservatively.
+
+    Preference order:
+    paragraphs -> lines -> sentence boundaries -> hard split.
+    """
+
+    if len(text) <= max_chunk_chars:
+        return [text]
+
+    paragraphs = [
+        p.strip()
+        for p in text.split("\n\n")
+        if p.strip()
+    ]
+
+    if len(paragraphs) <= 1:
+
+        paragraphs = [
+            p.strip()
+            for p in text.split("\n")
+            if p.strip()
+        ]
+
+    chunks = []
+    current = ""
+
+    for paragraph in paragraphs:
+
+        candidate = (
+            paragraph
+            if not current
+            else current + "\n\n" + paragraph
+        )
+
+        if len(candidate) <= max_chunk_chars:
+
+            current = candidate
+
+        else:
+
+            if current:
+                chunks.append(
+                    current.strip()
+                )
+
+            if len(paragraph) <= max_chunk_chars:
+
+                current = paragraph
+
+            else:
+
+                start = 0
+
+                while start < len(paragraph):
+
+                    end = (
+                        start
+                        + max_chunk_chars
+                    )
+
+                    chunks.append(
+                        paragraph[start:end].strip()
+                    )
+
+                    start = end
+
+                current = ""
+
+    if current:
+        chunks.append(
+            current.strip()
+        )
+
+    return chunks
+
+
+def _adaptive_chunk_section(
+    section_key,
+    content,
+    crop_name,
+    max_chunk_chars
+):
+    """
+    Adaptive structure-aware chunking.
+
+    Each top-level dataset section is preserved as a topic.
+    Nested structures are flattened into readable blocks,
+    while large sections are split without mixing unrelated
+    topics.
+    """
+
+    category = _infer_category(
+        section_key
+    )
+
+    topic = (
+        section_key
+        .replace("_", " ")
+        .title()
+    )
+
+    header = (
+        f"Crop: {crop_name} "
+        f"| Topic: {topic}"
+    )
+
+    if isinstance(content, dict):
+
+        units = []
+
+        for key, value in content.items():
+
+            label = (
+                str(key)
+                .replace("_", " ")
+                .title()
+            )
+
+            if isinstance(value, (dict, list)):
+
+                unit_text = (
+                    f"{label}:\n"
+                    f"{flatten_value(value)}"
+                )
+
+            else:
+
+                unit_text = (
+                    f"{label}: {value}"
+                )
+
+            units.append(
+                unit_text
+            )
+
+    elif isinstance(content, list):
+
+        units = []
+
+        for item in content:
+
+            if isinstance(item, (dict, list)):
+
+                unit_text = (
+                    flatten_value(item)
+                )
+
+            else:
+
+                unit_text = str(item)
+
+            units.append(
+                unit_text
+            )
+
+    else:
+
+        units = [
+            str(content)
+        ]
+
+    chunks = []
+    current = header
+
+    for unit in units:
+
+        candidate = (
+            current
+            + "\n"
+            + unit
+        )
+
+        if len(candidate) <= max_chunk_chars:
+
+            current = candidate
+
+        else:
+
+            if current != header:
+
+                chunks.extend(
+                    _split_large_text(
+                        current,
+                        max_chunk_chars
+                    )
+                )
+
+            current = (
+                header
+                + "\n"
+                + unit
+            )
+
+            if len(current) > max_chunk_chars:
+
+                chunks.extend(
+                    _split_large_text(
+                        current,
+                        max_chunk_chars
+                    )
+                )
+
+                current = header
+
+    if current != header:
+
+        chunks.extend(
+            _split_large_text(
+                current,
+                max_chunk_chars
+            )
+        )
+
+    return [
+        _make_chunk(
+            text=chunk,
+            category=category,
+            topic=topic
+        )
+        for chunk in chunks
+        if chunk.strip()
+    ]
+
+
+def load_and_chunk_data(
+    file_path,
+    max_chunk_chars=1200
+):
+    """
+    Load sugarcanemerged3.json using adaptive
+    structure-aware chunking.
+    """
+
+    print(
+        "Loading chunks using "
+        "adaptive structure-aware chunking..."
+    )
+
+    with open(
+        file_path,
+        "r",
+        encoding="utf-8"
+    ) as f:
+
+        data = json.load(f)
+
+    crop_name = data.get(
+        "crop_name",
+        "Sugarcane"
     )
 
     all_chunks = []
@@ -840,71 +590,97 @@ def load_and_chunk_data(
         ):
             continue
 
-        section_chunks = chunk_section(
-            crop_name=crop_main,
-            section_key=section_key,
-            content=content,
-            max_chunk_chars=max_chunk_chars
+        section_chunks = (
+            _adaptive_chunk_section(
+                section_key=section_key,
+                content=content,
+                crop_name=crop_name,
+                max_chunk_chars=max_chunk_chars
+            )
         )
 
         all_chunks.extend(
             section_chunks
         )
 
-    # Remove exact duplicate chunks while preserving order.
+    return all_chunks
+
+
+# ============================================================
+# 5. DUPLICATE PROTECTION
+# ============================================================
+
+def remove_exact_duplicates(chunk_objs):
+    """
+    Remove exact duplicate chunk text before embedding/upsert.
+
+    This is an additional safeguard even though UUID5 is
+    deterministic. It prevents duplicate corpus content from
+    entering the evaluation corpus.
+    """
+
     seen = set()
     unique_chunks = []
 
-    for chunk in all_chunks:
+    for chunk in chunk_objs:
 
-        text = chunk["text"]
+        normalized_text = (
+            chunk["text"]
+            .strip()
+        )
 
-        if not text or text in seen:
+        if normalized_text in seen:
             continue
 
-        seen.add(text)
+        seen.add(
+            normalized_text
+        )
 
-        unique_chunks.append(chunk)
+        unique_chunks.append(
+            chunk
+        )
+
+    removed = (
+        len(chunk_objs)
+        - len(unique_chunks)
+    )
+
+    if removed > 0:
+
+        print(
+            f"⚠️ Removed {removed} "
+            f"exact duplicate chunk(s)."
+        )
 
     return unique_chunks
 
 
 # ============================================================
-# 10. BUILD QDRANT DATABASE
+# 6. DATABASE BUILDER
 # ============================================================
 
 def build_database(
-    data_file: str = DATA_FILE,
-    max_chunk_chars: int = DEFAULT_MAX_CHUNK_CHARS
+    data_file=DATA_FILE,
+    max_chunk_chars=1200
 ):
     """
-    Build the Qdrant database using adaptive structure-aware chunks.
+    Build a completely fresh Qdrant hybrid database.
+
+    IMPORTANT:
+    The existing collection is always deleted first.
+    This prevents stale chunks from previous chunking
+    strategies contaminating the new corpus.
     """
 
-# Delete the old collection completely before rebuilding
-if db_client.collection_exists(COLLECTION_NAME):
-    print(f"Deleting existing collection: {COLLECTION_NAME}")
-    db_client.delete_collection(COLLECTION_NAME)
-
-# Create a fresh collection
-db_client.create_collection(
-    collection_name=COLLECTION_NAME,
-    vectors_config={
-        "dense": models.VectorParams(
-            size=DENSE_VECTOR_SIZE,
-            distance=models.Distance.COSINE,
-        )
-    },
-    sparse_vectors_config={
-        "sparse": models.SparseVectorParams()
-    },
-)
-
-print(f"Created fresh collection: {COLLECTION_NAME}")
+    print("📖 Processing JSON...")
 
     chunk_objs = load_and_chunk_data(
         data_file,
         max_chunk_chars=max_chunk_chars
+    )
+
+    chunk_objs = remove_exact_duplicates(
+        chunk_objs
     )
 
     chunks = [
@@ -913,15 +689,61 @@ print(f"Created fresh collection: {COLLECTION_NAME}")
     ]
 
     metadatas = [
-        dict(chunk)
+        {
+            "category": chunk["category"],
+            "topic": chunk["topic"],
+            "text": chunk["text"]
+        }
         for chunk in chunk_objs
     ]
 
     if not chunks:
+
         raise ValueError(
             "No chunks were generated. "
             "Check the dataset path and JSON structure."
         )
+
+    # --------------------------------------------------------
+    # CRITICAL: ALWAYS REBUILD THE COLLECTION FROM SCRATCH
+    # --------------------------------------------------------
+
+    if db_client.collection_exists(
+        COLLECTION_NAME
+    ):
+
+        print(
+            f"🧹 Deleting existing collection: "
+            f"{COLLECTION_NAME}"
+        )
+
+        db_client.delete_collection(
+            collection_name=COLLECTION_NAME
+        )
+
+    print(
+        f"🆕 Creating fresh collection: "
+        f"{COLLECTION_NAME}"
+    )
+
+    db_client.create_collection(
+        collection_name=COLLECTION_NAME,
+
+        vectors_config={
+            "dense": models.VectorParams(
+                size=DENSE_VECTOR_SIZE,
+                distance=models.Distance.COSINE
+            )
+        },
+
+        sparse_vectors_config={
+            "sparse": models.SparseVectorParams()
+        }
+    )
+
+    # --------------------------------------------------------
+    # GENERATE EMBEDDINGS
+    # --------------------------------------------------------
 
     print(
         f"🧬 Generating Dense & Sparse Embeddings "
@@ -943,15 +765,20 @@ print(f"Created fresh collection: {COLLECTION_NAME}")
         "lexical_weights"
     ]
 
+    # --------------------------------------------------------
+    # CREATE QDRANT POINTS
+    # --------------------------------------------------------
+
     points = []
 
-    for i, chunk_text in enumerate(chunks):
+    for i in range(
+        len(chunks)
+    ):
 
-        # Stable deterministic ID.
         point_id = str(
             uuid.uuid5(
                 uuid.NAMESPACE_URL,
-                chunk_text
+                chunks[i]
             )
         )
 
@@ -970,6 +797,7 @@ print(f"Created fresh collection: {COLLECTION_NAME}")
         ]
 
         points.append(
+
             models.PointStruct(
 
                 id=point_id,
@@ -978,30 +806,80 @@ print(f"Created fresh collection: {COLLECTION_NAME}")
 
                 vector={
 
-                    "dense":
-                        dense_vecs[i].tolist(),
+                    "dense": (
+                        dense_vecs[i]
+                        .tolist()
+                    ),
 
-                    "sparse":
+                    "sparse": (
                         models.SparseVector(
                             indices=sparse_indices,
                             values=sparse_values
                         )
+                    )
+
                 }
+
             )
+
         )
+
+    # --------------------------------------------------------
+    # UPSERT
+    # --------------------------------------------------------
 
     db_client.upsert(
         collection_name=COLLECTION_NAME,
         points=points
     )
 
+    # --------------------------------------------------------
+    # VERIFICATION
+    # --------------------------------------------------------
+
+    points_after, _ = db_client.scroll(
+        collection_name=COLLECTION_NAME,
+        limit=1000,
+        with_payload=True,
+        with_vectors=False
+    )
+
+    stored_texts = [
+        point.payload
+        .get("text", "")
+        .strip()
+        for point in points_after
+    ]
+
+    text_counts = Counter(
+        stored_texts
+    )
+
+    duplicate_groups = sum(
+        1
+        for count in text_counts.values()
+        if count > 1
+    )
+
+    extra_duplicates = sum(
+        count - 1
+        for count in text_counts.values()
+        if count > 1
+    )
+
     print(
-        "🚀 Local Qdrant Hybrid Database "
+        "\n🚀 Local Qdrant Hybrid Database "
         "built successfully!"
     )
 
     print(
-        f"📦 Total chunks: {len(chunks)}"
+        f"📦 Total generated chunks: "
+        f"{len(chunks)}"
+    )
+
+    print(
+        f"📦 Total stored points: "
+        f"{len(points_after)}"
     )
 
     print(
@@ -1017,7 +895,8 @@ print(f"Created fresh collection: {COLLECTION_NAME}")
     if sizes:
 
         average_size = (
-            sum(sizes) / len(sizes)
+            sum(sizes)
+            / len(sizes)
         )
 
         print(
@@ -1027,38 +906,75 @@ print(f"Created fresh collection: {COLLECTION_NAME}")
             f"max={max(sizes)}"
         )
 
-    # Print a small topic/category distribution.
-    distribution = {}
+    category_counts = Counter(
+        chunk["category"]
+        for chunk in chunk_objs
+    )
 
-    for chunk in chunk_objs:
+    print(
+        "\n📊 Chunk distribution:"
+    )
 
-        category = chunk["category"]
-
-        distribution[category] = (
-            distribution.get(category, 0) + 1
-        )
-
-    print("\n📊 Chunk distribution:")
-
-    for category, count in sorted(
-        distribution.items()
+    for category in sorted(
+        category_counts
     ):
+
         print(
-            f"  {category}: {count}"
+            f"  {category}: "
+            f"{category_counts[category]}"
         )
+
+    print(
+        "\n🔍 Duplicate verification:"
+    )
+
+    print(
+        f"  Unique texts: "
+        f"{len(text_counts)}"
+    )
+
+    print(
+        f"  Exact duplicate groups: "
+        f"{duplicate_groups}"
+    )
+
+    print(
+        f"  Extra duplicate chunks: "
+        f"{extra_duplicates}"
+    )
+
+    if len(points_after) != len(chunks):
+
+        raise RuntimeError(
+            "Qdrant point count does not match "
+            "generated chunk count."
+        )
+
+    if extra_duplicates != 0:
+
+        raise RuntimeError(
+            "Exact duplicate chunks detected "
+            "after database build."
+        )
+
+    print(
+        "\n✅ Database verification passed."
+    )
 
 
 # ============================================================
-# 11. QUERY EMBEDDING
+# 7. QUERY EMBEDDING
 # ============================================================
 
 def embed_query(text: str):
     """
     Embed a query using the same Kannada normalization
-    used for corpus chunks.
+    applied to corpus content.
     """
 
-    normalized = normalize_text(text)
+    normalized = normalize_kannada(
+        text
+    )
 
     output = embed_model.encode(
         [normalized],
@@ -1094,7 +1010,7 @@ def embed_query(text: str):
 
 
 # ============================================================
-# 12. COMMAND LINE
+# 8. MAIN
 # ============================================================
 
 if __name__ == "__main__":
@@ -1109,20 +1025,21 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--data-file",
-        default=DATA_FILE,
+        "--max-chars",
+        type=int,
+        default=1200,
         help=(
-            "Path to the sugarcane JSON dataset"
+            "Maximum characters "
+            "per chunk"
         )
     )
 
     parser.add_argument(
-        "--max-chars",
-        type=int,
-        default=DEFAULT_MAX_CHUNK_CHARS,
+        "--data-file",
+        default=DATA_FILE,
         help=(
-            "Soft maximum chunk size. "
-            "Records are never cut arbitrarily."
+            "Path to the sugarcane "
+            "JSON dataset"
         )
     )
 
