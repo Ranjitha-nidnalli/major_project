@@ -732,7 +732,7 @@ db_client.recreate_collection(
     # GENERATE EMBEDDINGS
     # --------------------------------------------------------
 
-    print(
+print(
         f"🧬 Generating Dense & Sparse Embeddings "
         f"for {len(chunks)} chunks..."
     )
