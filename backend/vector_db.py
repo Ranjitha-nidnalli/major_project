@@ -736,15 +736,6 @@ def build_database(
         }
     )
 
-    fresh_info = db_client.get_collection(
-        collection_name=COLLECTION_NAME
-    )
-
-    if fresh_info.points_count != 0:
-        raise RuntimeError(
-            "Fresh collection is not empty."
-        )
-
     # --------------------------------------------------------
     # GENERATE EMBEDDINGS
     # --------------------------------------------------------
