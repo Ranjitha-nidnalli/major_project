@@ -1,0 +1,994 @@
+
+
+====================================================================================================
+CHUNK 1
+CATEGORY: general
+TOPIC: General Information
+SIZE: 632
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: General Information
+Significance: World's most important sugar crop; plays a vital role in Indian economy. Largest processing industry in India next to cotton.
+Employment: Employs nearly 35 million growers & 3,30,000 skilled personnel.
+Industry Stats: About 550 sugar factories in India with 135 milling days.
+Origin: North-East India & New Guinea
+Distribution Global: India, Brazil, Cuba, Mexico, Pakistan, China, Philippines, Thailand
+Distribution India: UP, TN, Maharashtra, Karnataka. UP stands first with 50% area and 40% production. TN stands first in yield.
+
+====================================================================================================
+CHUNK 2
+CATEGORY: general
+TOPIC: Industrial Processing And Byproducts
+SIZE: 638
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Industrial Processing And Byproducts
+Standard Yield: 100t of cane produces 10t sugar + 4t molasses + 3t filter mud + 0.3t ash + 30t bagasse
+Bagasse: Used as fuel, for making fibre boards and paper (7t bagasse = 1t paper).
+Molasses: Used in distilleries for ethyl alcohol (ethanol), blended with petrol (Gasohol). Used for oxalic, maleic, and citric acid, Rum, and livestock feed additive.
+Press Mud: Rich in organic 'C', 'P', & 'S'; used in vermicomposting as manure.
+Green Tops: Good sources of fodder.
+Co Generation: A plant of 2500 TCD generates 7-8 MW surplus power.
+
+====================================================================================================
+CHUNK 3
+CATEGORY: general
+TOPIC: Botanical Classification
+SIZE: 732
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Botanical Classification
+Cultivated Species:
+Species: Saccharum officinarum
+Characteristics: Thick and juicy cane, good for chewing, indigenous to New Guinea. High sugar %, low fibre, high tonnage. Generally resistant to smut but susceptible to red rot. Tropical areas.
+Type: Noble cane
+
+Species: Saccharum sinense
+Characteristics: Indigenous to N-E India, long thin stalks, broad leaves, low/medium sucrose, early maturity. Zig-zag internodes with prominent nodes.
+
+Species: Saccharum barbery
+Characteristics: Indigenous to N-E India, short thin stalks, narrow leaves, low/medium sucrose, early maturing.
+
+Wild Species:
+- Saccharum spontaneum
+- Saccharum robustum
+
+====================================================================================================
+CHUNK 4
+CATEGORY: general
+TOPIC: Botany And Growth
+SIZE: 1063
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Botany And Growth
+Plant Type: Perennial grass growing in tropical regions.
+Morphology: 3-4 m height, tillering, unbranching stalk (cane). Stalk has distinct nodes and internodes coated with waxy material. Eye bud at each node protected by leaf sheath.
+Tillering: Produces 20-40 tillers per cane from below soil surface.
+Inflorescence: Called 'arrow', has male and female parts. Produced at 10-12 months (qualitative short day plant).
+Root System:
+Sett Roots: Temporary roots from root primordia at the base of every cane joint; provide initial moisture and nutrients.
+Shoot Roots: Permanent, thick fleshy white roots from lower nodes of the primary shoot; provide anchorage.
+Flowering Disadvantages: Reduces quality (1% Sucrose loss), pithy canes, loss of apical dominance, development of water shoots, shorter leaf blade, low yield (25% loss), high fibre, reduced juice extraction.
+Flowering Control: Withholding water, mechanical defoliation, chemical sprays (Maleic hydrazide - MH, ethephon).
+
+====================================================================================================
+CHUNK 5
+CATEGORY: general
+TOPIC: Botany And Growth
+SIZE: 228
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Botany And Growth
+Nobilization: Crossing wild cane S. spontaneum with S. officinarum, with backcrossing to the noble parent to get thick stalks of good quality.
+
+====================================================================================================
+CHUNK 6
+CATEGORY: soil
+TOPIC: Climate And Soil
+SIZE: 903
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Climate And Soil
+Title Kannada: ಮಣ್ಣಿನ ತಯಾರಿ ಮತ್ತು ಭೂ ನಿರ್ವಹಣೆ
+Climate: Tropical to subtropical. Optimum temperature: 21-35°C (Growth arrests if <20°C or >50°C). Cold stress below 12°C.
+Rainfall: Well distributed annual rainfall of 750-1200 mm is optimum. Total water requirement: 1200-1500 mm.
+Sunshine: Bright sunshine leads to thicker, shorter stems and broader greener leaves. Low sunshine leads to slender, long stems with narrow yellowish leaves.
+Day Length: Short day length decreases tillers and tonnage. Long day produces more dry matter.
+Soil Requirements:
+Soil Type: Deep red soil, Black soil; well-drained loamy soils are ideal (ಆಳವಾದ ಕೆಂಪು ಮಣ್ಣು, ಕಪ್ಪು ಮಣ್ಣು).
+Soil Ph: 6.0 to 7.5 (Optimum)
+Drainage: Essential  -  water should not stagnate (ಅತ್ಯಗತ್ಯ  -  ನೀರು ನಿಲ್ಲಬಾರದು)
+Notes: Saline and alkaline soils are not suitable.
+
+====================================================================================================
+CHUNK 7
+CATEGORY: general
+TOPIC: Varieties And Seasons
+SIZE: 1065
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Varieties And Seasons
+Recommended Varieties:
+Variety: Co-419
+Duration Months: 12-16
+Seed Rate Tonnes: 6.25-8.25
+Planting Time: June-Aug, Sep-Oct, Jan-Feb
+
+Variety: Co-62175
+Duration Months: 12-14
+Seed Rate Tonnes: 6.50-7.50
+Planting Time: June-Aug, Oct-Nov
+
+Variety: Co-7804
+Duration Months: 12-14
+Seed Rate Tonnes: 6.50-7.50
+Planting Time: June-Aug, Oct-Nov, Jan-Feb
+
+Variety: CoC-671
+Duration Months: 10-11
+Seed Rate Tonnes: 6.50-7.50
+Planting Time: June-Aug, Oct-Nov, Jan-Feb
+
+Variety: Co-8371
+Duration Months: 12-13
+Seed Rate Tonnes: 10.0
+Planting Time: Aug 1st wk, Jan-Feb
+
+Variety: Co-86032
+Duration Months: 12-13
+Seed Rate Tonnes: 6.50-7.50
+Planting Time: June-Aug, Oct-Nov, Jan-Feb
+Notes: More yield and sugar content, very popular among farmers.
+
+Variety: Co-94012
+Recommended Region: Karnataka
+Notes: High yield and sucrose content.
+
+Variety: Co-8011
+Recommended Region: Karnataka
+
+Variety: VSI-434
+Recommended Region: Karnataka
+
+Notes: In coastal areas, Nov to Feb planting can be done.
+
+====================================================================================================
+CHUNK 8
+CATEGORY: general
+TOPIC: Varieties And Seasons
+SIZE: 504
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Varieties And Seasons
+Varietal Decline Causes:
+- Biotic and abiotic stress
+- Lack of aeration/reduced oxygen due to compactness
+- Soil compaction by heavy implements
+- Depletion of trace elements
+- Lack of organic matter
+- Accumulation of toxic elements
+- Pest and diseases (Ratoon stunt disease, mosaic, nematodes, red rot)
+Varietal Decline Management: Replacement of varieties, heat therapy before planting, good agronomic management.
+
+====================================================================================================
+CHUNK 9
+CATEGORY: general
+TOPIC: Varieties And Seasons
+SIZE: 947
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Varieties And Seasons
+Tamil Nadu Regional Recommendations:
+All Districts:
+ Early Season:
+  - CO 658
+  - COC 671
+  - COC 8201
+  - COC 91061
+  - COG 94077
+  - TNAU SC Si7
+ Mid Late Season:
+  - CO 419
+  - CO 6304
+  - COC 771
+  - COC 8001
+  - COC 99061
+  - CO 86032
+  - TNAU SC Si8
+ Special Purpose:
+  - CO 62175 (Factory)
+  - CO 62174 (Jaggery)
+  - CO 62198
+  - CO 740
+Local Specialties:
+ Region: Pudukkottai, Vellore, Cuddalore, Villuppuram
+ Varieties:
+  - CoV 92102
+  - CoC 90063
+  - Co Si(Sc)6
+  - TNAU SC Si 8
+ Features: Drought tolerance, high yield
+
+ Region: Erode, Coimbatore, Tiruvallur
+ Varieties:
+  - Co 86032
+  - CoSi 95071
+  - Co 86249
+  - CoC 24
+ Features: Multi-ratooning, high recovery, drought tolerance
+
+ Region: Thanjavur, Nagapattinam, Tiruvarur
+ Varieties:
+  - Co V 92102
+  - CoG 93076
+  - CoG 94077
+  - TNAU SC Si 8
+ Features: Waterlogging tolerance, good yield
+
+====================================================================================================
+CHUNK 10
+CATEGORY: general
+TOPIC: Varieties And Seasons
+SIZE: 499
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Varieties And Seasons
+Key Variety Characteristics Tnau:
+Co 86032: Universal performer, multi-ratooning, self-detrashing, high sugar recovery.
+Cov 92102: Non-flowering, thrives in red, clay, and alkaline soils.
+Coc 90063: Non-lodging, drought and alkaline tolerant, excellent ratooner.
+Co 85019: Drought tolerant and resistant to Red Rot disease.
+Tnau Sc Si 8: Tolerant to drought and waterlogging; ideal for mechanized cultivation.
+
+====================================================================================================
+CHUNK 11
+CATEGORY: general
+TOPIC: Varietal Performance Data
+SIZE: 1163
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Varietal Performance Data
+Id: COC 671
+Duration Months: 10
+Cane Yield T Ha: 123.5
+Ccs Percent: 14.2
+Ccs T Ha: 17.5
+Id: COC 771
+Duration Months: 10
+Cane Yield T Ha: 140.0
+Ccs Percent: 13.1
+Ccs T Ha: 18.3
+Id: COC 772
+Duration Months: 10
+Cane Yield T Ha: 143.3
+Ccs Percent: 14.0
+Ccs T Ha: 20.0
+Id: COC 773
+Duration Months: 10
+Cane Yield T Ha: 97.5
+Ccs Percent: 13.2
+Ccs T Ha: 12.6
+Id: COC 8001 (C 66191)
+Duration Months: 10 - 11
+Cane Yield T Ha: 102.9
+Ccs Percent: 13.2
+Ccs T Ha: 13.5
+Id: COC 774
+Duration Months: 11
+Cane Yield T Ha: 159.8
+Ccs Percent: 11.9
+Ccs T Ha: 17.9
+Id: COC 775
+Duration Months: 11
+Cane Yield T Ha: 122.5
+Ccs Percent: 13.4
+Ccs T Ha: 16.4
+Id: COC 776
+Duration Months: 11
+Cane Yield T Ha: 112.3
+Ccs Percent: 14.0
+Ccs T Ha: 15.5
+Id: COC 777
+Duration Months: 12
+Cane Yield T Ha: 171.3
+Ccs Percent: 11.8
+Ccs T Ha: 20.0
+Id: COC 778
+Duration Months: 12
+Cane Yield T Ha: 165.5
+Ccs Percent: 11.0
+Ccs T Ha: 18.1
+Id: COC 779
+Duration Months: 12
+Cane Yield T Ha: 204.6
+Ccs Percent: 11.8
+Ccs T Ha: 24.0
+Id: CO 419
+Duration Months: 12
+Cane Yield T Ha: 112.5
+Ccs Percent: 10.5
+Ccs T Ha: 11.8
+
+====================================================================================================
+CHUNK 12
+CATEGORY: general
+TOPIC: Varietal Performance Data
+SIZE: 1129
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Varietal Performance Data
+Id: CO 6304
+Duration Months: 12
+Cane Yield T Ha: 115.0
+Ccs Percent: 13.5
+Ccs T Ha: 15.5
+Id: COC 85061
+Duration Months: 10 - 11
+Cane Yield T Ha: 128.5
+Ccs Percent: 12.9
+Ccs T Ha: 16.6
+Id: COC 86062
+Duration Months: 10 - 11
+Cane Yield T Ha: 133.5
+Ccs Percent: 12.6
+Ccs T Ha: 16.8
+Id: COSi 86071
+Duration Months: 10 - 11
+Cane Yield T Ha: 131.7
+Ccs Percent: 12.2
+Ccs T Ha: 16.0
+Id: COC 90063
+Duration Months: 10 - 11
+Cane Yield T Ha: 124.0
+Ccs Percent: 12.3
+Ccs T Ha: 15.4
+Id: CO 8021
+Duration Months: 10 - 11
+Cane Yield T Ha: 137.7
+Ccs Percent: 11.0
+Ccs T Ha: 14.6
+Id: COC 91061
+Duration Months: 10 - 11
+Cane Yield T Ha: 131.0
+Ccs Percent: 11.3
+Ccs T Ha: 15.6
+Id: COC 92061
+Duration Months: 8 - 11
+Cane Yield T Ha: 132.7
+Ccs Percent: 12.76
+Ccs T Ha: 16.05
+Id: CO 8362
+Duration Months: 11 - 12
+Cane Yield T Ha: 124.3
+Ccs Percent: 12.4
+Ccs T Ha: 15.4
+Id: COG 93076
+Duration Months: 11 - 12
+Cane Yield T Ha: 132.0
+Ccs Percent: 13.2
+Ccs T Ha: 17.4
+Id: CO 8208
+Duration Months: 11 - 13
+Cane Yield T Ha: 141.5
+Ccs Percent: 11.07
+Ccs T Ha: 15.28
+
+====================================================================================================
+CHUNK 13
+CATEGORY: general
+TOPIC: Varietal Performance Data
+SIZE: 1114
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Varietal Performance Data
+Id: COG 94077
+Duration Months: 11
+Cane Yield T Ha: 133.2
+Ccs Percent: 13.5
+Ccs T Ha: 17.6
+Id: COG 95076
+Duration Months: 10 - 11
+Cane Yield T Ha: 108.2
+Ccs Percent: 11.5
+Ccs T Ha: 12.4
+Id: CO 85019
+Duration Months: 12
+Cane Yield T Ha: 134.5
+Ccs Percent: 12.5
+Ccs T Ha: 16.8
+Id: COSi 95071
+Duration Months: 10
+Cane Yield T Ha: 152.0
+Ccs Percent: 12.9
+Ccs T Ha: 21.0
+Id: COSi 96071
+Duration Months: 10
+Cane Yield T Ha: 145.0
+Ccs Percent: 11.9
+Ccs T Ha: 17.3
+Id: CO 86010
+Duration Months: 10 - 12
+Cane Yield T Ha: 146.1
+Ccs Percent: 10.78
+Ccs T Ha: 15.64
+Id: COC 98061
+Duration Months: 10 - 11
+Cane Yield T Ha: 120.0
+Ccs Percent: 11.6
+Ccs T Ha: 13.8
+Id: COSi 98071
+Duration Months: 12
+Cane Yield T Ha: 144.7
+Ccs Percent: 12.3
+Ccs T Ha: 17.7
+Id: CO 86249
+Duration Months: 10 - 12
+Cane Yield T Ha: 128.7
+Ccs Percent: 11.3
+Ccs T Ha: 14.3
+Id: COC 99061
+Duration Months: 10 - 12
+Cane Yield T Ha: 130.3
+Ccs Percent: 11.9
+Ccs T Ha: 15.6
+Id: CO 86032
+Duration Months: 10 - 12
+Cane Yield T Ha: 110.0
+Ccs Percent: 13.0
+Ccs T Ha: 14.3
+
+====================================================================================================
+CHUNK 14
+CATEGORY: general
+TOPIC: Varietal Performance Data
+SIZE: 768
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Varietal Performance Data
+Id: COC (SC) 22
+Duration Months: 10 - 12
+Cane Yield T Ha: 135.9
+Ccs Percent: 12.1
+Ccs T Ha: 16.5
+Id: CO Si (SC) 6
+Duration Months: 10 - 11
+Cane Yield T Ha: 142.0
+Ccs Percent: 13.1
+Ccs T Ha: 18.6
+Id: COG (SC) 5
+Duration Months: 11 - 12
+Cane Yield T Ha: 115.0
+Ccs Percent: 12.7
+Ccs T Ha: 14.6
+Id: CoC 23
+Duration Months: 10 - 11
+Cane Yield T Ha: 133.0
+Ccs Percent: 12.95
+Ccs T Ha: 17.23
+Id: CoC 24
+Duration Months: 10 - 11
+Cane Yield T Ha: 133.0
+Ccs Percent: 12.82
+Ccs T Ha: 17.05
+Id: TNAU SC Si 7
+Duration Months: 10 - 11
+Cane Yield T Ha: 156.0
+Ccs Percent: 13.4
+Ccs T Ha: 20.9
+Id: TNAU SC Si 8
+Duration Months: 11 - 12
+Cane Yield T Ha: 146.0
+Ccs Percent: 12.9
+Ccs T Ha: 18.0
+
+====================================================================================================
+CHUNK 15
+CATEGORY: general
+TOPIC: Seed Rate
+SIZE: 370
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Seed Rate
+Acre Basis:
+Line Sowing: 10,000 to 12,000 three-budded setts/acre
+Notes: Select disease-free setts from an 8-10 month old healthy nursery crop. For wide row spacing, 7,000-8,000 setts are sufficient.
+Hectare Basis:
+Standard: 25,000-30,000 setts (5-7 t) per hectare
+Notes: Use 3 eye bud setts.
+
+====================================================================================================
+CHUNK 16
+CATEGORY: general
+TOPIC: Spacing
+SIZE: 448
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Spacing
+Imperial Units:
+Line Sowing: 3 ft (Standard) OR 5-6 ft (Wide Row/Mechanized)
+Notes: For wide row spacing (5-6 ft), plant setts in a zig-zag pattern on both sides of the furrow. This saves 20% on seed material and allows easy inter-cropping.
+Metric Units:
+Standard: 90 X 30 cm
+Specific: 75 X 30 cm for CoC-671
+Paired Row: 60-120-60 X 30 cm pair (60 cm two rows, 120 cm gap)
+
+====================================================================================================
+CHUNK 17
+CATEGORY: general
+TOPIC: Planting Practices
+SIZE: 797
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Planting Practices
+Seed Rate:
+Standard: 25,000-30,000 setts (5-7 t) per hectare
+Notes: Use 3 eye bud setts.
+Spacing:
+Standard: 90 X 30 cm
+Specific: 75 X 30 cm for CoC-671
+Paired Row: 60-120-60 X 30 cm pair (60 cm two rows, 120 cm gap)
+Land Preparation:
+Process: 30-40 cm deep ploughing (ಆಳವಾದ ಉಳುಮೆ) followed by two cross harrowings to make the soil smooth.
+Manure: Apply 8-10 tonnes of Farmyard Manure (FYM) or Compost per acre before planting.
+Planting Seasons:
+Season: Adsali
+Timing: June-August
+Duration: 18 months
+
+Season: Autumn
+Timing: Oct-Nov
+Duration: 14-16 months
+
+Season: Eksali (ವಸಂತ ಕಾಲ)
+Timing: Jan-Feb (ವಸಂತ ಕಾಲ) or Feb-March
+Duration: 10-12 months
+
+Season: Sharad (ಶರದ್ ಕಾಲ)
+Timing: Oct-Nov
+Duration: 14-16 months
+
+====================================================================================================
+CHUNK 18
+CATEGORY: general
+TOPIC: Planting Practices
+SIZE: 1009
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Planting Practices
+Planting Methods:
+Method: Furrow planting
+Details: 15-20 cm deep furrows across slope at 90 cm spacing. Setts placed with buds facing sideward and covered with soil. In ridges/furrows, setts planted half way through ridge.
+
+Method: Flat bed planting
+Details: Shallow furrows 8-10 cm depth at 90 cm apart. 3 eye budded setts planted at 30 cm distance. Covered by running wooden plank and irrigated by flooding.
+
+Method: Trench method
+Details: Trenches 2-3 m long, 25-30 cm deep, 40 cm wide at 90 cm spacing. Suitable for coastal areas (prevents lodging) and stiff clays/sloppy lands.
+
+Method: Pit method
+Details: Square pits 40-60 cm dug at 90 cm apart. Trenches dug after every 3 rows to store water. Suitable for low rainfall areas. Two setts planted per pit (>5 cm depth).
+
+Method: Paired row / Wide row
+Details: 90 cm row spacing with 30 cm plant spacing. 120 cm gap can be used for mechanized farming or intercropping.
+
+====================================================================================================
+CHUNK 19
+CATEGORY: general
+TOPIC: Planting Practices
+SIZE: 524
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Planting Practices
+Seed Treatment:
+Method: Disease Protection (Sett Dipping)
+Details: Dip the sugarcane setts in a 0.1% Carbendazim 50 WP solution (1 g/L water) for 10-15 minutes before planting to prevent Pineapple disease (ಅನಾನಸ್ ರೋಗ) and soil-borne fungal infections.
+
+Method: Hot Water Treatment (Yellow Leaf/Smut Protection)
+Details: Treat setts in moist hot air/water at 52°C for 1 hour to eliminate internal viruses and smut before nursery planting.
+
+====================================================================================================
+CHUNK 20
+CATEGORY: fertilizer
+TOPIC: Nutrient Management
+SIZE: 549
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Nutrient Management
+Regional Profiles:
+Region: Mandya
+N: 250
+P: 100
+K: 125
+Unit: kg/ha
+
+Region: Bhadra command area
+N: 250
+P: 75
+K: 75
+Unit: kg/ha
+
+Region: Coastal area
+N: 186
+P: 125
+K: 125
+Unit: kg/ha
+
+Region: Vanivilas command area
+N: 250
+P: 100
+K: 125
+Unit: kg/ha
+
+Region: Karnataka (General Recommended)
+N: 120
+P: 60
+K: 60
+Unit: kg/acre
+Micronutrients:
+ Zinc Sulphate: 10 kg/acre for higher yield
+Bio Fertilizer: Azospirillum + Phosphobacteria (reduces chemical need by 20-25%)
+
+====================================================================================================
+CHUNK 21
+CATEGORY: fertilizer
+TOPIC: Nutrient Management
+SIZE: 810
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Nutrient Management
+General Profiles:
+Variety: All Varieties
+Season: Year-round
+N: 100
+P: 40
+K: 50
+Unit: kg/acre
+Application Schedule:
+ Stage: Basal (At Planting)
+ N Percent: 10
+ P Percent: 100
+ K Percent: 100
+ Notes: Apply 10 tons of FYM/Compost 2-3 weeks before planting. Apply 10% N, full P, and full K in the furrows at planting.
+
+ Stage: Top-dressing 1 (45 Days)
+ N Percent: 20
+ P Percent: 0
+ K Percent: 0
+ Notes: Apply 20% of the Nitrogen dose.
+
+ Stage: Top-dressing 2 (75 Days)
+ N Percent: 30
+ P Percent: 0
+ K Percent: 0
+ Notes: Apply 30% of the Nitrogen dose.
+
+ Stage: Top-dressing 3 (105 Days)
+ N Percent: 40
+ P Percent: 0
+ K Percent: 0
+ Notes: Apply the final 40% of the Nitrogen dose during inter-cultivation and earth up the soil.
+
+====================================================================================================
+CHUNK 22
+CATEGORY: fertilizer
+TOPIC: Nutrient Management
+SIZE: 980
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Nutrient Management
+Application Schedule Detailed:
+Stage: Basal (At Planting)
+N Percent: 10
+P Percent: 100
+K Percent: 100
+Notes: Apply 10 tons of FYM/Compost 2-3 weeks before planting. Apply 10% N, full P, and full K in the furrows at planting.
+
+Stage: Top-dressing 1 (45 Days)
+N Percent: 20
+P Percent: 0
+K Percent: 0
+Notes: Apply 20% of the Nitrogen dose.
+
+Stage: Top-dressing 2 (75 Days)
+N Percent: 30
+P Percent: 0
+K Percent: 0
+Notes: Apply 30% of the Nitrogen dose.
+
+Stage: Top-dressing 3 (105 Days)
+N Percent: 40
+P Percent: 0
+K Percent: 0
+Notes: Apply the final 40% of the Nitrogen dose during inter-cultivation and earth up the soil.
+
+Application Schedule General:
+Stage: Basal (At Planting)
+N Percent: 10
+P Percent: 100
+K Percent: 100
+Notes: Apply 25 t/ha FYM. Apply 10% nitrogen and full P&K.
+
+Stage: Top-dressing
+Notes: Remaining nitrogen should be given in 3 split doses on the 6th, 10th, and 14th week.
+
+====================================================================================================
+CHUNK 23
+CATEGORY: fertilizer
+TOPIC: Nutrient Management
+SIZE: 871
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Nutrient Management
+Nutrient Specifics:
+High Nitrogen Effects: Increases pest and disease problem, pithyness, delays ripening, reduces juice quality and sugar recovery, increases water/non-milleable shoots.
+Silicon Importance: Sugarcane is siliciferous. Silicon maintains turgidity, reduces lodging, ensures better water utilization, provides resistance to pest/diseases, and improves sugar recovery. Calcium-magnesium silicate can be used.
+Micronutrients And Biofertilizers:
+Element: Bio-fertilizers (ಜೈವಿಕ ಗೊಬ್ಬರಗಳು)
+Dosage: 1 kg Azotobacter + 4 kg PSB
+Notes: Mix Azotobacter/Azospirillum (1kg) and PSB like Bacillus megaterium (4kg) with FYM and apply to the soil.
+
+Element: Bio-fertilizers
+Dosage: Azotobacter 2.5 kg/ha, Bacillus megaterium, Agrobacterium radiobacter, Aspergillus awamorii: 10 kg/ha
+
+====================================================================================================
+CHUNK 24
+CATEGORY: irrigation
+TOPIC: Irrigation Schedule
+SIZE: 908
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Irrigation Schedule
+Stage: General
+Notes: Irrigate once every 8 days in sandy loam soils and once every 15 days in black soils. In summer, apply 3 tons of sugarcane trash mulch per acre to conserve moisture.
+Stage: General
+Notes: Irrigate once in 8 days in red sandy soils and once in 15 days in black soils. Total water requirement is 250 cm. Less water first 3 months, more water later.
+Stage: General / Karnataka Advice
+Water Per Week Mm: 45
+Summer Interval Days: 6
+Winter Interval Days: 11
+Drip Irrigation: Saves 35% water; highly recommended.
+Stop Before Harvest: Stop irrigation 30 days before harvest to increase sugar content.
+Critical Stages:
+ - Germination (ಮೊಳಕೆ ಹಂತ)
+ - Stalk growth (ಕಾಂಡ ಬೆಳವಣಿಗೆ)
+ - Milk stage (ಹಾಲು ತುಂಬುವ ಹಂತ)
+Stage: Critical Stages
+Notes: Tillering & grand growth stages are highly critical for irrigation.
+
+====================================================================================================
+CHUNK 25
+CATEGORY: weed
+TOPIC: Weed Management
+SIZE: 1088
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Weed Management
+Stage: Pre-emergence
+Chemical: Atrazine 50 WP OR Metribuzin 70 WP OR Diuron 80 WP
+Chemical Kannada: ಅಟ್ರಾಜಿನ್ 50 ಡಬ್ಲ್ಯೂ.ಪಿ ಅಥವಾ ಮೆಟ್ರಿಬುಜಿನ್ 70 ಡಬ್ಲ್ಯೂ.ಪಿ ಅಥವಾ ಡೈಯುರಾನ್ 80 ಡಬ್ಲ್ಯೂ.ಪಿ
+Dosage: 1 kg/acre (Atrazine/Diuron) OR 600 g/acre (Metribuzin) in 300L water
+Notes: Spray within 2-3 days of planting.
+Stage: Post-emergence
+Chemical: 2,4-D Sodium Salt 80 WP
+Chemical Kannada: 2,4-ಡಿ ಸೋಡಿಯಂ ಸಾಲ್ಟ್ 80 ಡಬ್ಲ್ಯೂ.ಪಿ
+Dosage: 1 kg/acre in 300L water
+Notes: Spray at 25 days after planting to control broad-leaved weeds and sedges.
+Stage: General
+Weeds Targeted: Sorghum halepense, Cynodon dactylon, Ipomoea spp., Cyperus rotundus
+Chemical: Atrazine OR Diuron OR Metribuzin
+Dosage: 2.5 kg Atrazine OR 2.5 kg Diuron OR 1.5 kg Metribuzin in 750 litres
+Notes: Pre-emergent application. Manual hoeing after 2-3 weeks of planting gives better control.
+Stage: Manual Weeding
+Timing: 30 and 60 days after planting
+Notes: Hand weeding (ಕೈಯಿಂದ ಕಳೆ ತೆಗೆಯುವಿಕೆ) is essential for 30-40% yield increase. Mulching also helps.
+
+====================================================================================================
+CHUNK 26
+CATEGORY: pest
+TOPIC: Pest Management
+SIZE: 1155
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Pest Management
+Name: Early Shoot Borer (ಆದಿ ಸುಳಿ ಕೊರೆಯುವ ಹುಳು)
+Recommendations:
+ Chemical: Chlorpyrifos 20 EC
+ Chemical Kannada: ಕ್ಲೋರಪೈರಿಫಾಸ್ 20 ಇ.ಸಿ
+ Dosage: 2.0 ml/L or 600 ml/acre
+ Notes: Spray using 300L water/acre when shoots start drying up.
+
+ Chemical: Bio-control (Trichogramma)
+ Chemical Kannada: ಟ್ರೈಕೋಗ್ರಾಮ ಪರತಂತ್ರ ಜೀವಿ
+ Dosage: 6000 wasps/acre
+ Notes: Release Trichogramma chilonis egg parasitoids starting from the 4th week of planting, once a week for 5 weeks.
+
+Name: Top Shoot Borer (ಮೇಲಿನ ಸುಳಿ ಕೊರಕ)
+Recommendations:
+ Chemical: Bio-control (Trichogramma)
+ Chemical Kannada: ಟ್ರೈಕೋಗ್ರಾಮ ಪರತಂತ್ರ ಜೀವಿ
+ Dosage: 6000 wasps/acre
+ Notes: Release 90 days after planting, once a week for 5 weeks. Collect and destroy egg masses.
+
+Name: Termites (ಗೆದ್ದಲು)
+Recommendations:
+ Chemical: Chlorantraniliprole 0.4 G OR Fipronil 0.3 G
+ Chemical Kannada: ಕ್ಲೋರಾಂಟ್ರಾನಿಲಿಪ್ರೋಲ್ 0.4 ಜಿ ಅಥವಾ ಫಿಪ್ರೋನಿಲ್ 0.3 ಜಿ
+ Dosage: 9 kg/acre (Chlorantraniliprole) OR 10 kg/acre (Fipronil)
+ Notes: Apply granular insecticide at the time of planting or at 60 days to prevent roots/setts from being eaten.
+
+====================================================================================================
+CHUNK 27
+CATEGORY: pest
+TOPIC: Pest Management
+SIZE: 674
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Pest Management
+Name: White Woolly Aphid (ಬಿಳಿ ಉಣ್ಣೆ ಹೇನು)
+Recommendations:
+ Chemical: Chlorpyrifos 20 EC OR Dimethoate 30 EC
+ Chemical Kannada: ಕ್ಲೋರಪೈರಿಫಾಸ್ 20 ಇ.ಸಿ ಅಥವಾ ಡೈಮಿಥೋಯೇಟ್ 30 ಇ.ಸಿ
+ Dosage: 2.0 ml/L (Chlorpyrifos) OR 1.7 ml/L (Dimethoate)
+ Notes: Strip dry leaves and spray using 300L water/acre. For bio-control, release Micromus igorotus predators (500-1000/acre).
+
+Name: Root Borer (ಬೇರು ಕೊರಕ)
+Recommendations:
+ Chemical: Phorate 10G OR Carbofuran 3G
+ Chemical Kannada: ಫೋರೇಟ್ 10ಜಿ ಅಥವಾ ಕಾರ್ಬೋಫ್ಯೂರಾನ್ 3ಜಿ
+ Notes: Apply in the furrows at 45 days. Survey every 15 days (15 ದಿನಕ್ಕೊಮ್ಮೆ ಸಮೀಕ್ಷೆ).
+
+====================================================================================================
+CHUNK 28
+CATEGORY: disease
+TOPIC: Disease Management
+SIZE: 1152
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Disease Management
+Name: Pineapple Disease / Sett Rot (ಅನಾನಸ್ ರೋಗ)
+Recommendations:
+ Chemical: Carbendazim 50 WP
+ Chemical Kannada: ಕಾರ್ಬೆಂಡೈಜಿಮ್ 50 ಡಬ್ಲ್ಯೂ.ಪಿ
+ Dosage: 1 g/L or 500 g/acre
+ Notes: Mandatory 15-minute sett dip before planting. Prevents setts from rotting and smelling like ripe pineapple.
+
+Name: Leaf Spot (ಎಲೆ ಚುಕ್ಕೆ ರೋಗ)
+Recommendations:
+ Chemical: Copper Oxychloride 50 WP OR Mancozeb 75 WP
+ Chemical Kannada: ತಾಮ್ರದ ಆಕ್ಸಿಕ್ಲೋರೈಡ್ ಅಥವಾ ಮ್ಯಾಂಕೋಜೆಬ್
+ Dosage: 2.5 g/L (COC) OR 2 g/L (Mancozeb)
+ Notes: Spray using 300L water/acre when long brown/red spots appear. Grow resistant varieties like Co 62175.
+
+Name: Yellow Leaf Disease (YLD) (ಹಳದಿ ನಂಜು ರೋಗ)
+Recommendations:
+ Chemical: Cultural Control
+ Chemical Kannada: ಸಮಗ್ರ ನಿರ್ವಹಣೆ
+ Dosage: N/A
+ Notes: Uproot and burn infected plants. Use tissue-cultured disease-free seedlings for planting.
+
+Name: Smut (ಕಾಡಿಗೆ ರೋಗ)
+Recommendations:
+ Chemical: Cultural Control
+ Chemical Kannada: ಸಸ್ಯ ನಿರ್ಮೂಲನೆ
+ Dosage: N/A
+ Notes: Uproot and burn clumps producing the long, black whip-like smut structure instead of a normal shoot.
+
+====================================================================================================
+CHUNK 29
+CATEGORY: disease
+TOPIC: Disease Management
+SIZE: 348
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Disease Management
+Name: Wilt / Grassy Shoot / Red Rot (ಕೆಂಪು ಕೊಳೆ / ಸಸಿ ಕುಂಠಿತ)
+Recommendations:
+ Chemical: Copper Oxychloride
+ Chemical Kannada: ತಾಮ್ರದ ಆಕ್ಸಿಕ್ಲೋರೈಡ್
+ Dosage: 3 g/L
+ Notes: Pre-treatment with Carbendazim 0.1% for 10 min is crucial. Rotate crops (ಬೆಳೆ ಪರಿವರ್ತನೆ).
+
+====================================================================================================
+CHUNK 30
+CATEGORY: general
+TOPIC: Intercultivation And Cropping Systems
+SIZE: 545
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Intercultivation And Cropping Systems
+Earthing Up: Done after last top dressing of nitrogen and after each top dressing to give support to the main plant and tillers.
+Wrapping And Propping: Wrapping: Tying stalks of same clump with lower/dried leaves. Propping: Giving support with bamboo or tying wrapped canes to adjacent rows.
+Intercropping: French bean & soybean (Variety: KB-79) or pulse/legumes.
+Sequenced Crops: Potato, Rice, Wheat, Cotton, Sorghum, Chickpea, Groundnut.
+
+====================================================================================================
+CHUNK 31
+CATEGORY: general
+TOPIC: Harvesting And Seed Production
+SIZE: 630
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Harvesting And Seed Production
+Maturity Indicators: 12-14 months after planting. Withered lower leaves & few green leaves at top, metallic sound of stem, hand refractometer reading (Brix) between 18-20.
+Harvesting Method: Manual cutting at ground level (ನೆಲಮಟ್ಟದಲ್ಲಿ ಕತ್ತರಿಸುವುದು). Detrashing and cutting the green top. Transport to factory within 24 hours to prevent sucrose loss.
+Seed Cane Production: Seed cane should be free from pests/diseases, high in moisture, rich in invert sugars/soluble nitrogen. Top 2/3rd portion is suitable due to apical dominance.
+
+====================================================================================================
+CHUNK 32
+CATEGORY: general
+TOPIC: Ratooning
+SIZE: 381
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Ratooning
+Definition: Allowing the stubble to regrow after the harvest of the main crop.
+Advantages: Shorter crop cycle, reduces seed cost (25-30%), better utilization of climate.
+Disadvantages: Lower yields due to poor sprouting/soil compaction, build-up of pests/diseases, early run-out of commercial varieties.
+
+====================================================================================================
+CHUNK 33
+CATEGORY: general
+TOPIC: Ratooning
+SIZE: 901
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Ratooning
+Management Practices:
+Trash Burning: Advised if plant crop is infested with scales/mealy bugs, termites, rodents, or excess moisture affecting sprouting.
+Stubble Shaving: Cutting protruding stubbles to ground level with a spade to facilitate healthy underground bud sprouting and deep root system.
+Off Barring: Breaking/cutting ridges on either side to loosen soil between rows, reducing compaction and aiding root development.
+Gap Filling: Crucial if gaps >20%. Done using pre-germinated single eye bud setts or excess sprouts. Fill gaps with new seedlings.
+Fertilizer Management: Entire P and 1/3 N&K applied soon after stubble shaving. 25% extra Nitrogen is recommended for ratoon crops.
+Yield Notes: Ratoon yield is typically 15-20% lower than main crop. Recommended for maximum 2 cycles (ಎರಡನೇ ರಾಟೂನ್ ಗಿಂತ ಹೆಚ್ಚು ಬೇಡ).
+
+====================================================================================================
+CHUNK 34
+CATEGORY: general
+TOPIC: Specialty Canes And Sugars
+SIZE: 794
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Specialty Canes And Sugars
+Fibre Cane:
+Description: Bred for fibre or bagasse for paper industries. Less sugar, high biomass, more tillers.
+Varieties: S. robustum varieties Co-421, Co-423, Co-426
+Energy Cane:
+Description: Bred for high molasses production for bio-fuel. Grown with closer spacing & high nitrogen. High biomass and total sugars.
+Varieties: PR-980, CP 65-357 (Yields 4000-6000 L alcohol/ha)
+Artificial Sugars:
+Description: Low calorie alternatives for health/lifestyle.
+Types:
+ - Saccharin (300x sweeter, bitter aftertaste)
+ - Aspartame (180x sweeter)
+ - Acesulfame-K (110x sweeter)
+ - Hydrogenated glucose syrup
+ - Isomalt
+ - Xylitol
+ - High Fructose Corn Syrup (HFCS) - replaces sugar up to 10% in soft drinks.
+
+====================================================================================================
+CHUNK 35
+CATEGORY: general
+TOPIC: Intercropping Details
+SIZE: 700
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Intercropping Details
+Title: ಮಿಶ್ರ ಬೆಳೆ (Intercropping)
+Content: ಕಬ್ಬಿನ ಜೊತೆ ಮಿಶ್ರ ಬೆಳೆ ಮಾಡುವುದರಿಂದ ಹೆಚ್ಚುವರಿ ಆದಾಯ ಬರುತ್ತದೆ ಮತ್ತು ಮಣ್ಣಿನ ಫಲವತ್ತತೆ ಹೆಚ್ಚುತ್ತದೆ. ಸೂಕ್ತ ಮಿಶ್ರ ಬೆಳೆಗಳೆಂದರೆ ಈರುಳ್ಳಿ, ಆಲೂಗೆಡ್ಡೆ, ಕೊತ್ತಂಬರಿ, ಮೆಂತ್ಯ ಮತ್ತು ಅವರೆಕಾಳು. ಕಬ್ಬಿನ ಆರಂಭಿಕ 3 ತಿಂಗಳು ಮಿಶ್ರ ಬೆಳೆ ಬೆಳೆಯಲು ಸೂಕ್ತ ಸಮಯ. ದ್ವಿದಳ ಧಾನ್ಯ ಬೆಳೆ ಮಿಶ್ರ ಮಾಡಿದರೆ ಮಣ್ಣಿನ ಸಾರಜನಕ ಹೆಚ್ಚುತ್ತದೆ. ಮಿಶ್ರ ಬೆಳೆ ಕಬ್ಬಿನ ಮುಖ್ಯ ಬೆಳೆಗೆ ಸ್ಪರ್ಧೆ ನೀಡಬಾರದು.
+Suitable Intercrops:
+- ಈರುಳ್ಳಿ (Onion)
+- ಆಲೂಗೆಡ್ಡೆ (Potato)
+- ಕೊತ್ತಂಬರಿ (Coriander)
+- ಮೆಂತ್ಯ (Fenugreek)
+- ಅವರೆಕಾಳು (Cowpea)
+Benefits:
+Income: Extra ₹5,000-10,000 per acre
+Soil: Legumes fix nitrogen in the soil.
+Timing: First 3 months
+
+====================================================================================================
+CHUNK 36
+CATEGORY: general
+TOPIC: Government Schemes
+SIZE: 608
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Government Schemes
+Title: ಸರ್ಕಾರಿ ಯೋಜನೆಗಳು ಮತ್ತು ಸಹಾಯಧನ
+Schemes:
+Name: PM-KISAN
+Benefit: ₹6,000 annual support
+Description: Annual direct benefit transfer to farmers.
+
+Name: Drip Irrigation Subsidy
+Benefit: 50-75% subsidy
+Description: Financial aid for installing drip systems.
+
+Name: Crop Insurance
+Name Local: ರಾಷ್ಟ್ರೀಯ ಕೃಷಿ ವಿಮಾ ಯೋಜನೆ
+Description: Insurance against crop loss.
+
+Services:
+Soil Test: Free soil test at Raita Samparka Kendra (ರೈತ ಸಂಪರ್ಕ ಕೇಂದ್ರ)
+Price Control: FRP (Fair and Remunerative Price) decided by Central Government
+
+====================================================================================================
+CHUNK 37
+CATEGORY: general
+TOPIC: Weather And Seasonal Advice
+SIZE: 424
+----------------------------------------------------------------------------------------------------
+Crop: Sugarcane (ಕಬ್ಬು / Saccharum officinarum L. Poaceae) | Topic: Weather And Seasonal Advice
+Title: ಹವಾಮಾನ ಮತ್ತು ಋತು ಸಲಹೆ
+Optimal Range: 21-35°C with bright sunshine.
+Seasonal Risks:
+Monsoon: Drainage is crucial; risk of root rot.
+Summer: Increase irrigation intervals; use trash mulch.
+Winter: Growth slows down below 12°C.
+Hailstorm: Spray fungicide immediately if hailstorms occur.
+Annual Rainfall Needed: 1200-1500 mm
