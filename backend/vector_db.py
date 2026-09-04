@@ -10,6 +10,7 @@ from sentence_transformers import CrossEncoder
 
 from indic_preprocess import normalize_kannada
 
+
 # ============================================================
 # 1. CONFIGURATION
 # ============================================================
@@ -21,29 +22,44 @@ DATA_FILE = "sugarcanemerged3.json"
 
 DENSE_VECTOR_SIZE = 1024
 
-model_name = os.getenv("EMBEDDING_MODEL", "BAAI/bge-m3")
+model_name = os.getenv(
+    "EMBEDDING_MODEL",
+    "BAAI/bge-m3"
+)
+
 reranker_model_name = os.getenv(
     "RERANKER_MODEL",
     "BAAI/bge-reranker-v2-m3"
 )
 
+
 print(f"Loading {model_name}...")
+
 embed_model = BGEM3FlagModel(
     model_name,
     use_fp16=False
 )
 
+
 print(f"Loading {reranker_model_name}...")
+
 reranker_model = CrossEncoder(
     reranker_model_name
 )
 
+
+# ============================================================
+# QDRANT INITIALIZATION
+# ============================================================
+
 try:
+
     db_client = QdrantClient(
         path=qdrant_path
     )
 
 except Exception as e:
+
     err_str = str(e)
 
     if (
@@ -51,6 +67,7 @@ except Exception as e:
         or "already accessed" in err_str
         or "PermissionError" in str(type(e))
     ):
+
         print("\n" + "=" * 70)
         print("!!! QDRANT DB SERVER IS LOCKED! !!!")
         print(
@@ -190,7 +207,7 @@ def _infer_category(section_key: str) -> str:
 
 # ============================================================
 # 3. LEGACY CHUNKING FUNCTIONS
-#    Kept for compatibility with evaluation/BM25 code
+#    Kept for compatibility with existing evaluation/BM25 code
 # ============================================================
 
 def load_and_clean_data(file_path):
@@ -332,7 +349,12 @@ def _split_large_text(
     Split oversized text conservatively.
 
     Preference order:
-    paragraphs -> lines -> sentence boundaries -> hard split.
+        paragraphs
+        lines
+        hard split
+
+    The function never creates chunks larger than
+    max_chunk_chars.
     """
 
     if len(text) <= max_chunk_chars:
@@ -370,6 +392,7 @@ def _split_large_text(
         else:
 
             if current:
+
                 chunks.append(
                     current.strip()
                 )
@@ -398,12 +421,116 @@ def _split_large_text(
                 current = ""
 
     if current:
+
         chunks.append(
             current.strip()
         )
 
     return chunks
 
+
+# ============================================================
+# ENTITY-LEVEL HELPERS
+# ============================================================
+
+def _is_named_entity(value):
+    """
+    Check whether a dictionary represents a named
+    disease or pest entity.
+
+    Example:
+
+        {
+            "name": "Leaf Spot",
+            "recommendations": [...]
+        }
+    """
+
+    return (
+        isinstance(value, dict)
+        and isinstance(value.get("name"), str)
+        and value.get("name").strip() != ""
+    )
+
+
+def _extract_named_entities(value):
+    """
+    Recursively locate dictionaries containing a 'name'
+    field.
+
+    This prevents disease/pest entities from being flattened
+    together when their surrounding JSON structure is nested.
+    """
+
+    entities = []
+
+    if isinstance(value, dict):
+
+        if _is_named_entity(value):
+
+            entities.append(value)
+
+            return entities
+
+        for child in value.values():
+
+            entities.extend(
+                _extract_named_entities(child)
+            )
+
+    elif isinstance(value, list):
+
+        for item in value:
+
+            entities.extend(
+                _extract_named_entities(item)
+            )
+
+    return entities
+
+
+def _entity_to_text(
+    entity,
+    header
+):
+    """
+    Convert one named disease/pest entity into readable text.
+
+    The entity name is written explicitly once at the top.
+    The remaining fields are flattened underneath it.
+    """
+
+    name = str(
+        entity.get("name", "")
+    ).strip()
+
+    body = {
+        key: value
+        for key, value in entity.items()
+        if key != "name"
+    }
+
+    body_text = flatten_value(
+        body
+    ).strip()
+
+    if body_text:
+
+        return (
+            f"{header}\n"
+            f"Name: {name}\n"
+            f"{body_text}"
+        )
+
+    return (
+        f"{header}\n"
+        f"Name: {name}"
+    )
+
+
+# ============================================================
+# MAIN ADAPTIVE CHUNKER
+# ============================================================
 
 def _adaptive_chunk_section(
     section_key,
@@ -414,10 +541,19 @@ def _adaptive_chunk_section(
     """
     Adaptive structure-aware chunking.
 
-    Each top-level dataset section is preserved as a topic.
-    Nested structures are flattened into readable blocks,
-    while large sections are split without mixing unrelated
-    topics.
+    Special entity-level rules:
+
+        disease_management:
+            one named disease per retrieval unit
+
+        pest_management:
+            one named pest per retrieval unit
+
+    If one disease/pest is larger than max_chunk_chars,
+    it is split internally without combining it with another
+    entity.
+
+    Other sections retain structural adaptive packing.
     """
 
     category = _infer_category(
@@ -435,6 +571,76 @@ def _adaptive_chunk_section(
         f"| Topic: {topic}"
     )
 
+    # ========================================================
+    # DISEASE / PEST ENTITY-LEVEL CHUNKING
+    # ========================================================
+
+    if section_key.lower() in {
+        "disease_management",
+        "pest_management"
+    }:
+
+        entities = _extract_named_entities(
+            content
+        )
+
+        chunks = []
+
+        for entity in entities:
+
+            entity_text = _entity_to_text(
+                entity,
+                header
+            )
+
+            # ------------------------------------------------
+            # Normal entity
+            # ------------------------------------------------
+
+            if len(entity_text) <= max_chunk_chars:
+
+                chunks.append(
+                    _make_chunk(
+                        text=entity_text,
+                        category=category,
+                        topic=topic
+                    )
+                )
+
+                continue
+
+            # ------------------------------------------------
+            # Oversized entity
+            #
+            # Important:
+            # Do NOT combine this entity with another entity.
+            # ------------------------------------------------
+
+            entity_parts = _split_large_text(
+                entity_text,
+                max_chunk_chars
+            )
+
+            for part in entity_parts:
+
+                chunks.append(
+                    _make_chunk(
+                        text=part,
+                        category=category,
+                        topic=topic
+                    )
+                )
+
+        return [
+            chunk
+            for chunk in chunks
+            if chunk["text"].strip()
+        ]
+
+    # ========================================================
+    # NORMAL STRUCTURE-AWARE CHUNKING
+    # ========================================================
+
     if isinstance(content, dict):
 
         units = []
@@ -447,7 +653,10 @@ def _adaptive_chunk_section(
                 .title()
             )
 
-            if isinstance(value, (dict, list)):
+            if isinstance(
+                value,
+                (dict, list)
+            ):
 
                 unit_text = (
                     f"{label}:\n"
@@ -470,10 +679,13 @@ def _adaptive_chunk_section(
 
         for item in content:
 
-            if isinstance(item, (dict, list)):
+            if isinstance(
+                item,
+                (dict, list)
+            ):
 
-                unit_text = (
-                    flatten_value(item)
+                unit_text = flatten_value(
+                    item
                 )
 
             else:
@@ -490,7 +702,12 @@ def _adaptive_chunk_section(
             str(content)
         ]
 
+    # ========================================================
+    # PACK STRUCTURAL UNITS
+    # ========================================================
+
     chunks = []
+
     current = header
 
     for unit in units:
@@ -553,6 +770,10 @@ def _adaptive_chunk_section(
     ]
 
 
+# ============================================================
+# DATASET LOADER
+# ============================================================
+
 def load_and_chunk_data(
     file_path,
     max_chunk_chars=1200
@@ -610,13 +831,15 @@ def load_and_chunk_data(
 # 5. DUPLICATE PROTECTION
 # ============================================================
 
-def remove_exact_duplicates(chunk_objs):
+def remove_exact_duplicates(
+    chunk_objs
+):
     """
-    Remove exact duplicate chunk text before embedding/upsert.
+    Remove exact duplicate chunk text before
+    embedding/upsert.
 
-    This is an additional safeguard even though UUID5 is
-    deterministic. It prevents duplicate corpus content from
-    entering the evaluation corpus.
+    This prevents duplicate corpus content from entering
+    the evaluation corpus.
     """
 
     seen = set()
@@ -666,18 +889,22 @@ def build_database(
     """
     Build a completely fresh Qdrant hybrid database.
 
-    IMPORTANT:
-    The existing collection is always deleted first.
-    This prevents stale chunks from previous chunking
-    strategies contaminating the new corpus.
+    The existing collection is recreated first so stale
+    points from previous chunking versions cannot remain.
     """
 
-    print("📖 Processing JSON...")
+    print(
+        "📖 Processing JSON..."
+    )
 
     chunk_objs = load_and_chunk_data(
         data_file,
         max_chunk_chars=max_chunk_chars
     )
+
+    # --------------------------------------------------------
+    # EXACT DUPLICATE REMOVAL
+    # --------------------------------------------------------
 
     chunk_objs = remove_exact_duplicates(
         chunk_objs
@@ -705,7 +932,7 @@ def build_database(
         )
 
     # --------------------------------------------------------
-    # CRITICAL: ALWAYS REBUILD THE COLLECTION FROM SCRATCH
+    # RECREATE COLLECTION FROM SCRATCH
     # --------------------------------------------------------
 
     print(
@@ -713,19 +940,16 @@ def build_database(
         f"{COLLECTION_NAME}"
     )
 
-    if db_client.collection_exists(COLLECTION_NAME):
-        db_client.delete_collection(
-            collection_name=COLLECTION_NAME
-        )
-
-    db_client.create_collection(
+    db_client.recreate_collection(
         collection_name=COLLECTION_NAME,
+
         vectors_config={
             "dense": models.VectorParams(
                 size=DENSE_VECTOR_SIZE,
                 distance=models.Distance.COSINE
             )
         },
+
         sparse_vectors_config={
             "sparse": models.SparseVectorParams()
         }
@@ -787,15 +1011,12 @@ def build_database(
         ]
 
         points.append(
-
             models.PointStruct(
-
                 id=point_id,
 
                 payload=metadatas[i],
 
                 vector={
-
                     "dense": (
                         dense_vecs[i]
                         .tolist()
@@ -807,11 +1028,8 @@ def build_database(
                             values=sparse_values
                         )
                     )
-
                 }
-
             )
-
         )
 
     # --------------------------------------------------------
@@ -857,6 +1075,10 @@ def build_database(
         if count > 1
     )
 
+    # --------------------------------------------------------
+    # SUMMARY
+    # --------------------------------------------------------
+
     print(
         "\n🚀 Local Qdrant Hybrid Database "
         "built successfully!"
@@ -867,14 +1089,9 @@ def build_database(
         f"{len(chunks)}"
     )
 
-    collection_info = db_client.get_collection(
-        collection_name=COLLECTION_NAME
-    )
-    stored_count = collection_info.points_count
-
     print(
         f"📦 Total stored points: "
-        f"{stored_count}"
+        f"{len(points_after)}"
     )
 
     print(
@@ -938,7 +1155,11 @@ def build_database(
         f"{extra_duplicates}"
     )
 
-    if stored_count != len(chunks):
+    # --------------------------------------------------------
+    # HARD VERIFICATION
+    # --------------------------------------------------------
+
+    if len(points_after) != len(chunks):
 
         raise RuntimeError(
             "Qdrant point count does not match "
@@ -961,7 +1182,9 @@ def build_database(
 # 7. QUERY EMBEDDING
 # ============================================================
 
-def embed_query(text: str):
+def embed_query(
+    text: str
+):
     """
     Embed a query using the same Kannada normalization
     applied to corpus content.
