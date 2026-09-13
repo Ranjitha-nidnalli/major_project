@@ -57,10 +57,9 @@ _UNIT_PATTERN = re.compile(
 
 # Combined: number followed (optionally) by unit, with up to 3 words of slack
 _NUM_UNIT_RE = re.compile(
-    rf"({_NUMBER_PATTERN.pattern})"  # group 1: the number
-    rf"(?:\s+{{0,3}}"                # up to 3 whitespace-separated words
-    rf"({_UNIT_PATTERN.pattern}))?"   # group 2: the unit (optional)
-    rf"(?=\s|$|[^\wಀ-೿])",  # lookahead: word boundary
+    rf"({_NUMBER_PATTERN.pattern})"
+    rf"(?:(?:\s+\S+){{0,3}}\s*({_UNIT_PATTERN.pattern}))?"
+    rf"(?=\s|$|[^\wಀ-೿])",
     re.IGNORECASE,
 )
 
