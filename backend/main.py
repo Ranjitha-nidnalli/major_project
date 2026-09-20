@@ -9,9 +9,15 @@ from chat_db import connect_db, close_db, get_chat_history
 
 app = FastAPI(title="Krishi Mitra API")
 
+# CORS_ALLOW_ORIGINS: comma-separated list of allowed origins, e.g.
+#   CORS_ALLOW_ORIGINS=http://localhost:3000,https://your-deployed-frontend.example
+# Defaults to the local Next.js dev server if unset.
+_cors_origins_env = os.getenv("CORS_ALLOW_ORIGINS", "http://localhost:3000")
+CORS_ALLOW_ORIGINS = [origin.strip() for origin in _cors_origins_env.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=CORS_ALLOW_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
