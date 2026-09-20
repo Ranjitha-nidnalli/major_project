@@ -1,74 +1,154 @@
 # Krishi Mitra
 
-A Kannada-language RAG chatbot that answers sugarcane farming questions for Karnataka farmers. FastAPI backend, Next.js frontend, Qdrant hybrid (dense + sparse) vector store, BGE-M3 embeddings, a BGE cross-encoder reranker, and MongoDB for chat history.
+A Kannada-language RAG chatbot that answers sugarcane farming questions for
+Karnataka farmers. FastAPI backend, Next.js frontend, Qdrant hybrid
+(dense + sparse) vector store, BGE-M3 embeddings, and MongoDB for chat
+history.
 
-## Architecture & LLM Backend
+This README describes what the code in this repository actually does today.
+For the target architecture and the phased roadmap toward it, see
+`ARCHITECTURE.md`. For current facts and working rules, see `CLAUDE.md`.
 
-The system is designed around a local-first stack: **FastAPI** backend, **Next.js** frontend, **Qdrant** hybrid (dense + sparse) vector store, **BGE-M3** embeddings, and **MongoDB** for chat history. Retrieval and embedding run entirely on the local machine with no external dependencies.
+## Architecture
 
-**LLM Generation:** The system was originally implemented against local **Ollama** models for zero-cost, offline operation. Ollama's Python client (v0.6.2) proved unstable in our environment (Windows 11, Python 3.13), crashing on every generation call with a response-parsing error (`'NoneType' object is not subscriptable`). After extensive debugging, local inference could not be restored in the project timeline.
+- **Backend**: FastAPI (`backend/main.py`), endpoints `POST /chat`,
+  `GET /history/{session_id}`, `GET /health`.
+- **Frontend**: Next.js (`frontend/`), a chat UI that posts to `/chat`.
+- **Vector store**: Qdrant, collection `sugarcane_knowledge`, named vectors
+  `dense` + `sparse`. Server mode (Docker) is the target setup; see
+  "Running the stack" below. Falls back to a local file-mode store if
+  `QDRANT_URL` is unset.
+- **Embeddings**: BAAI/bge-m3 via `FlagEmbedding.BGEM3FlagModel`, used for
+  both the dense vector and the learned-sparse (lexical) vector — not
+  classical BM25.
+- **Reranker**: a `bge-reranker-v2-m3` cross-encoder is loaded at startup
+  (`backend/vector_db.py`) but is **not used anywhere in the live request
+  path**. `ENABLE_RERANKER` and `RERANK_THRESHOLD` are defined in
+  `rag_service.py` but nothing reads them yet — reranking is not wired in.
+  Treat both as dead configuration until that changes.
+- **LLM**: `backend/llm_client.py` abstracts over three backends
+  (`groq`, `openrouter`, `ollama`), selected by `LLM_BACKEND` (default
+  `groq`). Model ID comes from `GENERATION_MODEL` — there is no hardcoded
+  fallback. Kannada generation quality has not been validated.
+- **Chat history**: MongoDB, db `sugarcane_chat`, collection `messages`.
+- **Corpus**: `sugarcanemerged3.json` at the repo root. Provenance
+  unknown — it contains Tamil Nadu content and should not be treated as
+  authoritative for Karnataka-specific advice (see `CLAUDE.md`).
 
-For the prototype evaluation and live demo, generation was switched to **Groq's hosted Llama 3.1 API**. This requires a `GROQ_API_KEY` and internet connectivity. The backend includes an `llm_client.py` abstraction that supports both Groq and Ollama backends via the `LLM_BACKEND` environment variable; restoring fully local inference is future work.
+## Request flow (`rag_service.get_sugarcane_answer`)
 
-**Request flow:** query → LLM router (category + English gloss) → BGE-M3 hybrid retrieval (dense + sparse, fused with Reciprocal Rank Fusion) → query-expansion retry on weak matches → optional BGE cross-encoder reranks/filters → LLM generates a Kannada answer strictly from context → LLM judges faithfulness → **faithfulness gate blocks low-score answers** → answer + `search_score` + `accuracy_score` + sources saved to MongoDB and returned.
+1. **Router** — an LLM classifies the query into a category
+   (`price`, `disease`, `pest`, `fertilizer`, `general`) and produces an
+   English gloss of the query. The category is used *only* to pick a
+   stricter abstention-gate threshold for safety-critical categories
+   (pest/disease/fertilizer) — it is never used to filter or exclude
+   retrieved documents. (An earlier version applied the category as a hard
+   Qdrant filter, which made gold chunks unreachable whenever the router
+   misclassified a query; that filter has been removed.)
+2. **Hybrid retrieval** — the query is embedded with BGE-M3 into a dense
+   vector and sparse (lexical) weights. Both are queried against Qdrant and
+   fused with Reciprocal Rank Fusion (RRF), returning the top 5 chunks. No
+   category filter, no reranking.
+3. **Abstention gate** (`backend/services/gating.py`) — a pure function
+   decides whether to answer or refuse, based on the max dense cosine
+   similarity over the retrieved chunks (a real relevance score) and the
+   query's category (used only to select a stricter threshold for
+   safety-critical categories). The threshold is an explicitly
+   **uncalibrated placeholder**; it has not been tuned against a labelled
+   answerable/unanswerable question set. Do not treat refusal accuracy as
+   validated until that calibration happens.
+4. **Generation** — an LLM answers strictly from the retrieved context, in
+   Kannada, with a fixed refusal string used when it can't find the answer
+   in context. The last 3 turns of chat history are replayed as
+   conversational memory.
+5. **Live-path checks after generation** (interactive requests only):
+   - An LLM faithfulness judge scores the answer against the retrieved
+     context; scores below `FAITHFULNESS_GATE_THRESHOLD` (0.50) trigger a
+     refusal.
+   - A regex-based numeric-faithfulness check
+     (`backend/eval/numeric_faithfulness.py`) cross-references numbers in
+     the answer against numbers in the context. **This check has known
+     false-positive and false-negative failure modes** (it can mis-bind a
+     number to the wrong unit) and is left as-is in this phase — replacing
+     it with field-identity verification against typed fact records is
+     later-phase work, not fixed here. Don't treat its output as a
+     reliable safety signal.
+6. **Persistence** — user and assistant turns are saved to MongoDB.
+
+`ChatResponse` (`main.py`) returns `answer`, `search_score` (the RRF fusion
+score — kept for telemetry/display only, **not** used by the abstention
+gate), and `accuracy_score` (the faithfulness judge score).
 
 ## Prerequisites
 
 - Python 3.10+
 - Node.js 18+
-- MongoDB running locally (no auth needed)
-- Groq API key (free tier at console.groq.com)
+- Docker (for Qdrant + MongoDB in server mode) — see below for the
+  file-mode fallback if you don't want to use Docker
+- An API key for whichever `LLM_BACKEND` you configure (Groq is the
+  default; a free-tier key works at https://console.groq.com)
 
-## Setup
+## Running the stack
 
-### 1. Backend environment
+### 1. Start Qdrant and MongoDB
 
-Create `backend/.env` (gitignored):
+```bash
+docker compose up -d
+```
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `MONGO_URI` | `mongodb://localhost:27017` | MongoDB connection string |
-| `LLM_BACKEND` | `groq` | `groq` or `ollama` (ollama untested) |
-| `GENERATION_MODEL` | `llama-3.1-8b-instant` | Groq model id |
-| `GROQ_API_KEY` | — | Required if `LLM_BACKEND=groq` |
-| `EMBEDDING_MODEL` | `BAAI/bge-m3` | HF model id for dense+sparse embeddings |
-| `RERANKER_MODEL` | `BAAI/bge-reranker-v2-m3` | HF model id for cross-encoder |
-| `ENABLE_RERANKER` | `false` | Set to `true` to rerank retrieved chunks |
-| `ENABLE_WEB_FALLBACK` | `false` | Set to `true` to enable Tavily web search fallback |
-| `TAVILY_API_KEY` | — | Only needed if `ENABLE_WEB_FALLBACK=true` |
+This starts Qdrant (`localhost:6333`) and MongoDB (`localhost:27017`) with
+persistent named volumes. If you don't want to run Docker, you can omit
+this step and leave `QDRANT_URL` unset in your `.env` — `vector_db.py`
+will fall back to a local file-mode Qdrant store at
+`backend/qdrant_sugarcane_db/`, which only allows one process to hold it
+at a time (you cannot run `main.py` and a seeding/eval script
+simultaneously in that mode). MongoDB has no equivalent fallback; you need
+a MongoDB instance reachable at `MONGO_URI` either way.
 
-### 2. Install backend dependencies
+### 2. Backend environment
+
+```bash
+cd backend
+cp .env.example .env
+```
+
+Fill in `.env` — see `backend/.env.example` for every variable and what it
+does. At minimum you need an API key for your chosen `LLM_BACKEND`.
+
+### 3. Install backend dependencies
 
 ```bash
 cd backend
 pip install -r requirements.txt
 ```
 
-First run will download the BGE-M3 embedding model and the BGE reranker model from Hugging Face (a few GB total).
+First run will download the BGE-M3 embedding model and the BGE reranker
+model from Hugging Face (several GB total; the reranker is loaded even
+though it isn't used in the live path yet — see Architecture above).
 
-### 3. Seed the Qdrant database
+### 4. Seed the Qdrant collection
 
-Qdrant runs in local file-mode (no separate server) at `backend/qdrant_sugarcane_db/`. Place your source knowledge file at `backend/sugarcanemerged3.json`, then:
+Place your source knowledge file at `backend/sugarcanemerged3.json`, then:
 
 ```bash
 cd backend
 python vector_db.py
 ```
 
-This chunks the JSON, generates dense + sparse embeddings for each chunk, and upserts them into the `sugarcane_knowledge` Qdrant collection. Re-run it any time you update the source data.
+This chunks the JSON, generates dense + sparse embeddings, and upserts
+into the `sugarcane_knowledge` Qdrant collection. Re-run any time the
+source data changes — it recreates the collection from scratch.
 
-Qdrant's file-mode store only allows one process to hold it at a time. If you see a "DB SERVER IS LOCKED" error, stop `main.py` first; `python unlock_db.py` can kill zombie holders.
-
-### 4. Run the backend
+### 5. Run the backend
 
 ```bash
 cd backend
 python main.py
 ```
 
-Serves on `http://localhost:8000`. Endpoints: `POST /chat`, `GET /history/{session_id}`, `GET /health`.
+Serves on `http://localhost:8000`.
 
-### 5. Run the frontend
+### 6. Run the frontend
 
 ```bash
 cd frontend
@@ -76,65 +156,55 @@ npm install
 npm run dev
 ```
 
-Serves on `http://localhost:3000` and talks to the backend at `http://localhost:8000`.
+Serves on `http://localhost:3000` and talks to the backend at
+`http://localhost:8000`. Set `CORS_ALLOW_ORIGINS` in the backend `.env` if
+you serve the frontend from a different origin.
+
+## Tests
+
+```bash
+cd backend
+pytest
+```
+
+Runs `backend/tests/` only (scoped by `backend/pytest.ini`) — pure unit
+and invariant tests that don't require Qdrant, MongoDB, or an LLM API key
+(they use an in-memory Qdrant client for the retrieval invariant, and pure
+functions for the gating invariant). Scripts like `quick_test.py` and
+`backend/eval/refusal_test.py` are manual, live-service scripts, not part
+of the automated suite — see their docstrings for what they need running.
 
 ## Evaluation
 
-All eval code and data lives in `backend/eval/`.
+Eval code lives in `backend/eval/`. Several of its data files
+(`gold.jsonl`, `chunks.jsonl`, `contexts.json`, `results.jsonl`, and
+others) describe a corpus state that no longer exists and have been moved
+to `backend/eval/_archive_stale/` with an explanation of why each is
+stale — see the README there. The scripts that read those paths
+(`run_retrieval_ablation.py`, `refusal_test.py`, `threshold_sweep.py`, and
+others) will fail with `FileNotFoundError` until a current, hand-labelled
+gold set is built; this is intentional, not a bug — the alternative would
+be silently running against circular, non-resolving labels.
 
-### Metric validity
+This README does not report retrieval ablation numbers, generation-model
+comparison numbers, or metric-validity numbers. Those all depend on the
+stale/archived data above and would be misleading if reprinted here
+without being regenerated against a current corpus and a current,
+non-circular gold set.
 
-We initially scored retrieved/generated text against gold answers with ROUGE-L and BGE-M3 embedding cosine similarity. `backend/eval/diagnose_metrics.py` checks any metric before trusting it, by scoring each reference against itself (expect ≈1.0) and against an unrelated reference (the metric's noise floor):
+## Known limitations (current, not aspirational)
 
-| Metric | self-score | unrelated-score | usable range |
-|--------|-----------|-----------------|-------------|
-| ROUGE-L | 0.625 | 0.048 | 0.577 |
-| chrF | 1.000 | 0.172 | 0.828 |
-| embedding-sim | 1.000 | 0.524 | 0.476 |
+- The abstention gate's relevance threshold is uncalibrated.
+- The numeric-faithfulness check in the live path has known false-positive
+  and false-negative failure modes and is not a reliable safety signal on
+  its own.
+- The corpus's provenance is unknown and it contains non-Karnataka
+  content.
+- Kannada generation quality has not been validated against native
+  speakers.
+- The reranker is loaded but not used in the live request path.
+- `ollama` and `openrouter` backends in `llm_client.py` are less tested
+  than the default `groq` path; `ollama` in particular is documented as
+  untested on Windows+Python 3.13.
 
-ROUGE-L is broken for this corpus — its tokenizer strips non-Latin script, so 6 of 16 pure-Kannada references scored **0.000 against themselves**. We replaced it with **chrF** (character-n-gram, `sacrebleu`), which is script-agnostic and scored a clean 1.000 self / 0.172 unrelated baseline.
-
-### Retrieval ablation
-
-`run_retrieval_ablation.py` scores against gold chunk labels with proper IR metrics: recall@k, MRR, nDCG@5, latency (mean + p95), reported with n and a 95% CI (n=15 answerable questions; price-1 is excluded as unanswerable).
-
-| Config | recall@1 | recall@3 | recall@5 | recall@10 | MRR | nDCG@5 | Latency (mean / p95) |
-|--------|----------|----------|----------|-----------|-----|--------|---------------------|
-| dense | 0.667±0.247 | 0.800±0.210 | 0.933±0.131 | 1.000±0.000 | 0.763±0.179 | 0.738±0.167 | 0.00s / 0.01s |
-| dense+rerank | 0.800±0.210 | 1.000±0.000 | 1.000±0.000 | 1.000±0.000 | 0.878±0.129 | 0.855±0.124 | 30.52s / 34.30s |
-| sparse | 0.333±0.247 | 0.667±0.247 | 0.733±0.232 | 0.800±0.210 | 0.503±0.203 | 0.555±0.200 | 0.01s / 0.01s |
-| sparse+rerank | 0.667±0.247 | 0.800±0.210 | 0.800±0.210 | 0.800±0.210 | 0.722±0.215 | 0.707±0.209 | 27.31s / 39.08s |
-| hybrid | 0.667±0.247 | 0.867±0.178 | 0.933±0.131 | 1.000±0.000 | 0.782±0.167 | 0.762±0.155 | 0.02s / 0.03s |
-| hybrid+rerank | 0.800±0.210 | 1.000±0.000 | 1.000±0.000 | 1.000±0.000 | 0.878±0.129 | 0.855±0.124 | 32.98s / 37.70s |
-
-**Key finding:** Dense/hybrid already achieve recall@10 = 1.0 without reranking. Reranking improves MRR/nDCG by +0.10–0.12 but adds ~30s latency on CPU vs. ~0.02s without. `ENABLE_RERANKER` defaults to `false`. This conclusion is corpus-size-dependent and must be re-benchmarked if the corpus scales.
-
-### Generation evaluation
-
-`build_contexts.py` freezes retrieval contexts once. `run_eval.py` replays identical contexts to the generation model, with LLM-judged faithfulness.
-
-**Llama 3.1 8B (Groq) results (n=16):**
-
-| Metric | Average | Notes |
-|--------|---------|-------|
-| chrF | 0.416 | Moderate lexical overlap; Kannada agglutination lowers n-gram match |
-| Embedding sim | 0.730 (+0.206 vs baseline) | Strong semantic alignment with gold answers |
-| Faithfulness | 0.765 | High grounding in retrieved context |
-| Gen latency | 24.1s | Groq free-tier queueing after initial rapid calls |
-
-**Self-judge caveat:** Due to Groq free-tier rate limits, we used the same model as judge and generator. Self-judging is a known source of bias; faithfulness scores should be read as an internal consistency check, not an absolute quality measure, until a genuinely separate judge model is used.
-
-### Safety
-
-- **Hard refusal** on low-confidence queries (`search_score < 0.35`)
-- **Safety-critical gate**: pest/disease/fertilizer queries with medium confidence are refused
-- **Faithfulness gate**: generated answers with `accuracy_score < 0.50` are blocked and replaced with a refusal
-- **Escalation line** on every answer: Kisan Call Centre `1800-180-1551`
-
-## What's next
-
-- Human evaluation subset (~30–50 answers)
-- Manual failure-mode review (tagged taxonomy)
-- Refusal-accuracy metric for unanswerable questions
-- Additional crops (ragi, tomato) to test reranker off the recall ceiling
-- Restore Ollama local-inference path (currently blocked by Windows/Python 3.13 client bug)
+See `ARCHITECTURE.md` for the phased plan that addresses these.
