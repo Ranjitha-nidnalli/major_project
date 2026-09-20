@@ -13,6 +13,7 @@ from vector_db import db_client, COLLECTION_NAME, embed_model, reranker_model
 from chat_db import save_chat_message, get_chat_history
 from llm_client import call_llm  # NEW: unified LLM abstraction
 from eval.numeric_faithfulness import check_numeric_faithfulness  # #5
+from services.gating import decide as gating_decide, GatingConfig
 
 # --- Configuration ---
 GENERATION_MODEL = os.getenv("GENERATION_MODEL")  # No fallback — must be set in .env
@@ -20,9 +21,18 @@ INTERACTIVE_MAX_PREDICT = int(os.getenv("INTERACTIVE_MAX_PREDICT", 250))
 EVAL_MAX_PREDICT = int(os.getenv("EVAL_MAX_PREDICT", 500))
 INTERACTIVE_TIMEOUT = int(os.getenv("INTERACTIVE_TIMEOUT", 120))
 
-HARD_REFUSAL_THRESHOLD = 0.35
-CONFIDENT_SEARCH_THRESHOLD = 0.5
+# HARD_REFUSAL_THRESHOLD removed: the abstention gate now lives in
+# services/gating.py and is driven by dense cosine relevance, not the RRF
+# fusion score. See GATING_CONFIG below and ARCHITECTURE.md Section 21.
+CONFIDENT_SEARCH_THRESHOLD = 0.5  # UNCALIBRATED: only gates the escalation-line UX, not refusal
 FAITHFULNESS_GATE_THRESHOLD = 0.50
+
+SAFETY_CRITICAL_CATEGORIES = {"pest", "disease", "fertilizer"}
+
+# Abstention gate config (Task 2). Thresholds are UNCALIBRATED placeholders;
+# Phase 2 replaces them via backend/eval/threshold_sweep.py against a real
+# labelled answerable/unanswerable set. Do not report these as validated.
+GATING_CONFIG = GatingConfig(safety_critical_categories=frozenset(SAFETY_CRITICAL_CATEGORIES))
 
 print(f"[Krishi Mitra] Loaded with GENERATION_MODEL={GENERATION_MODEL}")
 
@@ -63,8 +73,6 @@ EMPTY_ANSWER_FALLBACK_MESSAGE = (
     "ಕ್ಷಮಿಸಿ, ಅಗತ್ಯಮಾಧ್ಯಮ ಮಾಹಿತಿ ಇಲ್ಲದ ಕಾರಣ ಸೂಕ್ತ ಉತ್ತರವನ್ನು ನೀಡಲಾಗುತ್ತಿಲ್ಲ. "
     "ಹೆಚ್ಚಿನ ಸಹಾಯಕ್ಕೆ ಕರೆಮಾಡಿ: ರೈತ ಸಹಾಯ ಕೇಂದ್ರ — 1800-180-1551"
 )
-
-SAFETY_CRITICAL_CATEGORIES = {"pest", "disease", "fertilizer"}
 
 
 import json
@@ -224,39 +232,60 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
         fused = [{"score": h.score, "payload": h.payload} for h in hits]
         return fused, hits[0].score if hits else 0.0
 
+    async def get_dense_relevance(d_vec):
+        """
+        Max dense cosine similarity over the retrieved cards, for the
+        abstention gate (services/gating.py). This is a plain dense-only
+        query -- no fusion, no filter -- against the same collection.
+        The dense vector space is configured with Distance.COSINE
+        (vector_db.py), so the returned score is a genuine cosine
+        similarity, unlike the rank-derived RRF fusion score.
+        """
+        response = await asyncio.to_thread(
+            db_client.query_points,
+            collection_name=COLLECTION_NAME,
+            query=d_vec,
+            using="dense",
+            limit=1,
+        )
+        hits = response.points
+        return hits[0].score if hits else None
+
     top_chunks, best_fused_score = await execute_weighted_search(dense_vec, sparse_indices, sparse_values)
 
-    # ==========================================
-    # 3. SAFETY & CONFIDENCE CHECKS
-    # ==========================================
     docs = [p["payload"]["text"] for p in top_chunks]
+    # search_score (RRF fusion score) is kept only for logging/telemetry and
+    # for the ChatResponse payload the frontend already expects. It must
+    # NEVER be used as the relevance signal for the abstention gate -- RRF
+    # scores are rank-derived, so a top-ranked-but-irrelevant hit can score
+    # 1.0 (verified defect, ARCHITECTURE.md Section 21).
     search_score = top_chunks[0]['score'] if top_chunks else 0.0
 
-    is_low_confidence = not docs or search_score < HARD_REFUSAL_THRESHOLD
-    is_medium_confidence = search_score < CONFIDENT_SEARCH_THRESHOLD
-    is_safety_critical = category in SAFETY_CRITICAL_CATEGORIES
+    # ==========================================
+    # 3. ABSTENTION GATE (Task 2 / ARCHITECTURE.md Section 21)
+    # ==========================================
+    # Relevance = max dense cosine similarity over the retrieved cards,
+    # computed via a plain dense-only query (no fusion, no filter). The
+    # dense vector space is configured with COSINE distance in vector_db.py,
+    # so this score is a genuine cosine similarity, unlike the RRF score.
+    dense_relevance = await get_dense_relevance(dense_vec) if docs else None
 
-    # Hard Refusal: low retrieval confidence
-    if is_low_confidence:
-        print(f"🟥 Hard Refusal: Low confidence score ({search_score:.2f}).")
+    gate_decision = gating_decide(relevance=dense_relevance, category=category, config=GATING_CONFIG)
+
+    if not gate_decision.should_answer:
+        print(f"🟥 Gate refusal ({gate_decision.reason}).")
         return {
             "answer": HARD_REFUSAL_MESSAGE,
             "search_score": search_score,
+            "relevance": dense_relevance,
             "accuracy_score": 0.0,
             "context": "\n\n".join(docs) if return_context else None,
         }
 
-    # For safety-critical categories, require higher confidence
-    if is_safety_critical and is_medium_confidence:
-        print(f"🟧 Safety Refusal: {category} query with medium confidence ({search_score:.2f}).")
-        return {
-            "answer": HARD_REFUSAL_MESSAGE,
-            "search_score": search_score,
-            "accuracy_score": 0.0,
-            "context": "\n\n".join(docs) if return_context else None,
-        }
+    # Only used for the escalation-line UX below (not a refusal decision).
+    is_medium_confidence = dense_relevance is not None and dense_relevance < CONFIDENT_SEARCH_THRESHOLD
 
-    print(f"🟢 DB Hit! Best Score: {search_score:.2f}")
+    print(f"🟢 DB Hit! Relevance (dense cosine): {dense_relevance:.2f} | RRF score (telemetry only): {search_score:.2f}")
     context_text = "\n\n".join([f"{doc}" for doc in docs])
 
     # ==========================================
