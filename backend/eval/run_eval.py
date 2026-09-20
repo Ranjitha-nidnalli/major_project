@@ -40,14 +40,14 @@ RESULTS_PATH = os.path.join(os.path.dirname(__file__), "results.jsonl")
 
 EMBEDDING_SIM_BASELINE = 0.524
 
-# Self-judge for Groq models (pragmatic for free tier rate limits)
-# For local Ollama, cross-judge is preferred.
-JUDGE_MODEL_MAP = {
-    "gemma4:e4b": "llama3.1:8b",
-    "llama3.1:8b": "gemma4:e4b",
-    "gaganyatri/sarvam-2b-v0.5": "llama3.1:8b",
-    "llama-3.1-8b-instant": "llama-3.1-8b-instant",  # self-judge (Groq pragmatic)
-}
+# Judge model is set explicitly via the JUDGE_MODEL env var, not looked up
+# from a hardcoded map of specific GENERATION_MODEL values. The old
+# JUDGE_MODEL_MAP raised ValueError for any model not already listed in it,
+# which crashed the bake-off the first time someone tried a new model
+# (verified defect, Task 6). Self-judging (JUDGE_MODEL == GENERATION_MODEL)
+# is allowed -- it's a documented, pragmatic tradeoff for free-tier rate
+# limits (see module docstring) -- but it must be an explicit choice made
+# by whoever runs the script, not a silent default.
 
 def chrf_score(reference: str, hypothesis: str) -> float:
     return sacrebleu.sentence_chrf(hypothesis, [reference]).score / 100
@@ -59,9 +59,15 @@ def embedding_similarity(a: str, b: str) -> float:
 
 async def main():
     model_tag = os.getenv("GENERATION_MODEL", "llama-3.1-8b-instant")
-    judge_model = JUDGE_MODEL_MAP.get(model_tag)
-    if judge_model is None:
-        raise ValueError(f"No judge model configured for '{model_tag}' - add it to JUDGE_MODEL_MAP")
+    judge_model = os.getenv("JUDGE_MODEL")
+    if not judge_model:
+        raise ValueError(
+            "JUDGE_MODEL env var is not set. Set it to the model that should "
+            "judge GENERATION_MODEL's answers, e.g.:\n"
+            "  set GENERATION_MODEL=llama-3.1-8b-instant\n"
+            "  set JUDGE_MODEL=llama-3.1-8b-instant   (self-judge; see module docstring)\n"
+            "or a different model for cross-judging."
+        )
 
     with open(QUESTIONS_PATH, "r", encoding="utf-8") as f:
         questions = json.load(f)
