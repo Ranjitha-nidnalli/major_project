@@ -7,9 +7,18 @@ python-dotenv>=1.0.0
 qdrant-client>=1.8.0
 FlagEmbedding>=1.2.0
 sentence-transformers>=2.5.0
+torch>=2.2.0
 
-# LLM (current: Groq hosted)
+# Kannada text normalization (indic_preprocess.py). Has a regex-based
+# fallback if this is missing, but it should be installed so the real
+# normalizer is used, not the fallback.
+indic-nlp-library>=0.92
+
+# LLM (current default: Groq hosted)
 groq>=0.9.0
+
+# LLM (OpenRouter backend — cross-judge evaluation, model bake-off)
+openai>=1.30.0
 
 # LLM (optional local backend — currently untested on Windows+Python 3.13)
 # ollama>=0.1.7
@@ -17,12 +26,17 @@ groq>=0.9.0
 # Database
 motor>=3.3.0
 
-# Web fallback (optional)
-tavily-python>=0.3.0
-
 # Evaluation
 sacrebleu>=2.4.0
 numpy>=1.26.0
+rank_bm25>=0.2.2
+rouge-score>=0.1.2
+
+# Process management. NOTE: currently only imported by unlock_db.py, which
+# is deleted as part of the migration to Qdrant server mode (Task 4/5 of
+# Phase 1). Kept per the explicit missing-dependency list; remove if nothing
+# ends up importing it after that migration lands.
+psutil>=5.9.0
 
 # Dev
 pytest>=8.0.0
