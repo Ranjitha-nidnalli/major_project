@@ -12,7 +12,7 @@ variance or router/query-expansion calls (which themselves depend on
 whichever GENERATION_MODEL happens to be configured, which would recontaminate
 the "frozen" context if included here).
 
-Requires exclusive access to the local Qdrant store - stop main.py first.
+Runs against whatever Qdrant instance QDRANT_URL points at (server mode -- see docker-compose.yml). No exclusive-access requirement in server mode.
 """
 import os
 import sys

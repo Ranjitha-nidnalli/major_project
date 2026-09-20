@@ -6,7 +6,7 @@ Chunk ids are deterministic (uuid5 hash of chunk text, see vector_db.py) so
 they stay stable across re-seeding as long as the chunk text itself doesn't
 change - gold.jsonl labels keyed on these ids survive a rebuild.
 
-Requires exclusive access to the local Qdrant store - stop main.py first.
+Runs against whatever Qdrant instance QDRANT_URL points at (server mode -- see docker-compose.yml). No exclusive-access requirement in server mode.
 """
 import os
 import sys

@@ -24,7 +24,7 @@ Bucketed analysis uses MANUAL query_type from questions.json:
   - quantity-specific: asks about dosage, amount, timing
   - procedural: asks about steps, schedule, method
 
-Requires exclusive access to the local Qdrant store - stop main.py first.
+Runs against whatever Qdrant instance QDRANT_URL points at (server mode -- see docker-compose.yml). No exclusive-access requirement in server mode.
 """
 import os
 import sys

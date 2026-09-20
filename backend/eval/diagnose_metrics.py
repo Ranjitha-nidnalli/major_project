@@ -11,8 +11,9 @@ If self-score and unrelated-score are close together, the metric has no usable
 range for this data and any conclusion drawn from small differences within
 that range is noise, not signal.
 
-Does not need the Qdrant lock beyond importing embed_model (vector_db.py opens
-the Qdrant client eagerly at import time) - stop main.py first regardless.
+vector_db.py opens the Qdrant client eagerly at import time (needed for
+embed_model), but in server mode (QDRANT_URL set) this is a normal client
+connection, not an exclusive lock.
 """
 import os
 import sys

@@ -7,7 +7,7 @@ ablation. Checks the three hypothesized causes from PROJECT_PLAN.md:
   2. Is scoring done one-pair-at-a-time instead of batched?
   3. Is use_fp16 relevant on this CPU-only machine?
 
-Requires exclusive access to the local Qdrant store - stop main.py first.
+Runs against whatever Qdrant instance QDRANT_URL points at (server mode -- see docker-compose.yml). No exclusive-access requirement in server mode.
 """
 import os
 import sys

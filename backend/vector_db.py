@@ -1,7 +1,6 @@
 import json
 import os
 import uuid
-import sys
 from collections import Counter
 
 from qdrant_client import QdrantClient, models
@@ -51,38 +50,31 @@ reranker_model = CrossEncoder(
 # ============================================================
 # QDRANT INITIALIZATION
 # ============================================================
+#
+# Server mode (default, recommended): set QDRANT_URL, e.g.
+#   QDRANT_URL=http://localhost:6333
+# via `docker compose up -d` (see docker-compose.yml at the repo root).
+#
+# File mode (fallback): if QDRANT_URL is unset, falls back to the old
+# local file-mode store at `qdrant_path`. File mode only allows a single
+# process to hold the store at a time and is kept only for environments
+# where running Docker isn't an option -- it is not the target setup.
 
-try:
+QDRANT_URL = os.getenv("QDRANT_URL")
 
-    db_client = QdrantClient(
-        path=qdrant_path
+if QDRANT_URL:
+
+    db_client = QdrantClient(url=QDRANT_URL)
+
+else:
+
+    print(
+        "QDRANT_URL not set -- falling back to local file-mode Qdrant "
+        f"store at {qdrant_path}. Run `docker compose up -d` and set "
+        "QDRANT_URL=http://localhost:6333 in backend/.env for server mode."
     )
 
-except Exception as e:
-
-    err_str = str(e)
-
-    if (
-        "AlreadyLocked" in err_str
-        or "already accessed" in err_str
-        or "PermissionError" in str(type(e))
-    ):
-
-        print("\n" + "=" * 70)
-        print("!!! QDRANT DB SERVER IS LOCKED! !!!")
-        print(
-            "Local mode requires exclusive access. "
-            "Please stop main.py before running this."
-        )
-        print(
-            "Run `python unlock_db.py` "
-            "to kill zombie processes."
-        )
-        print("=" * 70 + "\n")
-
-        sys.exit(1)
-
-    raise
+    db_client = QdrantClient(path=qdrant_path)
 
 
 # ============================================================

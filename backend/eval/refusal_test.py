@@ -10,7 +10,7 @@ answer.
 Usage:
     cd backend && python eval/refusal_test.py
 
-Requires: main.py stopped (Qdrant exclusive access), Ollama running.
+Requires: QDRANT_URL set to a running Qdrant instance (server mode -- see docker-compose.yml), a MongoDB instance reachable at MONGO_URI, and a valid LLM API key for the configured LLM_BACKEND.
 """
 import os
 import sys
