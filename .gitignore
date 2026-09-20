@@ -14,3 +14,6 @@ _book
 *.epub
 *.mobi
 *.pdf
+
+# Tooling artifacts (should never be committed)
+.claude/scheduled_tasks.lock

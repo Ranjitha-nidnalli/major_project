@@ -36,11 +36,10 @@ GATING_CONFIG = GatingConfig(safety_critical_categories=frozenset(SAFETY_CRITICA
 
 print(f"[Krishi Mitra] Loaded with GENERATION_MODEL={GENERATION_MODEL}")
 
-# #37: Tavily web fallback removed — was dead code (instantiated but never called).
-# If web fallback is needed in future, re-implement with a real search call,
-# not an orphaned client instantiation.
-ENABLE_WEB_FALLBACK = False
-
+# Tavily web fallback (ENABLE_WEB_FALLBACK) was removed: it was dead code --
+# a tavily client was instantiated but never called. Kill-list item, see
+# ARCHITECTURE.md Section 31. Re-implement with a real search call if web
+# fallback is needed in future; don't reintroduce an unused flag.
 ENABLE_RERANKER = os.getenv("ENABLE_RERANKER", "false").lower() == "true"
 RERANK_THRESHOLD = 0.5
 
