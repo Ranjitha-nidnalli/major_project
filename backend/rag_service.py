@@ -66,9 +66,6 @@ EMPTY_ANSWER_FALLBACK_MESSAGE = (
 
 SAFETY_CRITICAL_CATEGORIES = {"pest", "disease", "fertilizer"}
 
-# Categories that actually exist as payload fields in Qdrant
-STORED_CATEGORIES = {"disease", "pest", "soil", "fertilizer", "general"}
-
 
 import json
 import time
@@ -197,22 +194,22 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
     from vector_db import embed_query
     dense_vec, sparse_indices, sparse_values = await asyncio.to_thread(embed_query, user_query)
 
-    # #38: Category boost — use 'should' (ranking boost) not 'must' (hard exclusion).
-    # If router misclassifies, relevant chunks in other categories are still found,
-    # just ranked slightly lower. This is safer than a hard filter.
-    query_filter = None
-    if category in STORED_CATEGORIES:
-        query_filter = models.Filter(
-            should=[
-                models.FieldCondition(
-                    key="category",
-                    match=models.MatchValue(value=category)
-                )
-            ]
-        )
-        print(f"🔖 Applying category boost: {category}")
-
-    async def execute_weighted_search(d_vec, s_idx, s_val, filt=None):
+    # Category is intentionally NOT used as a retrieval filter.
+    #
+    # Verified defect (ARCHITECTURE.md Section 12): a Qdrant Filter(should=[...])
+    # with no other clauses is NOT a soft boost — it hard-restricts the result set
+    # to matching points only. Because the LLM router can misclassify a query,
+    # this made gold chunks unreachable whenever the router got the category wrong
+    # (e.g. a seed-treatment question routed as "general" while its chunk lives in
+    # "disease" was completely unretrievable).
+    #
+    # Fix applied (Option A, Section 12): remove the filter entirely and rely on
+    # pure hybrid (dense + sparse, RRF-fused) retrieval. `category` is still
+    # produced by the router and used below as a signal for the safety-critical
+    # confidence gate (SAFETY_CRITICAL_CATEGORIES) — an LLM classification must
+    # never be allowed to make a document unreachable, but it may still inform
+    # how cautious the gate is.
+    async def execute_weighted_search(d_vec, s_idx, s_val):
         response = await asyncio.to_thread(
             db_client.query_points,
             collection_name=COLLECTION_NAME,
@@ -222,13 +219,12 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
             ],
             query=models.FusionQuery(fusion=models.Fusion.RRF),
             limit=5,
-            query_filter=filt,
         )
         hits = response.points
         fused = [{"score": h.score, "payload": h.payload} for h in hits]
         return fused, hits[0].score if hits else 0.0
 
-    top_chunks, best_fused_score = await execute_weighted_search(dense_vec, sparse_indices, sparse_values, filt=query_filter)
+    top_chunks, best_fused_score = await execute_weighted_search(dense_vec, sparse_indices, sparse_values)
 
     # ==========================================
     # 3. SAFETY & CONFIDENCE CHECKS
