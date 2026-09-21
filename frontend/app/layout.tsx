@@ -7,8 +7,8 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'ಕೃಷಿ ಸಹಾಯಕ - Karnataka Agriculture AI Assistant',
-  description: 'ಕರ್ನಾಟಕ ರೈತರಿಗಾಗಿ AI ಕೃಷಿ ಸಹಾಯಕ - Ragi, Jowar, Sugarcane, Areca nut, Coffee farming assistance in Kannada',
+  title: 'ಕೃಷಿ ಸಹಾಯಕ - Karnataka Sugarcane Farming AI Assistant',
+  description: 'ಕರ್ನಾಟಕ ಕಬ್ಬು ಬೆಳೆಗಾರರಿಗಾಗಿ AI ಕೃಷಿ ಸಹಾಯಕ - Sugarcane farming assistance in Kannada. Other crops are planned but not yet supported.',
   generator: 'v0.app',
   icons: {
     icon: [
