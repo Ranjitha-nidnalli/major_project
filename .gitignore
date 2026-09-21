@@ -17,3 +17,23 @@ _book
 
 # Tooling artifacts (should never be committed)
 .claude/scheduled_tasks.lock
+
+# Python (backend/.gitignore covers backend/ specifically; these are a
+# root-level safety net in case a script is ever run from repo root)
+__pycache__/
+*.pyc
+.pytest_cache/
+venv/
+env/
+
+# Secrets -- never commit, regardless of directory
+.env
+*.env
+!.env.example
+!*.env.example
+
+# Local Qdrant file-mode store (fallback only, Docker server mode is
+# primary -- see ARCHITECTURE.md Section 6). A stray copy of this can end
+# up at repo root if vector_db.py is ever run from outside backend/.
+qdrant_sugarcane_db/
+sugarcane_vector_db/
