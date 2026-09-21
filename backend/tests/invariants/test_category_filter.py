@@ -64,16 +64,22 @@ def _build_collection():
     return client
 
 
-def _hybrid_query(client, dense_vec, sparse_indices, sparse_values, query_filter=None):
-    """Mirrors rag_service.execute_weighted_search's query shape."""
+def _hybrid_query(client, dense_vec, sparse_indices, sparse_values, query_filter=None, prefetch_filter=None):
+    """Mirrors rag_service.execute_weighted_search's query shape.
+
+    prefetch_filter, if given, is applied to each prefetch leg directly --
+    this is where a should-only Filter actually hard-restricts (see
+    test_old_should_only_filter_would_have_hidden_the_card).
+    """
     response = client.query_points(
         collection_name=COLLECTION,
         prefetch=[
-            models.Prefetch(query=dense_vec, using="dense", limit=15),
+            models.Prefetch(query=dense_vec, using="dense", limit=15, filter=prefetch_filter),
             models.Prefetch(
                 query=models.SparseVector(indices=sparse_indices, values=sparse_values),
                 using="sparse",
                 limit=15,
+                filter=prefetch_filter,
             ),
         ],
         query=models.FusionQuery(fusion=models.Fusion.RRF),
@@ -115,10 +121,22 @@ def test_old_should_only_filter_would_have_hidden_the_card():
     Documents the defect: a should-only Filter on the WRONG category
     (the router's misclassification) hard-excludes the correct card.
     This is what rag_service.py must never do again.
+
+    Investigated 2026-09-21: the pre-fix code (commit 1b57a3e^) passed the
+    should-only filter as the *outer* `query_filter` on a `prefetch` +
+    `FusionQuery` call. Against qdrant-client 1.18's `:memory:` backend,
+    that exact shape does NOT exclude "disease" -- the outer filter is not
+    enforced post-fusion in this backend. The should-only hard-restriction
+    is real and reproducible (verified below and against a plain, non-fused
+    search), but only when the filter reaches a search/prefetch leg
+    directly. This test applies it there so it still demonstrates the
+    genuine Qdrant gotcha; the outer-filter-on-fusion variant is untested
+    here for lack of a real Qdrant server (no Docker in this environment).
+    Re-verify against the docker-compose server before relying on this for
+    the paper/report.
     """
     client = _build_collection()
 
-    query_dense = [0.0, 1.0, 0.0, 0.0]
     query_sparse_indices = [2]
     query_sparse_values = [1.0]
 
@@ -127,7 +145,12 @@ def test_old_should_only_filter_would_have_hidden_the_card():
     )
 
     hits = _hybrid_query(
-        client, query_dense, query_sparse_indices, query_sparse_values, query_filter=buggy_filter
+        client,
+        [0.0, 1.0, 0.0, 0.0],
+        query_sparse_indices,
+        query_sparse_values,
+        query_filter=None,
+        prefetch_filter=buggy_filter,
     )
 
     categories = [h.payload["category"] for h in hits]
