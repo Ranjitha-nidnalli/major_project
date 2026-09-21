@@ -98,9 +98,11 @@ async def calculate_faithfulness(context: str, answer: str, judge_model: str = N
         # trigger on EVERY answer (0.0 < FAITHFULNESS_GATE_THRESHOLD is
         # always true) -- the live faithfulness gate would have refused
         # every single question regardless of actual answer quality.
-        # Reproduced empty at 50, correct numeric output at 200; 300 for
-        # margin across models/context lengths.
-        max_tokens=300,
+        # The reasoning-token cost scales with context length: 300 still
+        # returned empty for a real ~2.9k-char context (5 of 18 questions
+        # in one eval run), 500 reliably worked on the longest context
+        # tested. Matches EVAL_MAX_PREDICT's existing 500 default.
+        max_tokens=500,
         temperature=0.0
     )
     if content is None:
