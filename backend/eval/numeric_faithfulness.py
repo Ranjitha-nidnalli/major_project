@@ -55,13 +55,11 @@ _UNIT_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
-# Combined: number followed (optionally) by unit, with up to 3 words of slack
-_NUM_UNIT_RE = re.compile(
-    rf"({_NUMBER_PATTERN.pattern})"
-    rf"(?:(?:\s+\S+){{0,3}}\s*({_UNIT_PATTERN.pattern}))?"
-    rf"(?=\s|$|[^\wಀ-೿])",
-    re.IGNORECASE,
-)
+# A number's unit must appear before the next number or a sentence boundary --
+# "up to N words away" is not a safe proxy for "belongs to this number", since
+# it lets a regex bind a number to a unit that actually belongs to a
+# different, later number/quantity in the same sentence.
+_SENTENCE_BOUNDARY = re.compile(r"[.!?।]")
 
 
 def _normalize_kannada_number(s: str) -> str:
@@ -70,65 +68,83 @@ def _normalize_kannada_number(s: str) -> str:
     return s.translate(kannada_to_arabic)
 
 
+def _canonicalize_unit(unit_str: str) -> str:
+    u = unit_str.strip().lower()
+    if u in ("ಗ್ರಾಂ", "ಗ್ರಾಮ", "gram", "grams", "g"):
+        return "gram"
+    if u in ("ಕೆಜಿ", "kg"):
+        return "kg"
+    if u in ("ಲೀಟರ್", "ಲೀ", "litre", "liter", "litres", "liters", "l"):
+        return "litre"
+    if u in ("ಮಿಲಿ", "ml"):
+        return "ml"
+    if u in ("ಎಕರೆ", "acre", "acres"):
+        return "acre"
+    if u in ("ಹೆಕ್ಟೇರ್", "hectare", "hectares"):
+        return "hectare"
+    if u in ("%", "ಪರ್ಸೆಂಟ್", "percent"):
+        return "percent"
+    if u in ("ನಿಮಿಷ", "minute", "minutes"):
+        return "minute"
+    if u in ("ಗಂಟೆ", "hour", "hours"):
+        return "hour"
+    if u in ("ದಿನ", "day", "days"):
+        return "day"
+    if u in ("ವಾರ", "week", "weeks"):
+        return "week"
+    if u in ("ತಿಂಗಳು", "month", "months"):
+        return "month"
+    if u in ("ಸೆಟ್ಸ್", "setts", "sett"):
+        return "sett"
+    if u in ("ಟನ್", "ton", "tons", "tonne", "tonnes"):
+        return "ton"
+    if u in ("ಕ್ವಿಂಟಾಲ್", "quintal", "quintals"):
+        return "quintal"
+    if u in ("ಡಬ್ಲ್ಯೂ.ಪಿ", "wp"):
+        return "wp"
+    if u in ("ಇ.ಸಿ", "ec"):
+        return "ec"
+    if u in ("ಜಿ", "g_granule"):
+        return "g_granule"
+    return u
+
+
 def extract_number_units(text: str) -> Set[str]:
     """
     Extract all number+unit tuples from text.
     Returns a set of normalized strings like '10.0_gram' for easy comparison.
+
+    A number is bound only to the nearest unit token that appears strictly
+    before the NEXT number (or a sentence boundary, or end of string) --
+    never to a unit that actually belongs to a different number later in
+    the sentence.
     """
     found = set()
-    for match in _NUM_UNIT_RE.finditer(text):
-        num_str = match.group(1)
-        unit_str = match.group(2)
-        num_norm = _normalize_kannada_number(num_str)
-        # Try to parse as float for normalization
+    number_matches = list(_NUMBER_PATTERN.finditer(text))
+    for i, m in enumerate(number_matches):
+        num_norm = _normalize_kannada_number(m.group())
         try:
             num_val = float(num_norm)
         except ValueError:
             continue
-        # Normalize unit
-        unit_norm = ""
-        if unit_str:
-            u = unit_str.strip().lower()
-            # Canonicalize common variants
-            if u in ("ಗ್ರಾಂ", "ಗ್ರಾಮ", "gram", "grams", "g"):
-                unit_norm = "gram"
-            elif u in ("ಕೆಜಿ", "kg"):
-                unit_norm = "kg"
-            elif u in ("ಲೀಟರ್", "ಲೀ", "litre", "liter", "litres", "liters", "l"):
-                unit_norm = "litre"
-            elif u in ("ಮಿಲಿ", "ml"):
-                unit_norm = "ml"
-            elif u in ("ಎಕರೆ", "acre", "acres"):
-                unit_norm = "acre"
-            elif u in ("ಹೆಕ್ಟೇರ್", "hectare", "hectares"):
-                unit_norm = "hectare"
-            elif u in ("%", "ಪರ್ಸೆಂಟ್", "percent"):
-                unit_norm = "percent"
-            elif u in ("ನಿಮಿಷ", "minute", "minutes"):
-                unit_norm = "minute"
-            elif u in ("ಗಂಟೆ", "hour", "hours"):
-                unit_norm = "hour"
-            elif u in ("ದಿನ", "day", "days"):
-                unit_norm = "day"
-            elif u in ("ವಾರ", "week", "weeks"):
-                unit_norm = "week"
-            elif u in ("ತಿಂಗಳು", "month", "months"):
-                unit_norm = "month"
-            elif u in ("ಸೆಟ್ಸ್", "setts", "sett"):
-                unit_norm = "sett"
-            elif u in ("ಟನ್", "ton", "tons", "tonne", "tonnes"):
-                unit_norm = "ton"
-            elif u in ("ಕ್ವಿಂಟಾಲ್", "quintal", "quintals"):
-                unit_norm = "quintal"
-            elif u in ("ಡಬ್ಲ್ಯೂ\.ಪಿ", "wp"):
-                unit_norm = "wp"
-            elif u in ("ಇ\.ಸಿ", "ec"):
-                unit_norm = "ec"
-            elif u in ("ಜಿ", "g_granule"):
-                unit_norm = "g_granule"
-            else:
-                unit_norm = u
-        # Store as "value_unit" for set comparison
+
+        window_end = number_matches[i + 1].start() if i + 1 < len(number_matches) else len(text)
+        window = text[m.end():window_end]
+
+        # Don't just slice the window at the first ".", "!", etc. -- unit
+        # abbreviations like "ಡಬ್ಲ್ಯೂ.ಪಿ" (WP) contain a literal period, and
+        # slicing there would cut the unit token in half before the unit
+        # regex ever sees it. Instead, only reject a unit match that starts
+        # at or after a genuine sentence boundary.
+        boundary = _SENTENCE_BOUNDARY.search(window)
+        boundary_pos = boundary.start() if boundary else len(window)
+
+        unit_match = _UNIT_PATTERN.search(window)
+        if unit_match and unit_match.start() < boundary_pos:
+            unit_norm = _canonicalize_unit(unit_match.group())
+        else:
+            unit_norm = ""
+
         key = f"{num_val}_{unit_norm}" if unit_norm else f"{num_val}_nounit"
         found.add(key)
     return found
