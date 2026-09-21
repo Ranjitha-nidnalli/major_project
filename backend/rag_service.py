@@ -331,10 +331,16 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
             accuracy_score = 0.0
         else:
             # Escalation line on every genuine answer (PROJECT_PLAN.md P3.1),
-            # not just medium-confidence ones. HARD_REFUSAL_MESSAGE and
-            # EMPTY_ANSWER_FALLBACK_MESSAGE already embed the number
-            # literally and never reach this branch, so no duplicate-number
-            # risk here.
+            # not just medium-confidence ones. HARD_REFUSAL_MESSAGE always
+            # skips this branch (it's assigned in the `if` above, which
+            # returns before reaching here). EMPTY_ANSWER_FALLBACK_MESSAGE
+            # (already containing the number, see its definition above)
+            # USUALLY doesn't reach here either -- judging a canned,
+            # off-topic fallback against real context should score low and
+            # trigger semantic_fail above -- but that's judge-model
+            # behavior, not something this code enforces. If the judge ever
+            # scores it high, the number would appear twice. Harmless
+            # (never missing), but worth knowing if a duplicate is ever seen.
             if ans:
                 ans += ESCALATION_MESSAGE
 
