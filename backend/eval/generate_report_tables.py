@@ -108,7 +108,10 @@ def main():
         for r in by_q[qid]:
             rr = r.get('reciprocal_rank', '—')
             rr_str = f"{rr:.3f}" if isinstance(rr, float) else rr
-            print(f"| {r['config']} | {r['recall@5']:.0f} | {rr_str} | {r['ndcg@5']:.3f} | {r['latency_seconds']:.2f}s |")
+            # recall@5 is a FRACTION (true_recall_at_k in
+            # run_retrieval_ablation.py), not binary -- :.0f would round a
+            # multi-gold question's fractional recall to a misleading 0 or 1.
+            print(f"| {r['config']} | {r['recall@5']:.2f} | {rr_str} | {r['ndcg@5']:.3f} | {r['latency_seconds']:.2f}s |")
 
 
 if __name__ == "__main__":
