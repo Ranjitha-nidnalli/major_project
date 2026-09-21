@@ -23,33 +23,36 @@ import statistics
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from qdrant_client import models
 from vector_db import db_client, COLLECTION_NAME, embed_model
 
 QUESTIONS_PATH = os.path.join(os.path.dirname(__file__), "questions.json")
 GOLD_PATH = os.path.join(os.path.dirname(__file__), "gold.jsonl")
 
 
-def get_vectors(q_text):
-    out = embed_model.encode([q_text], return_dense=True, return_sparse=True)
-    dense_vec = out["dense_vecs"][0].tolist()
-    lex_weights = out["lexical_weights"][0]
-    sp_indices = [int(k) for k in lex_weights.keys()]
-    sp_values = [float(v) for v in lex_weights.values()]
-    return dense_vec, sp_indices, sp_values
+def get_dense_vector(q_text):
+    out = embed_model.encode([q_text], return_dense=True, return_sparse=False)
+    return out["dense_vecs"][0].tolist()
 
 
 def retrieve_best_score(q_text):
-    """Run hybrid retrieval and return the best fused score."""
-    d_vec, s_idx, s_val = get_vectors(q_text)
+    """
+    Max dense cosine similarity over the top hit -- a plain dense-only
+    query, matching rag_service.get_dense_relevance() exactly.
+
+    NOT the RRF fusion score. RRF is rank-derived (a top-ranked-but-
+    irrelevant hit can score ~1.0 regardless of actual relevance -- this is
+    the exact defect ARCHITECTURE.md Section 21 documents in the old gate).
+    services/gating.py's live threshold is compared against dense cosine
+    similarity, so a threshold calibrated here against the RRF score would
+    be on a different scale/distribution than what the gate actually uses
+    at runtime -- silently miscalibrating it.
+    """
+    d_vec = get_dense_vector(q_text)
     response = db_client.query_points(
         collection_name=COLLECTION_NAME,
-        prefetch=[
-            models.Prefetch(query=d_vec, using="dense", limit=15),
-            models.Prefetch(query=models.SparseVector(indices=s_idx, values=s_val), using="sparse", limit=15),
-        ],
-        query=models.FusionQuery(fusion=models.Fusion.RRF),
-        limit=5,
+        query=d_vec,
+        using="dense",
+        limit=1,
     )
     hits = response.points
     return hits[0].score if hits else 0.0
