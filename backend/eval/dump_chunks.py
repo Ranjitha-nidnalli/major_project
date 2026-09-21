@@ -19,10 +19,32 @@ from vector_db import db_client, COLLECTION_NAME
 CHUNKS_PATH = os.path.join(os.path.dirname(__file__), "chunks.jsonl")
 
 
+def _scroll_all_points():
+    """
+    Paginate through the full collection. A single scroll() call caps at
+    its `limit` and silently returns only the first page -- fine while the
+    corpus is ~43 chunks, but TODO #33 (multi-crop expansion) would make a
+    fixed limit silently drop chunks past it, right before a human is
+    meant to review every one for gold labeling.
+    """
+    points = []
+    offset = None
+    while True:
+        batch, offset = db_client.scroll(
+            collection_name=COLLECTION_NAME,
+            limit=1000,
+            offset=offset,
+            with_payload=True,
+            with_vectors=False,
+        )
+        points.extend(batch)
+        if offset is None:
+            break
+    return points
+
+
 def main():
-    points, _ = db_client.scroll(
-        collection_name=COLLECTION_NAME, limit=1000, with_payload=True, with_vectors=False
-    )
+    points = _scroll_all_points()
     print(f"Dumping {len(points)} chunks to {CHUNKS_PATH}")
 
     with open(CHUNKS_PATH, "w", encoding="utf-8") as f:

@@ -925,12 +925,29 @@ def build_database(
     # VERIFICATION
     # --------------------------------------------------------
 
-    points_after, _ = db_client.scroll(
-        collection_name=COLLECTION_NAME,
-        limit=1000,
-        with_payload=True,
-        with_vectors=False
-    )
+    # Paginate through the whole collection. A single scroll() call caps at
+    # its `limit` and silently returns only the first page -- fine while
+    # the corpus is ~43 chunks, but TODO #33 (multi-crop expansion) would
+    # make a fixed limit silently under-report "Total stored points" and
+    # miss duplicates past it, right when this verification step matters most.
+    points_after = []
+
+    scroll_offset = None
+
+    while True:
+
+        batch, scroll_offset = db_client.scroll(
+            collection_name=COLLECTION_NAME,
+            limit=1000,
+            offset=scroll_offset,
+            with_payload=True,
+            with_vectors=False
+        )
+
+        points_after.extend(batch)
+
+        if scroll_offset is None:
+            break
 
     stored_texts = [
         point.payload
