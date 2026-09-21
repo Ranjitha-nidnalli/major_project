@@ -35,6 +35,10 @@ interface ChatSession {
   date: string;
 }
 
+const API_BASE = "http://localhost:8000";
+const STORAGE_KEY_SESSIONS = "krishi-mitra-chat-sessions";
+const STORAGE_KEY_ACTIVE_SESSION = "krishi-mitra-active-session";
+
 const suggestedQuestions = [
   {
     icon: Wheat,
@@ -108,6 +112,37 @@ export function ChatInterface() {
     });
   }, [messages, sessionId]);
 
+  // Restore the sidebar session list and reload the previously active
+  // session's messages from MongoDB on page load -- otherwise a refresh
+  // silently loses all chat history even though the backend already
+  // persists it (GET /history/{session_id} was never called from here).
+  useEffect(() => {
+    const storedSessions = window.localStorage.getItem(STORAGE_KEY_SESSIONS);
+    const storedActiveId = window.localStorage.getItem(STORAGE_KEY_ACTIVE_SESSION);
+
+    if (!storedSessions) return;
+
+    try {
+      const parsed: ChatSession[] = JSON.parse(storedSessions);
+      setChatSessions(parsed);
+      if (storedActiveId && parsed.some((s) => s.id === storedActiveId)) {
+        handleSelectChat(storedActiveId);
+      }
+    } catch (error) {
+      console.error("Failed to restore chat sessions from localStorage:", error);
+    }
+    // Mount-only: handleSelectChat is stable enough for this one-time restore.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(STORAGE_KEY_SESSIONS, JSON.stringify(chatSessions));
+  }, [chatSessions]);
+
+  useEffect(() => {
+    window.localStorage.setItem(STORAGE_KEY_ACTIVE_SESSION, sessionId);
+  }, [sessionId]);
+
   useEffect(() => {
     if (isSidebarVisible) {
       setShowSidebarOpenButton(false);
@@ -154,9 +189,40 @@ export function ChatInterface() {
 
   const deleteChat = (chatId: string) => {
     if (!window.confirm("Are you sure?")) return;
+    // Removes the sidebar entry only -- there is no backend endpoint to
+    // delete a session's messages from MongoDB, so the history still exists
+    // server-side and would reappear if this chatId were selected again.
     setChatSessions((prev) => prev.filter((chat) => chat.id !== chatId));
     if (sessionId === chatId) {
       handleNewConversation();
+    }
+  };
+
+  const handleSelectChat = async (chatId: string) => {
+    if (chatId === sessionId) return;
+
+    setSessionId(chatId);
+    setInput("");
+    setEditingChatId(null);
+
+    try {
+      const response = await fetch(`${API_BASE}/history/${chatId}`);
+      if (!response.ok) throw new Error("Failed to load chat history.");
+      const data = await response.json();
+      const loaded: Message[] = (data.messages || []).map((m: any, index: number) => ({
+        id: `${chatId}-${index}`,
+        role: m.role,
+        content: m.content,
+        timestamp: new Date(m.timestamp),
+      }));
+      setMessages(loaded);
+    } catch (error) {
+      console.error("Failed to load chat history:", error);
+      setMessages([]);
+    }
+
+    if (window.innerWidth < 768) {
+      setIsSidebarVisible(false);
     }
   };
 
@@ -176,7 +242,7 @@ export function ChatInterface() {
     setIsTyping(true);
 
     try {
-      const response = await fetch("http://localhost:8000/chat", {
+      const response = await fetch(`${API_BASE}/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -295,15 +361,26 @@ export function ChatInterface() {
               {chatSessions.map((chat) => (
                 <div
                   key={chat.id}
-                  className="group relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors hover:bg-sidebar-accent"
+                  onClick={() => handleSelectChat(chat.id)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSelectChat(chat.id);
+                  }}
+                  className={cn(
+                    "group relative flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors hover:bg-sidebar-accent",
+                    sessionId === chat.id && "bg-sidebar-accent"
+                  )}
                 >
                   <Sprout className="h-4 w-4 shrink-0 text-sidebar-foreground/50" />
                   <div className="min-w-0 flex-1 pr-14">
                     {editingChatId === chat.id ? (
                       <input
                         value={editingTitle}
+                        onClick={(e) => e.stopPropagation()}
                         onChange={(e) => setEditingTitle(e.target.value)}
                         onKeyDown={(e) => {
+                          e.stopPropagation();
                           if (e.key === "Enter") saveRenameChat(chat.id);
                         }}
                         onBlur={() => saveRenameChat(chat.id)}
