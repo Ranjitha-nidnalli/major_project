@@ -24,7 +24,6 @@ INTERACTIVE_TIMEOUT = int(os.getenv("INTERACTIVE_TIMEOUT", 120))
 # HARD_REFUSAL_THRESHOLD removed: the abstention gate now lives in
 # services/gating.py and is driven by dense cosine relevance, not the RRF
 # fusion score. See GATING_CONFIG below and ARCHITECTURE.md Section 21.
-CONFIDENT_SEARCH_THRESHOLD = 0.5  # UNCALIBRATED: only gates the escalation-line UX, not refusal
 FAITHFULNESS_GATE_THRESHOLD = 0.50
 
 SAFETY_CRITICAL_CATEGORIES = {"pest", "disease", "fertilizer"}
@@ -281,9 +280,6 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
             "context": "\n\n".join(docs) if return_context else None,
         }
 
-    # Only used for the escalation-line UX below (not a refusal decision).
-    is_medium_confidence = dense_relevance is not None and dense_relevance < CONFIDENT_SEARCH_THRESHOLD
-
     print(f"🟢 DB Hit! Relevance (dense cosine): {dense_relevance:.2f} | RRF score (telemetry only): {search_score:.2f}")
     context_text = "\n\n".join([f"{doc}" for doc in docs])
 
@@ -333,8 +329,11 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
             ans = HARD_REFUSAL_MESSAGE
             accuracy_score = 0.0
         else:
-            # Append escalation line if confidence is not high
-            if is_medium_confidence and ans:
+            # Escalation line on every genuine answer (PROJECT_PLAN.md P3.1),
+            # not just medium-confidence ones -- refusal/timeout messages
+            # already embed the number literally and never reach this branch,
+            # so there's no duplicate-number risk.
+            if ans:
                 ans += ESCALATION_MESSAGE
 
     except asyncio.TimeoutError:

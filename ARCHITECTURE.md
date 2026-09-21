@@ -211,6 +211,13 @@ Raitha Samparka Kendra, in Kannada. This is a floor, not a substitute for
 Section 21's gate — the point is that even a correctly-gated "I don't know"
 still gives the farmer a next step.
 
+Verified/fixed 2026-09-21: refusal and timeout messages already embed the
+number literally, but the success path only appended it when confidence was
+medium, not on every gate-approved answer -- contradicting this section as
+written (and PROJECT_PLAN.md P3.1's explicit "every answer" spec). Fixed in
+`rag_service.py`'s generation branch; the now-dead `CONFIDENT_SEARCH_THRESHOLD`
+constant and `is_medium_confidence` variable were removed with it.
+
 ---
 
 ## 30. Repo hygiene
