@@ -47,18 +47,17 @@ QUESTIONS_PATH = os.path.join(os.path.dirname(__file__), "questions.json")
 GOLD_PATH = os.path.join(os.path.dirname(__file__), "gold.jsonl")
 RESULTS_PATH = os.path.join(os.path.dirname(__file__), "retrieval_results.jsonl")
 
-# All configs to test
-BASE_CONFIGS = [
-    ("dense", False), ("dense", True),
-    ("sparse", False), ("sparse", True),
-    ("hybrid", False), ("hybrid", True),
-]
-BM25_CONFIGS = [
-    ("bm25", False),
+# Configs to test: dense, hybrid, bm25+dense only, per prior decision (see
+# ARCHITECTURE.md Section 13) -- reranker adds ~30s/query CPU latency with
+# recall already near-ceiling at this corpus size, and that conclusion held
+# even before this rebuild. sparse-alone, bm25-alone, and bm25+hybrid are
+# skipped for this run to keep it fast; re-add them if a fuller ablation is
+# wanted later.
+ALL_CONFIGS = [
+    ("dense", False),
+    ("hybrid", False),
     ("bm25+dense", False),
-    ("bm25+hybrid", False),
 ]
-ALL_CONFIGS = BASE_CONFIGS + BM25_CONFIGS
 RECALL_KS = [1, 3, 5, 10]
 
 
