@@ -1,0 +1,18 @@
+{"id": "disease-1", "gold_chunk_ids": ["1cde43a6-e819-5e47-bd6e-21ca4aac1697", "27ec51fc-2d87-5474-9391-67c97bc01548"], "unanswerable": false}
+{"id": "disease-2", "gold_chunk_ids": ["e789559c-f692-51de-a0b9-bea27330583b"], "unanswerable": false}
+{"id": "disease-3", "gold_chunk_ids": ["bc038826-09b1-561a-b80b-47cc1102d4db"], "unanswerable": false}
+{"id": "disease-4", "gold_chunk_ids": ["0a49f68c-8da2-5794-8cfc-e5ec9e6d488a"], "unanswerable": false}
+{"id": "pest-1", "gold_chunk_ids": ["f52fd836-bdfc-5dea-8895-afeb818f7cc3"], "unanswerable": false}
+{"id": "pest-2", "gold_chunk_ids": ["f7f0a90b-586a-5e16-88fa-a2ae5616a056"], "unanswerable": false}
+{"id": "pest-3", "gold_chunk_ids": ["4f561376-8884-5fc4-8be1-b7d4f3450ea7"], "unanswerable": false}
+{"id": "pest-4", "gold_chunk_ids": ["3f1f2ff1-8e1b-5dff-bfa9-83f8c96759b2"], "unanswerable": false}
+{"id": "fertilizer-1", "gold_chunk_ids": ["e0c0eb3d-3300-5b94-8636-9e6cb5c46255", "f69c5f65-00b0-5d6b-9df6-b9b5e76c9430"], "unanswerable": false}
+{"id": "fertilizer-2", "gold_chunk_ids": ["69dd12c2-0c60-553d-bde4-80be3fa24048"], "unanswerable": false}
+{"id": "fertilizer-3", "gold_chunk_ids": ["69dd12c2-0c60-553d-bde4-80be3fa24048"], "unanswerable": false}
+{"id": "general-1", "gold_chunk_ids": ["de8c35a3-4d0c-518e-92d9-7baabac425bf"], "unanswerable": false}
+{"id": "general-2", "gold_chunk_ids": ["90dd2112-d365-50ca-9822-58fbb5b8da59", "de8c35a3-4d0c-518e-92d9-7baabac425bf"], "unanswerable": false}
+{"id": "general-3", "gold_chunk_ids": ["27ec51fc-2d87-5474-9391-67c97bc01548"], "unanswerable": false}
+{"id": "general-4", "gold_chunk_ids": ["981f5713-eff6-52d0-b528-6970ed32c5c3"], "unanswerable": false}
+{"id": "price-1", "gold_chunk_ids": [], "unanswerable": true}
+{"id": "pest-5", "gold_chunk_ids": [], "unanswerable": true}
+{"id": "general-5", "gold_chunk_ids": [], "unanswerable": true}
