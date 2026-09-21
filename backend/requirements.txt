@@ -26,6 +26,7 @@ openai>=1.30.0
 
 # Database
 motor>=3.3.0
+pymongo>=4.5.0  # sync client, used directly by preflight.py (motor is async-only)
 
 # Evaluation
 sacrebleu>=2.4.0
@@ -33,11 +34,6 @@ numpy>=1.26.0
 rank_bm25>=0.2.2
 rouge-score>=0.1.2
 
-# Process management. NOTE: currently only imported by unlock_db.py, which
-# is deleted as part of the migration to Qdrant server mode (Task 4/5 of
-# Phase 1). Kept per the explicit missing-dependency list; remove if nothing
-# ends up importing it after that migration lands.
-psutil>=5.9.0
 
 # Dev
 pytest>=8.0.0
