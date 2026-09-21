@@ -91,8 +91,11 @@ score would wash out exactly the signal that would justify including it
 ## 12. Category filtering in retrieval — Option A: remove it
 
 **Verified defect (fixed 2026-09-20, commit `1b57a3e`):** the LLM router
-classifies each query into a category (`pest` / `disease` / `fertilizer` /
-`general`). The original code turned this into a Qdrant
+classifies each query into a category (`price` / `disease` / `pest` /
+`fertilizer` / `general` — verified 2026-09-21 against the actual router
+prompt in `rag_service.py`; `price` is not safety-critical so it's omitted
+from `SAFETY_CRITICAL_CATEGORIES`, but it is a real router output). The
+original code turned this into a Qdrant
 `Filter(should=[FieldCondition(category=guess)])` on the retrieval query.
 
 In Qdrant, a `Filter` with only `should` clauses is **not a soft boost** — it
@@ -191,18 +194,39 @@ score) — never the RRF fusion score.
 
 **All current thresholds are explicitly UNCALIBRATED placeholders.**
 `backend/eval/threshold_sweep.py` implements the sweep methodology (pick by
-F1 against a labelled answerable/unanswerable set) but has not been run
-against a real relevance signal or a real labelled gold set — both are Phase 2
-work. Do not report these numbers, or any eval run using them, as validated.
+F1 against a labelled answerable/unanswerable set). Fixed 2026-09-21: it
+originally scored candidate thresholds against the RRF fusion score -- the
+exact wrong signal this section documents -- which would have calibrated a
+threshold incompatible with what this gate actually compares against. It
+now scores a plain dense-only query, matching `get_dense_relevance()`
+exactly. It still has not been *run* against a real labelled gold set --
+that's Phase 2 work, blocked on human gold labeling, independent of the
+scoring-signal fix. Do not report these numbers, or any eval run using
+them, as validated until it has been run against real data.
 
 ## 22. Faithfulness judge + numeric checker
 
 LLM faithfulness judge cross-checks generated answers against retrieved
 context. `eval/numeric_faithfulness.py` regex-cross-references dosage/quantity
-numbers in the answer against the context as a second, non-LLM check — but it
-currently mis-binds numbers to units (known defect #3 in CLAUDE.md) and
-rejects correct answers. Fix before trusting its output for the "structured
-extraction for safety-critical fields" upgrade path (TODO #40).
+numbers in the answer against the context as a second, non-LLM check.
+
+**Verified defect, fixed 2026-09-21 (commit `1929c7d`):** it previously bound
+a number to any unit up to 3 words away with no check that a different
+number sat in between, mis-binding units across adjacent dosage pairs and
+sometimes dropping pairs entirely -- the checker's own "safe, faithful
+paraphrase" demo scored 0.0 instead of 1.0. Fixed to bind each number only
+to the nearest unit strictly before the next number or a sentence boundary.
+Re-verified 2026-09-21: `python backend/eval/numeric_faithfulness.py` now
+scores that demo 1.0 with 0 violations, and 4 dedicated regression tests
+pass (`tests/invariants/test_numeric_faithfulness.py`).
+
+Even fixed, this is still regex-based pattern matching, not structured
+extraction against a verified fact record -- it can only catch numbers the
+generation model invents or alters, not chemical names, and can over-fire
+on paraphrased step counts/dates in `strict=True` mode. Not a substitute for
+the human dosage-verification step. Replacing it with field-identity
+verification against typed fact records is the "structured extraction for
+safety-critical fields" upgrade path (TODO #40), not done here.
 
 ## 23. Escalation line
 
@@ -268,11 +292,15 @@ compared across incompatible runs.
 Full task-level detail lives in `TODO.md` (ranked, two-track) and
 `PROJECT_PLAN.md` (P0–P4 work order with rationale). Summary:
 
-- **Phase 1 (demo-ready):** the defects fixed 2026-09-20 (Sections 12, 21, plus
-  dependency/hygiene fixes) + remaining Track 1 items — numeric faithfulness
-  fix (Section 22), threshold sweep (Section 21), BM25 bucketed eval
-  (Section 11), data provenance note, Docker preflight, manual failure-mode
-  review.
+- **Phase 1 (demo-ready):** defects fixed 2026-09-20/21 (Sections 12, 21, 22,
+  23, plus dependency/hygiene/eval-pipeline fixes) + Docker preflight script
+  (`backend/preflight.py`) -- these are done and verified. Still remaining:
+  running the threshold sweep and BM25 bucketed eval against a *real* gold
+  set (the tooling is now correct, per Sections 11/21, but hasn't been run
+  against real data -- blocked on Phase 2 human gold labeling), a data
+  provenance note (blocked on actually knowing the provenance, which nobody
+  does yet -- do not fabricate one), and manual failure-mode review (needs
+  live LLM outputs + human judgment).
 - **Phase 2 (rigor, pre-paper):** real gold-labeled retrieval eval, no-retrieval
   baseline, expanded eval set via KCC, BERTScore/RAGAS, statistical
   significance testing, human evaluation.

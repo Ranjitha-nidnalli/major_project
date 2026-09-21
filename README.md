@@ -77,7 +77,10 @@ For the target architecture and the phased roadmap toward it, see
 
 `ChatResponse` (`main.py`) returns `answer`, `search_score` (the RRF fusion
 score — kept for telemetry/display only, **not** used by the abstention
-gate), and `accuracy_score` (the faithfulness judge score).
+gate), `accuracy_score` (the faithfulness judge score), and `sources` (the
+retrieved chunk texts, returned as a list so the frontend doesn't have to
+reconstruct source boundaries by splitting a joined string — see
+`rag_service.py`'s `source_chunks` field).
 
 ## Prerequisites
 
@@ -167,12 +170,16 @@ cd backend
 pytest
 ```
 
-Runs `backend/tests/` only (scoped by `backend/pytest.ini`) — pure unit
-and invariant tests that don't require Qdrant, MongoDB, or an LLM API key
-(they use an in-memory Qdrant client for the retrieval invariant, and pure
-functions for the gating invariant). Scripts like `quick_test.py` and
-`backend/eval/refusal_test.py` are manual, live-service scripts, not part
-of the automated suite — see their docstrings for what they need running.
+Runs `backend/tests/` only (scoped by `backend/pytest.ini`) — currently 32
+tests across 6 files (category filter, gating, chunking helpers, Kannada
+normalization, numeric faithfulness, requirements-import resolution), none
+of which require Qdrant, MongoDB, or an LLM API key. The category-filter
+test uses an in-memory Qdrant client; the chunking-helper tests AST-extract
+`vector_db.py`'s pure functions rather than importing that module directly,
+since it loads ~7GB of models as an import-time side effect. Scripts like
+`quick_test.py` and `backend/eval/refusal_test.py` are manual, live-service
+scripts, not part of the automated suite — see their docstrings for what
+they need running.
 
 ## Evaluation
 
