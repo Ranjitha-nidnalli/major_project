@@ -23,6 +23,7 @@ import os
 import sys
 import json
 import time
+import hashlib
 import asyncio
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -30,13 +31,24 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import numpy as np
 import sacrebleu
 
-from rag_service import generate_from_context, calculate_faithfulness
+from rag_service import generate_from_context, calculate_faithfulness, SYSTEM_INSTRUCTION
 from vector_db import embed_model
 from chat_db import connect_db, close_db
 
 QUESTIONS_PATH = os.path.join(os.path.dirname(__file__), "questions.json")
 CONTEXTS_PATH = os.path.join(os.path.dirname(__file__), "contexts.json")
-RESULTS_PATH = os.path.join(os.path.dirname(__file__), "results.jsonl")
+# Each run writes its own file under runs/, never appends to a shared one
+# (CLAUDE.md: "Eval runs write to their own directory, never append to a
+# shared file. Record dataset hash, model ID, prompt version."). Appending
+# to one results.jsonl across runs -- the old behavior -- silently mixed
+# rows from different corpus/prompt states with no way to tell them apart,
+# and forced export_for_human_eval.py into a fragile "keep the latest
+# duplicate" workaround.
+RUNS_DIR = os.path.join(os.path.dirname(__file__), "runs")
+
+
+def _short_hash(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()[:12]
 
 EMBEDDING_SIM_BASELINE = 0.524
 
@@ -71,8 +83,18 @@ async def main():
 
     with open(QUESTIONS_PATH, "r", encoding="utf-8") as f:
         questions = json.load(f)
-    with open(CONTEXTS_PATH, "r", encoding="utf-8") as f:
-        contexts = json.load(f)
+    with open(CONTEXTS_PATH, "rb") as f:
+        contexts_bytes = f.read()
+    contexts = json.loads(contexts_bytes)
+
+    dataset_hash = _short_hash(contexts_bytes)
+    prompt_version = _short_hash(SYSTEM_INSTRUCTION.encode("utf-8"))
+    run_timestamp = time.strftime("%Y%m%dT%H%M%S")
+
+    os.makedirs(RUNS_DIR, exist_ok=True)
+    results_path = os.path.join(
+        RUNS_DIR, f"{model_tag}__{dataset_hash}__{run_timestamp}.jsonl"
+    )
 
     connect_db()
     results = []
@@ -94,6 +116,9 @@ async def main():
             record = {
                 "model": model_tag,
                 "judge_model": judge_model,
+                "dataset_hash": dataset_hash,
+                "prompt_version": prompt_version,
+                "run_timestamp": run_timestamp,
                 "id": q["id"],
                 "category": q["category"],
                 "question": q["question"],
@@ -125,9 +150,10 @@ async def main():
     finally:
         close_db()
 
-    with open(RESULTS_PATH, "a", encoding="utf-8") as f:
+    with open(results_path, "w", encoding="utf-8") as f:
         for r in results:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    print(f"\nWrote {len(results)} records to {results_path}")
 
     avg_chrf = sum(r["chrf"] for r in results) / len(results)
     avg_emb = sum(r["embedding_similarity"] for r in results) / len(results)
