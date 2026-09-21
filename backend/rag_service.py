@@ -89,7 +89,18 @@ async def calculate_faithfulness(context: str, answer: str, judge_model: str = N
     content = await call_llm(
         messages=[{"role": "system", "content": prompt}, {"role": "user", "content": user_msg}],
         model=judge_model or GENERATION_MODEL,
-        max_tokens=50,
+        # Verified defect, 2026-09-21: max_tokens=50 silently returned an
+        # EMPTY completion for the currently-configured GENERATION_MODEL
+        # (openai/gpt-oss-20b, a reasoning model -- it spends tokens on
+        # internal reasoning before emitting visible output and 50 wasn't
+        # enough to reach the actual answer). That parsed as non-numeric,
+        # scored accuracy_score=0.0, which would have made semantic_fail
+        # trigger on EVERY answer (0.0 < FAITHFULNESS_GATE_THRESHOLD is
+        # always true) -- the live faithfulness gate would have refused
+        # every single question regardless of actual answer quality.
+        # Reproduced empty at 50, correct numeric output at 200; 300 for
+        # margin across models/context lengths.
+        max_tokens=300,
         temperature=0.0
     )
     if content is None:

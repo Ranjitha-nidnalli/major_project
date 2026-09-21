@@ -92,8 +92,14 @@ async def main():
     run_timestamp = time.strftime("%Y%m%dT%H%M%S")
 
     os.makedirs(RUNS_DIR, exist_ok=True)
+    # model_tag frequently contains "/" (provider-prefixed IDs like
+    # "openai/gpt-oss-20b" are the norm on Groq/OpenRouter) -- a bare "/"
+    # in a filename is a path separator, not a valid filename character.
+    # Verified 2026-09-21: this crashed the run at the very last line,
+    # after every generation+judge API call had already been paid for.
+    safe_model_tag = model_tag.replace("/", "-")
     results_path = os.path.join(
-        RUNS_DIR, f"{model_tag}__{dataset_hash}__{run_timestamp}.jsonl"
+        RUNS_DIR, f"{safe_model_tag}__{dataset_hash}__{run_timestamp}.jsonl"
     )
 
     connect_db()
