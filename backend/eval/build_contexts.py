@@ -72,7 +72,12 @@ def main():
         d_vec, s_idx, s_val = get_vectors(q["question"])
         hits = retrieve_hybrid(q["question"], d_vec, s_idx, s_val)
         docs = [h.payload["text"] for h in hits]
-        context_text = "\n\n".join(f"<doc>{doc}</doc>" for doc in docs)
+        # Must match rag_service.py's context_text format exactly (plain
+        # "\n\n".join, no tags) -- run_eval.py feeds this straight into the
+        # same generate_from_context() production uses, so any format
+        # mismatch here means the "frozen context" generation comparison
+        # isn't actually testing what real users see.
+        context_text = "\n\n".join(docs)
 
         contexts[q["id"]] = {
             "query": q["question"],
