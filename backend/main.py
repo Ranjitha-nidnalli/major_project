@@ -55,10 +55,11 @@ async def chat(req: ChatRequest):
         req.query, req.session_id, return_context=True, interactive=True
     )
 
-    # Extract sources from context if available
-    sources = None
-    if result.get("context"):
-        sources = [chunk.strip() for chunk in result["context"].split("\n\n") if chunk.strip()]
+    # source_chunks is the un-joined per-chunk list from rag_service.py --
+    # splitting the joined "context" string on "\n\n" was unreliable, since
+    # a single chunk's flattened text can itself contain an internal blank
+    # line (see rag_service.py's return_context block).
+    sources = result.get("source_chunks") or None
 
     return ChatResponse(
         answer=result["answer"],

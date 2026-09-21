@@ -278,6 +278,7 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
             "relevance": dense_relevance,
             "accuracy_score": 0.0,
             "context": "\n\n".join(docs) if return_context else None,
+            "source_chunks": docs if return_context else None,
         }
 
     print(f"🟢 DB Hit! Relevance (dense cosine): {dense_relevance:.2f} | RRF score (telemetry only): {search_score:.2f}")
@@ -360,6 +361,13 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
     # Include numeric check details in debug/return mode
     if return_context:
         response_data["context"] = context_text
+        # The un-joined chunk list, for callers that need per-source
+        # boundaries (main.py's "sources" list). Splitting context_text on
+        # "\n\n" is NOT safe for this: a single chunk's flattened text can
+        # legitimately contain an internal blank line (e.g. flatten_value()
+        # separating list-of-dicts items), which would fragment one real
+        # chunk into multiple fake "sources".
+        response_data["source_chunks"] = docs
         response_data["numeric_faithfulness"] = {
             "score": numeric_score,
             "violations": numeric_violations,
