@@ -2,6 +2,11 @@
 P0.1 - metric sanity check. Before trusting any ablation numbers, prove the
 scoring functions actually discriminate between related and unrelated text.
 
+Includes BLEU alongside ROUGE-L and chrF: both BLEU and ROUGE-L are
+word-tokenized, which is structurally wrong for agglutinative Kannada (see
+CLAUDE.md/ARCHITECTURE.md). Reported here to show that failure explicitly by
+name, not because BLEU is a candidate metric to keep using.
+
 For each metric, computes:
   - self-score: reference scored against itself (expected ~1.0 if healthy)
   - unrelated-score: reference scored against a different, unrelated reference
@@ -50,6 +55,12 @@ def main():
     rouge_self = [rouge.score(r, r)["rougeL"].fmeasure for r in refs]
     rouge_unrelated = [rouge.score(refs[i], shuffled_refs[i])["rougeL"].fmeasure for i in range(n)]
 
+    # BLEU is word-tokenized, same agglutination problem as ROUGE-L (see
+    # module docstring) -- included because the professor asked for it by
+    # name; the point is to show WHY it fails on Kannada, not to use it.
+    bleu_self = [sacrebleu.sentence_bleu(r, [r]).score / 100 for r in refs]
+    bleu_unrelated = [sacrebleu.sentence_bleu(refs[i], [shuffled_refs[i]]).score / 100 for i in range(n)]
+
     chrf_self = [sacrebleu.sentence_chrf(r, [r]).score / 100 for r in refs]
     chrf_unrelated = [sacrebleu.sentence_chrf(refs[i], [shuffled_refs[i]]).score / 100 for i in range(n)]
 
@@ -63,10 +74,11 @@ def main():
         return sum(x) / len(x)
 
     print("\nPer-question detail:")
-    print(f"{'id':<14}{'rougeL_self':<13}{'rougeL_unrl':<13}{'chrF_self':<11}{'chrF_unrl':<11}{'embsim_self':<13}{'embsim_unrl':<13}")
+    print(f"{'id':<14}{'rougeL_self':<13}{'rougeL_unrl':<13}{'bleu_self':<11}{'bleu_unrl':<11}{'chrF_self':<11}{'chrF_unrl':<11}{'embsim_self':<13}{'embsim_unrl':<13}")
     for i in range(n):
         print(
             f"{ids[i]:<14}{rouge_self[i]:<13.3f}{rouge_unrelated[i]:<13.3f}"
+            f"{bleu_self[i]:<11.3f}{bleu_unrelated[i]:<11.3f}"
             f"{chrf_self[i]:<11.3f}{chrf_unrelated[i]:<11.3f}"
             f"{emb_self[i]:<13.3f}{emb_unrelated[i]:<13.3f}"
         )
@@ -75,6 +87,7 @@ def main():
     print(f"{'metric':<16}{'self-score':<13}{'unrelated-score':<17}{'usable range':<13}")
     for name, self_scores, unrel_scores in [
         ("ROUGE-L", rouge_self, rouge_unrelated),
+        ("BLEU", bleu_self, bleu_unrelated),
         ("chrF", chrf_self, chrf_unrelated),
         ("embedding-sim", emb_self, emb_unrelated),
     ]:

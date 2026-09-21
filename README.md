@@ -195,9 +195,13 @@ non-circular gold set.
 ## Known limitations (current, not aspirational)
 
 - The abstention gate's relevance threshold is uncalibrated.
-- The numeric-faithfulness check in the live path has known false-positive
-  and false-negative failure modes and is not a reliable safety signal on
-  its own.
+- The numeric-faithfulness check (fixed 2026-09-21: numbers no longer
+  mis-bind to a neighboring quantity's unit) is still regex-based, not a
+  structured extraction against a verified fact record — it can only catch
+  numbers the generation model invents or alters, not chemical names, and
+  in `strict=True` mode any bare number in the answer without a matching
+  context number is flagged, which can over-fire on paraphrased step counts
+  or dates. Not a substitute for the human dosage-verification step.
 - The corpus's provenance is unknown and it contains non-Karnataka
   content.
 - Kannada generation quality has not been validated against native
@@ -206,5 +210,30 @@ non-circular gold set.
 - `ollama` and `openrouter` backends in `llm_client.py` are less tested
   than the default `groq` path; `ollama` in particular is documented as
   untested on Windows+Python 3.13.
+- **PII / prompt injection**: no input sanitization, prompt-injection
+  defenses, or PII handling are implemented. Deliberately out of scope for
+  this phase, not an oversight — noted here so it isn't mistaken for one.
+- **Generation determinism**: `temperature=0.0` everywhere `call_llm` is
+  invoked (`rag_service.py`, `llm_client.py`'s default). Deliberate: reduces
+  eval variance and makes a given (query, context) pair reproducible, at
+  the cost of more mechanical-sounding Kannada phrasing than a natural
+  temperature would produce. A safety-critical dosage bot should prefer
+  reproducible over natural.
 
-See `ARCHITECTURE.md` for the phased plan that addresses these.
+### Production readiness (explicitly deferred, not addressed here)
+
+This is a prototype, not a deployable service. Known, deliberately-deferred
+operational gaps:
+
+- No authentication or authorization on any endpoint.
+- No rate limiting — a single client can exhaust the Groq/OpenRouter quota
+  or hammer the local Qdrant/Mongo instances.
+- Logging is `print()` statements, not structured logging; no log
+  aggregation, no request tracing.
+- No CI/CD pipeline (`backend/tests/` runs locally via `pytest` only).
+- No secrets management beyond a local `.env` file.
+- No monitoring, alerting, or uptime guarantees.
+
+See `ARCHITECTURE.md` for the phased plan that addresses the retrieval/
+safety limitations above (the production-readiness gaps are out of scope
+for the phases currently planned, not just not-yet-reached).
