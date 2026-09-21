@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import uuid
 from collections import Counter
 
@@ -772,6 +773,35 @@ def build_database(
     The existing collection is recreated first so stale
     points from previous chunking versions cannot remain.
     """
+
+    global db_client
+
+    if not QDRANT_URL:
+        # Verified 2026-09-21: qdrant-client's local/embedded (file-mode)
+        # backend does NOT reliably clear a pre-existing on-disk collection
+        # across process restarts -- neither recreate_collection() nor an
+        # explicit delete_collection()+create_collection() actually purges
+        # it. A fresh process reopening the same path can still see the old
+        # points, so a re-seed silently accumulates stale chunks instead of
+        # replacing them (reproduced directly: 43 freshly-chunked texts
+        # upserted into a store that still held old data came back as 80
+        # stored points). Real Qdrant server mode doesn't have this problem;
+        # this branch only runs in the local file-mode fallback. The only
+        # reliable fix is wiping the whole on-disk store first.
+        db_client.close()
+
+        if os.path.exists(qdrant_path):
+
+            print(
+                f"🧨 Local file-mode store at {qdrant_path} may contain "
+                f"stale data from a prior run -- wiping it before rebuild "
+                f"(qdrant-client's local backend does not reliably clear "
+                f"it via recreate_collection alone)."
+            )
+
+            shutil.rmtree(qdrant_path)
+
+        db_client = QdrantClient(path=qdrant_path)
 
     print(
         "📖 Processing JSON..."
