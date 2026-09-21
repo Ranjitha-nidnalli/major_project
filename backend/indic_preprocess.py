@@ -40,12 +40,25 @@ _KANNADA_ISSUES = [
 ]
 
 
-def _fallback_normalize(text: str) -> str:
-    """Lightweight regex-based Kannada normalizer."""
-    text = unicodedata.normalize('NFC', text)
+def _apply_whitespace_and_punctuation_cleanup(text: str) -> str:
+    """
+    Script-agnostic cleanup (whitespace collapse, danda spacing) that must
+    run regardless of which base normalizer ran. Previously this only ran
+    in the indic-nlp-library-unavailable fallback path, so with the library
+    installed (the actual state in this environment -- see
+    _INDIC_NLP_AVAILABLE), multiple/double spaces in corpus chunks and user
+    queries were silently never collapsed, contradicting this module's own
+    documented purpose.
+    """
     for pattern, replacement in _KANNADA_ISSUES:
         text = pattern.sub(replacement, text)
     return text.strip()
+
+
+def _fallback_normalize(text: str) -> str:
+    """Lightweight regex-based Kannada normalizer."""
+    text = unicodedata.normalize('NFC', text)
+    return _apply_whitespace_and_punctuation_cleanup(text)
 
 
 _normalizer = None
@@ -63,7 +76,8 @@ def normalize_kannada(text: str) -> str:
     if not text:
         return text
     if _INDIC_NLP_AVAILABLE:
-        return _get_normalizer().normalize(text)
+        text = _get_normalizer().normalize(text)
+        return _apply_whitespace_and_punctuation_cleanup(text)
     return _fallback_normalize(text)
 
 

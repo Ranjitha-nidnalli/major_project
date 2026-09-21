@@ -39,3 +39,18 @@ def test_normalize_is_idempotent():
 def test_normalize_empty_string_is_falsy_safe():
     assert normalize_kannada("") == ""
     assert normalize_kannada(None) is None
+
+
+def test_normalize_collapses_multiple_spaces():
+    """
+    Regression guard: the whitespace-collapse cleanup previously only ran
+    in the indic-nlp-library-unavailable fallback path. With the library
+    installed (the actual state whenever it's present in the environment),
+    multiple/double spaces were silently never collapsed.
+    """
+    out = normalize_kannada("ಕಬ್ಬಿನ  ಸೆಟ್ಸ್‍ಗಳಲ್ಲಿ   ಅನಾನಸ್ ರೋಗ")
+    assert "  " not in out, f"expected no double spaces in {out!r}"
+
+
+def test_normalize_strips_leading_and_trailing_whitespace():
+    assert normalize_kannada("   leading and trailing spaces   ") == "leading and trailing spaces"
