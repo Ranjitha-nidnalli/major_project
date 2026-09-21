@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp, ShieldAlert, Phone, BookOpen } from "lucide-react";
+import { ChevronDown, ChevronUp, ShieldAlert, BookOpen } from "lucide-react";
 
 interface ChatMessageProps {
   role: "user" | "assistant";
@@ -93,12 +93,6 @@ export default function ChatMessage({
                 )}
               </div>
             )}
-
-            {/* Escalation line — always visible */}
-            <div className="flex items-center gap-1.5 text-xs text-gray-500">
-              <Phone className="h-3 w-3" />
-              <span>Need help? Kisan Call Centre: <strong>1800-180-1551</strong></span>
-            </div>
           </div>
         )}
       </div>

@@ -330,15 +330,19 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
             accuracy_score = 0.0
         else:
             # Escalation line on every genuine answer (PROJECT_PLAN.md P3.1),
-            # not just medium-confidence ones -- refusal/timeout messages
-            # already embed the number literally and never reach this branch,
-            # so there's no duplicate-number risk.
+            # not just medium-confidence ones. HARD_REFUSAL_MESSAGE and
+            # EMPTY_ANSWER_FALLBACK_MESSAGE already embed the number
+            # literally and never reach this branch, so no duplicate-number
+            # risk here.
             if ans:
                 ans += ESCALATION_MESSAGE
 
     except asyncio.TimeoutError:
         print(f"⏰ Timeout error after {timeout}s!")
-        ans = TIMEOUT_MESSAGE
+        # Unlike HARD_REFUSAL_MESSAGE, TIMEOUT_MESSAGE doesn't embed the KCC
+        # number literally -- append it so this path also satisfies "every
+        # answer" (PROJECT_PLAN.md P3.1).
+        ans = TIMEOUT_MESSAGE + ESCALATION_MESSAGE
         accuracy_score = 0.0
     except Exception as e:
         print(f"❌ Unexpected pipeline error: {e}")
