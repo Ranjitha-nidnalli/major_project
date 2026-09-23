@@ -116,13 +116,21 @@ ENABLE_RERANKER = os.getenv("ENABLE_RERANKER", "false").lower() == "true"
 RERANK_THRESHOLD = 0.5
 
 # --- System Prompts & Messages ---
+
+# The exact phrase the generation model is instructed to use when the
+# context doesn't cover the question. Named separately (not just inline
+# in SYSTEM_INSTRUCTION) so generate_from_context() can recognize a
+# genuine, correctly-self-recognized refusal and skip the faithfulness
+# judge for it -- see that check for why.
+NOT_IN_CONTEXT_PHRASE = "ಕ್ಷಮಿಸಿ, ಈ ಮಾಹಿತಿ ನಮ್ಮ ಡೇಟಾಬೇಸ್ನಲ್ಲಿ ಲಭ್ಯವಿಲ್ಲ."
+
 SYSTEM_INSTRUCTION = (
     "You are a strict data extractor. Do not repeat the question. "
     "Answer using only the provided context in clean, short Kannada bullet points. "
     "DO NOT add any outside knowledge, facts, or scientific explanations that are not explicitly written in the context. "
     "If the context lists 3 soil types, list exactly those 3. "
     "Use the exact Kannada terminology found in the context. "
-    "If the answer is not there, say: \"ಕ್ಷಮಿಸಿ, ಈ ಮಾಹಿತಿ ನಮ್ಮ ಡೇಟಾಬೇಸ್ನಲ್ಲಿ ಲಭ್ಯವಿಲ್ಲ.\""
+    f"If the answer is not there, say: \"{NOT_IN_CONTEXT_PHRASE}\""
 )
 
 HARD_REFUSAL_MESSAGE = (
@@ -241,9 +249,28 @@ async def generate_from_context(
 
         accuracy_score = None
         if run_judge:
-            print("🔄 Calling LLM for faithfulness judge...")
-            accuracy_score = await calculate_faithfulness(context_text, ans, judge_model=judge_model)
-            print(f"🔄 Judge score: {accuracy_score}")
+            if ans.strip() == NOT_IN_CONTEXT_PHRASE:
+                # Verified defect, 2026-09-23: the judge scored two
+                # objectively-correct refusals (price-1, general-5, both
+                # chrF=1.000 against their expected answer) as 0.0
+                # faithfulness in a real eval run. Not a truncation bug --
+                # a genuine low score, because "is this answer derived
+                # from the context" naturally scores a refusal near zero,
+                # even though declining to answer IS correct when the
+                # context doesn't cover the question. The model reproduced
+                # the exact instructed refusal phrase verbatim, so this is
+                # recognizable without another LLM call: skip the judge
+                # and score it as fully faithful, rather than let a
+                # judge ill-suited to this case mis-score a correct
+                # refusal (which would otherwise trigger semantic_fail
+                # downstream and silently replace it with the gate's
+                # own generic refusal message).
+                accuracy_score = 1.0
+                print("🔄 Answer is the exact self-recognized refusal phrase; skipping judge, scoring as faithful.")
+            else:
+                print("🔄 Calling LLM for faithfulness judge...")
+                accuracy_score = await calculate_faithfulness(context_text, ans, judge_model=judge_model)
+                print(f"🔄 Judge score: {accuracy_score}")
 
         return {"answer": ans, "accuracy_score": accuracy_score}
     except Exception as e:
