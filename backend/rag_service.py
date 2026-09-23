@@ -14,7 +14,7 @@ from vector_db import db_client, COLLECTION_NAME, embed_model, reranker_model
 from chat_db import save_chat_message, get_chat_history
 from llm_client import call_llm  # NEW: unified LLM abstraction
 from eval.numeric_faithfulness import check_numeric_faithfulness  # #5
-from services.gating import decide as gating_decide, GatingConfig
+from services.gating import decide as gating_decide, GatingConfig, UNCALIBRATED_DEFAULT_THRESHOLD
 from services.entity_match import entity_match
 from indic_preprocess import normalize_kannada
 from bm25_retriever import BM25Retriever, load_chunks_from_qdrant_upsert
@@ -76,9 +76,34 @@ def _entity_match_hook(query_entities, retrieved_entities):
 # Abstention gate config (Task 2). Thresholds are UNCALIBRATED placeholders;
 # Phase 2 replaces them via backend/eval/threshold_sweep.py against a real
 # labelled answerable/unanswerable set. Do not report these as validated.
+#
+# ENABLE_LENIENT_PEST_DISEASE_THRESHOLD (opt-in, default OFF), 2026-09-23:
+# verified directly that pure dense relevance cannot separate correct
+# from incorrect pest/disease matches at ANY threshold value -- pest-2
+# (a correct answer) scores relevance=0.489, LOWER than pest-5 (a
+# wrong-entity hallucination) at 0.597. The stricter 0.50 safety-critical
+# threshold blocks pest-2, a genuinely correct answer, while
+# entity_match_hook (validated 9/9 for this same category pair) already
+# catches the actual wrong-entity danger case relevance was meant to
+# guard against. Left OFF by default: this weakens a safety-critical
+# refusal control in a domain where CLAUDE.md's standing rule is
+# "refusing is always better than guessing", and that specific a
+# decision needs an explicit, deliberate opt-in -- set
+# ENABLE_LENIENT_PEST_DISEASE_THRESHOLD=true in backend/.env, not an
+# inferred chat instruction. See TODO.md #46 for the full writeup.
+ENABLE_LENIENT_PEST_DISEASE_THRESHOLD = os.getenv("ENABLE_LENIENT_PEST_DISEASE_THRESHOLD", "false").lower() == "true"
+
+_category_thresholds = {}
+if ENABLE_LENIENT_PEST_DISEASE_THRESHOLD:
+    _category_thresholds = {
+        "pest": UNCALIBRATED_DEFAULT_THRESHOLD,
+        "disease": UNCALIBRATED_DEFAULT_THRESHOLD,
+    }
+
 GATING_CONFIG = GatingConfig(
     safety_critical_categories=frozenset(SAFETY_CRITICAL_CATEGORIES),
     entity_match_hook=_entity_match_hook,
+    category_thresholds=_category_thresholds,
 )
 
 print(f"[Krishi Mitra] Loaded with GENERATION_MODEL={GENERATION_MODEL}")
