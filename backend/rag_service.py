@@ -158,7 +158,17 @@ import json
 import time
 
 
-async def calculate_faithfulness(context: str, answer: str, judge_model: str = None) -> float:
+async def calculate_faithfulness(
+    context: str, answer: str, judge_model: str = None, judge_backend: str = None
+) -> float:
+    """
+    judge_backend (TODO #45, 2026-09-23): overrides LLM_BACKEND for just
+    this judge call, e.g. "openrouter" while GENERATION_MODEL/LLM_BACKEND
+    stay on Groq for generation -- enables a genuine cross-provider judge
+    (mitigating self-preference bias) without a second process or a
+    global env change. None (default) uses LLM_BACKEND, unchanged from
+    prior self-judge-only behavior.
+    """
     if not answer or not context:
         return 0.0
     prompt = (
@@ -170,6 +180,7 @@ async def calculate_faithfulness(context: str, answer: str, judge_model: str = N
     content = await call_llm(
         messages=[{"role": "system", "content": prompt}, {"role": "user", "content": user_msg}],
         model=judge_model or GENERATION_MODEL,
+        backend=judge_backend,
         # Verified defect, 2026-09-21: max_tokens=50 silently returned an
         # EMPTY completion for the currently-configured GENERATION_MODEL
         # (openai/gpt-oss-20b, a reasoning model -- it spends tokens on
@@ -209,6 +220,7 @@ async def generate_from_context(
     session_id: str,
     generation_model: str = None,
     judge_model: str = None,
+    judge_backend: str = None,
     save_to_db: bool = True,
     run_judge: bool = True,
     max_predict_tokens: int = None
@@ -269,7 +281,9 @@ async def generate_from_context(
                 print("🔄 Answer is the exact self-recognized refusal phrase; skipping judge, scoring as faithful.")
             else:
                 print("🔄 Calling LLM for faithfulness judge...")
-                accuracy_score = await calculate_faithfulness(context_text, ans, judge_model=judge_model)
+                accuracy_score = await calculate_faithfulness(
+                    context_text, ans, judge_model=judge_model, judge_backend=judge_backend
+                )
                 print(f"🔄 Judge score: {accuracy_score}")
 
         return {"answer": ans, "accuracy_score": accuracy_score}

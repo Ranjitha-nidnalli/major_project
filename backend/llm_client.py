@@ -170,9 +170,9 @@ async def _ollama_chat_async(messages, model, max_tokens, temperature):
 
 
 # --- Public API ---
-async def call_llm(messages, model=None, max_tokens=500, temperature=0.0):
+async def call_llm(messages, model=None, max_tokens=500, temperature=0.0, backend=None):
     """
-    Unified LLM call. Backend selected by LLM_BACKEND env var.
+    Unified LLM call. Backend selected by LLM_BACKEND env var by default.
     Model ID read from env var (GENERATION_MODEL) — no hardcoded defaults.
 
     Args:
@@ -180,24 +180,33 @@ async def call_llm(messages, model=None, max_tokens=500, temperature=0.0):
         model: Override model ID. If None, uses GENERATION_MODEL from .env.
         max_tokens: Maximum tokens to generate.
         temperature: Sampling temperature (0.0 = deterministic).
+        backend: Override LLM_BACKEND for this call only ("groq",
+            "openrouter", or "ollama"). Added 2026-09-23 (TODO #45) so a
+            single process can use different providers for different
+            calls -- e.g. Groq for generation, OpenRouter for cross-judge
+            evaluation -- without a global env change or a second process.
+            If None (default), uses LLM_BACKEND from .env, unchanged from
+            prior behavior.
 
     Returns:
         Generated text string, or None on failure.
     """
-    if LLM_BACKEND == "groq":
+    effective_backend = (backend or LLM_BACKEND).lower()
+
+    if effective_backend == "groq":
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
             None, _groq_chat_sync, messages, model, max_tokens, temperature
         )
-    elif LLM_BACKEND == "openrouter":
+    elif effective_backend == "openrouter":
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
             None, _openrouter_chat_sync, messages, model, max_tokens, temperature
         )
-    elif LLM_BACKEND == "ollama":
+    elif effective_backend == "ollama":
         return await _ollama_chat_async(messages, model, max_tokens, temperature)
     else:
         raise ValueError(
-            f"Unknown LLM_BACKEND: {LLM_BACKEND}. "
+            f"Unknown backend: {effective_backend!r}. "
             f"Use 'groq', 'openrouter', or 'ollama'."
         )

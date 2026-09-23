@@ -5,9 +5,13 @@ Retrieval is a controlled variable here (see build_contexts.py): every model
 sees byte-identical context per question, so any difference in scores is
 attributable to generation, not retrieval variance.
 
-Note: For Groq free tier, we use the same model as judge (self-judge) due to
-rate-limit constraints. In a full study, the judge should be a different model
-to avoid self-preference bias (P2.3).
+Note: For Groq free tier, self-judging (same model/backend as generation) is
+allowed as a documented, pragmatic default. For a genuine cross-provider
+judge (mitigating self-preference bias, P2.3), set JUDGE_BACKEND=openrouter
+alongside a JUDGE_MODEL that's a valid OpenRouter model ID, with
+OPENROUTER_API_KEY set in .env -- this became possible 2026-09-23 (TODO #45)
+via call_llm's per-call backend override; previously LLM_BACKEND was
+process-wide, so Groq-generates/OpenRouter-judges wasn't achievable in one run.
 
 Per diagnose_metrics.py (P0.1): scores answers with chrF (script-agnostic),
 not ROUGE-L.
@@ -80,6 +84,10 @@ async def main():
             "  set JUDGE_MODEL=llama-3.1-8b-instant   (self-judge; see module docstring)\n"
             "or a different model for cross-judging."
         )
+    # Optional (TODO #45): judge via a different provider than generation,
+    # e.g. JUDGE_BACKEND=openrouter while generation stays on Groq. None
+    # (unset) uses LLM_BACKEND for both, unchanged from prior behavior.
+    judge_backend = os.getenv("JUDGE_BACKEND")
 
     with open(QUESTIONS_PATH, "r", encoding="utf-8") as f:
         questions = json.load(f)
@@ -122,6 +130,7 @@ async def main():
             record = {
                 "model": model_tag,
                 "judge_model": judge_model,
+                "judge_backend": judge_backend or os.getenv("LLM_BACKEND", "groq"),
                 "dataset_hash": dataset_hash,
                 "prompt_version": prompt_version,
                 "run_timestamp": run_timestamp,
@@ -145,14 +154,16 @@ async def main():
             )
 
         # Phase 2: all judging
-        print(f"\n--- Phase 2: judging all {len(results)} answers with {judge_model} ---", flush=True)
+        judge_label = f"{judge_model} via {judge_backend}" if judge_backend else judge_model
+        print(f"\n--- Phase 2: judging all {len(results)} answers with {judge_label} ---", flush=True)
         for r in results:
             t0 = time.time()
             r["accuracy_score"] = await calculate_faithfulness(
-                r["context_text"], r["generated_answer"], judge_model=judge_model
+                r["context_text"], r["generated_answer"],
+                judge_model=judge_model, judge_backend=judge_backend,
             )
             r["judge_latency_seconds"] = time.time() - t0
-            print(f"[{judge_model} judging {r['id']}]: faithfulness={r['accuracy_score']:.3f}", flush=True)
+            print(f"[{judge_label} judging {r['id']}]: faithfulness={r['accuracy_score']:.3f}", flush=True)
     finally:
         close_db()
 
@@ -166,7 +177,7 @@ async def main():
     avg_faith = sum(r["accuracy_score"] for r in results) / len(results)
     avg_gen_lat = sum(r["generation_latency_seconds"] for r in results) / len(results)
     avg_judge_lat = sum(r["judge_latency_seconds"] for r in results) / len(results)
-    print(f"\n=== {model_tag} summary (judged by {judge_model}) ===")
+    print(f"\n=== {model_tag} summary (judged by {judge_label}) ===")
     print(
         f"avg chrF: {avg_chrf:.3f} avg emb-sim: {avg_emb:.3f} "
         f"(+{avg_emb - EMBEDDING_SIM_BASELINE:.3f} vs baseline) "
