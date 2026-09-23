@@ -20,37 +20,41 @@ name (the "Name: X (Y) Recommendations: ..." pattern
 vector_db._entity_to_text writes at chunking time for disease_management
 and pest_management sections).
 
-STATUS 2026-09-23: PROTOTYPED AND TESTED, NOT WIRED INTO PRODUCTION.
-NOT SAFE TO DEPLOY AS-IS. Validated against all 18 real questions'
-actual retrieved contexts (eval/contexts.json as of commit b01169d).
-Every rank-cutoff variant tried (check all of top-5, top-1 only, top-2,
-top-3, top-4) produces real false positives -- genuinely answerable
-questions where a retrieved-but-irrelevant entity chunk (root borer,
-white woolly aphid, pineapple disease, etc.) got pulled into the top-k
-by embedding similarity alongside the actual correct chunk, and this
-hook would incorrectly refuse. At the best configuration tested (check
-only the single top-ranked chunk), 4 of 15 answerable questions
-(disease-3, pest-2, fertilizer-3, general-2) still false-positive --
-notably because in all 4, the retrieval's rank-1 hit was not even the
-gold chunk (a separate, deeper retrieval-quality question this file
-does not attempt to fix), yet generation still succeeded because the
-correct chunk was present lower in the top-5. Checking all of top-5
-produces even more false positives (5+ of 15).
+STATUS 2026-09-23: WIRED INTO PRODUCTION, SCOPED TO pest/disease ONLY.
 
-This module DOES correctly flag the motivating case (pest-5, a pest not
-in the corpus, where the top hit was a real-but-wrong pest) -- but a
-heuristic that trades a ~27-47% false-refusal rate on this small,
-18-question set for catching one hallucination is not a net safety
-improvement; false refusals erode trust and utility too. Do not wire
-this into services/gating.py's entity_match_hook without either (a) a
-genuinely better entity-extraction approach (real NER, or an LLM call
-that explicitly cross-checks the query's subject against retrieved
-card names), or (b) first improving retrieval quality for named-entity
-queries specifically (why rank-1 misses the gold chunk on exact lexical
-matches like disease-3's "ಕಾಡಿಗೆ ರೋಗ" appearing verbatim in the Smut
-chunk's declared name is itself worth investigating -- possibly a case
-where BM25 would outperform dense embedding, worth checking against
-TODO #10's bucketed BM25 results once more gold data exists).
+First validation attempt (against pre-BM25-fusion retrieval, all of
+top-5) found real false positives on 6 of 18 questions across every
+rank-cutoff variant tried, including fertilizer-1/2/3 and general-2/3 --
+retrieved-but-irrelevant entity chunks (root borer, white woolly aphid,
+pineapple disease) got pulled into the top-k by embedding similarity
+alongside the actual correct chunk. Not shippable at that point.
+
+Re-tested after wiring BM25+dense fusion into production for pest/
+disease queries (rag_service.BM25_FUSION_CATEGORIES, TODO #10): with
+that better retrieval, this hook is **9/9 correct for pest+disease
+specifically** -- all 8 answerable pest/disease questions pass, and
+pest-5 (a pest not in the corpus) correctly triggers entity_mismatch,
+confirmed end-to-end against the real GatingConfig/decide() call, not
+just this module in isolation. The 6 original false positives were all
+in fertilizer/general -- categories that do NOT get BM25 fusion and
+were NOT re-tested; do not widen this hook's scope to them without
+separately validating, since the same retrieval-quality problem that
+caused those false positives is presumably still present there.
+
+rag_service._entity_match_hook enforces this scoping: it returns True
+(no-op) for any category outside BM25_FUSION_CATEGORIES, and only calls
+entity_match() for pest/disease.
+
+**Related finding, not fixed by this module**: end-to-end testing
+surfaced that pest-2 (a genuinely answerable question) gets refused by
+the *relevance* gate (Layer 1/2), not this entity check -- its plain
+dense-only relevance score (0.497) sits just under the uncalibrated
+0.50 safety-critical threshold. entity_match never even runs for that
+case, since relevance is checked first and fails. This is exactly the
+"do not treat these thresholds as calibrated" risk TODO.md already
+flags, now with a concrete instance: a real, correct answer sitting
+right at an arbitrary boundary. Not addressed here -- needs the
+Phase 2 threshold recalibration with more gold data, not a quick fix.
 
 This is a first-pass heuristic, not a general NER system: it only has
 signal for chunks that declare a Name: field (most disease/pest chunks;

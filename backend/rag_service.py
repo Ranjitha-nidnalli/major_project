@@ -14,6 +14,7 @@ from chat_db import save_chat_message, get_chat_history
 from llm_client import call_llm  # NEW: unified LLM abstraction
 from eval.numeric_faithfulness import check_numeric_faithfulness  # #5
 from services.gating import decide as gating_decide, GatingConfig
+from services.entity_match import entity_match
 from indic_preprocess import normalize_kannada
 from bm25_retriever import BM25Retriever, load_chunks_from_qdrant_upsert
 
@@ -51,10 +52,33 @@ FAITHFULNESS_GATE_THRESHOLD = 0.50
 
 SAFETY_CRITICAL_CATEGORIES = {"pest", "disease", "fertilizer"}
 
+
+def _entity_match_hook(query_entities, retrieved_entities):
+    """
+    Layer 3 of the abstention gate (ARCHITECTURE.md Section 21).
+
+    Scoped to BM25_FUSION_CATEGORIES (pest/disease) only -- verified
+    2026-09-23 against all 18 real questions using the actual post-BM25-
+    fusion retrieval: 9/9 correct for pest+disease (all 8 answerable pass,
+    pest-5's real hallucination case correctly refused). Applying it to
+    fertilizer/general/price was NOT re-validated after the BM25 fusion
+    change (those categories don't get BM25 fusion) and produced real
+    false positives before it -- see services/entity_match.py's docstring
+    for that history. Do not widen this scope without re-testing.
+    """
+    category, query_text = query_entities
+    if category not in BM25_FUSION_CATEGORIES:
+        return True
+    return entity_match(query_text, retrieved_entities)
+
+
 # Abstention gate config (Task 2). Thresholds are UNCALIBRATED placeholders;
 # Phase 2 replaces them via backend/eval/threshold_sweep.py against a real
 # labelled answerable/unanswerable set. Do not report these as validated.
-GATING_CONFIG = GatingConfig(safety_critical_categories=frozenset(SAFETY_CRITICAL_CATEGORIES))
+GATING_CONFIG = GatingConfig(
+    safety_critical_categories=frozenset(SAFETY_CRITICAL_CATEGORIES),
+    entity_match_hook=_entity_match_hook,
+)
 
 print(f"[Krishi Mitra] Loaded with GENERATION_MODEL={GENERATION_MODEL}")
 
@@ -339,7 +363,13 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
     # so this score is a genuine cosine similarity, unlike the RRF score.
     dense_relevance = await get_dense_relevance(dense_vec) if docs else None
 
-    gate_decision = gating_decide(relevance=dense_relevance, category=category, config=GATING_CONFIG)
+    gate_decision = gating_decide(
+        relevance=dense_relevance,
+        category=category,
+        config=GATING_CONFIG,
+        query_entities=(category, user_query),
+        retrieved_entities=docs,
+    )
 
     if not gate_decision.should_answer:
         print(f"🟥 Gate refusal ({gate_decision.reason}).")
