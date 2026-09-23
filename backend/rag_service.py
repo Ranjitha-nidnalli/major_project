@@ -7,6 +7,7 @@ env_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path=env_path, override=True)
 
 import torch
+import numpy as np
 
 from qdrant_client import models
 from vector_db import db_client, COLLECTION_NAME, embed_model, reranker_model
@@ -320,7 +321,35 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
                     "score": score,
                     "payload": {"text": chunk["text"], "category": chunk["category"]},
                 })
-        return fused, fused[0]["score"] if fused else 0.0
+
+        # Relevance for the gate must be the dense cosine similarity of the
+        # chunk actually used to build the answer (the top fused result),
+        # NOT an independent dense-only top-1 query -- verified defect,
+        # 2026-09-23: for pest-2, the independent dense-only top-1 was a
+        # DIFFERENT chunk (White Woolly Aphid, cos=0.497) than the one
+        # BM25+dense fusion actually selected (Termites, cos=0.489). The
+        # gate was scoring relevance against a chunk that had nothing to
+        # do with the generated answer. Fetch the top-fused chunk's own
+        # dense vector directly so this can't happen, regardless of
+        # whether that chunk happened to also be in dense's own top-15.
+        top_fused_relevance = None
+        if fused_ids:
+            top_chunk_id = fused_ids[0][0]
+            points = await asyncio.to_thread(
+                db_client.retrieve,
+                collection_name=COLLECTION_NAME,
+                ids=[top_chunk_id],
+                with_vectors=True,
+            )
+            if points:
+                top_dense_vec = np.array(points[0].vector["dense"])
+                query_vec = np.array(d_vec)
+                top_fused_relevance = float(
+                    np.dot(query_vec, top_dense_vec)
+                    / (np.linalg.norm(query_vec) * np.linalg.norm(top_dense_vec))
+                )
+
+        return fused, (fused[0]["score"] if fused else 0.0), top_fused_relevance
 
     async def get_dense_relevance(d_vec):
         """
@@ -341,8 +370,9 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
         hits = response.points
         return hits[0].score if hits else None
 
+    bm25_relevance = None
     if category in BM25_FUSION_CATEGORIES:
-        top_chunks, best_fused_score = await execute_bm25_dense_search(dense_vec, user_query)
+        top_chunks, best_fused_score, bm25_relevance = await execute_bm25_dense_search(dense_vec, user_query)
     else:
         top_chunks, best_fused_score = await execute_weighted_search(dense_vec, sparse_indices, sparse_values)
 
@@ -357,11 +387,17 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
     # ==========================================
     # 3. ABSTENTION GATE (Task 2 / ARCHITECTURE.md Section 21)
     # ==========================================
-    # Relevance = max dense cosine similarity over the retrieved cards,
-    # computed via a plain dense-only query (no fusion, no filter). The
-    # dense vector space is configured with COSINE distance in vector_db.py,
-    # so this score is a genuine cosine similarity, unlike the RRF score.
-    dense_relevance = await get_dense_relevance(dense_vec) if docs else None
+    # Relevance = dense cosine similarity of the chunk actually used to
+    # build the answer. For BM25_FUSION_CATEGORIES this is bm25_relevance
+    # (computed against the top-fused chunk, see execute_bm25_dense_search).
+    # Otherwise, a plain dense-only query (no fusion, no filter) against
+    # the same collection -- the dense vector space is configured with
+    # COSINE distance in vector_db.py, so this is a genuine cosine
+    # similarity, unlike the RRF score.
+    if category in BM25_FUSION_CATEGORIES:
+        dense_relevance = bm25_relevance
+    else:
+        dense_relevance = await get_dense_relevance(dense_vec) if docs else None
 
     gate_decision = gating_decide(
         relevance=dense_relevance,
