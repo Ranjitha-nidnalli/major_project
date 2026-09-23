@@ -308,9 +308,22 @@ class BM25Retriever:
 
             fused[chunk_id] = score
 
+        # Verified defect, 2026-09-23: sorting by score alone left ties
+        # broken by dict/set iteration order, which depends on Python's
+        # per-process string hash randomization (PYTHONHASHSEED is random
+        # by default) -- for two chunk_ids scoring an EXACT tie (common
+        # with this RRF formula when a chunk is rank-1 in exactly one of
+        # the two input lists and absent from the other), which one won
+        # rank-1 flipped nondeterministically across separate process runs
+        # of the identical query. Reproduced directly: an unrelated Soil
+        # chunk and the correct Termites chunk tied at 1/(60+1) for a
+        # pest query, alternating as "rank 1" run to run. Sorting by
+        # (score, chunk_id) makes tie-breaking deterministic -- chunk_id
+        # carries no meaningful ranking signal, but consistency here
+        # matters more than which arbitrary tiebreak direction is chosen.
         sorted_fused = sorted(
             fused.items(),
-            key=lambda item: item[1],
+            key=lambda item: (item[1], item[0]),
             reverse=True
         )
 
