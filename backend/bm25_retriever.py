@@ -1,7 +1,14 @@
 """
 bm25_retriever.py
 
-Standalone BM25 retriever for the Krishi Mitra ablation harness.
+BM25 retriever for Krishi Mitra. Originally an ablation-only tool
+(backend/eval/bm25_retriever.py); promoted to a production module
+2026-09-23 after the retrieval ablation showed BM25+dense measurably
+outperforming dense/hybrid on entity-specific queries (disease/pest
+names) -- see ARCHITECTURE.md Section 11 and TODO.md item #10 for the
+evidence and root-cause analysis. rag_service.py now uses this for
+pest/disease category queries specifically; eval/run_retrieval_ablation.py
+still uses it for the full ablation.
 
 Uses the exact same adaptive structure-aware chunking logic as
 vector_db.py so BM25 operates on the same corpus and generates the
@@ -40,13 +47,12 @@ from typing import List, Dict, Tuple
 import numpy as np
 
 
-# Allow importing vector_db.py from backend/
+# Allow importing vector_db.py -- this file lives directly in backend/,
+# a sibling of vector_db.py, so one level up from this file is backend/.
 sys.path.insert(
     0,
     os.path.dirname(
-        os.path.dirname(
-            os.path.abspath(__file__)
-        )
+        os.path.abspath(__file__)
     )
 )
 
@@ -61,7 +67,8 @@ except ImportError:
 
 # Import the CURRENT adaptive structure-aware chunking pipeline.
 # This is important: BM25 must operate on the exact same chunks
-# as Qdrant for the ablation comparison to be valid.
+# as Qdrant for the ablation comparison (and the production fusion
+# path) to be valid.
 from vector_db import load_and_chunk_data
 
 
@@ -69,10 +76,10 @@ from vector_db import load_and_chunk_data
 # TOKENIZATION
 # ============================================================
 
-# Kannada Unicode range: \u0C80-\u0CFF
+# Kannada Unicode range: ಀ-೿
 # Keep Kannada words, ASCII words and numbers.
 _NON_WORD = re.compile(
-    r"[^\w\u0C80-\u0CFF]+"
+    r"[^\wಀ-೿]+"
 )
 
 
@@ -310,6 +317,15 @@ class BM25Retriever:
         return sorted_fused[:top_k]
 
 
+    def get_chunk(self, chunk_id: str):
+        """Look up a chunk's {id, text, category} dict by its ID, or
+        None if not found. Used by callers that need the chunk payload
+        after fusing BM25 results with another retriever's IDs, without
+        a second round-trip to Qdrant."""
+        idx = self.id_to_idx.get(chunk_id)
+        return self.chunks[idx] if idx is not None else None
+
+
 # ============================================================
 # LOAD IDENTICAL CHUNKS
 # ============================================================
@@ -382,7 +398,7 @@ def demo():
 
     Run:
 
-        python eval/bm25_retriever.py
+        python bm25_retriever.py
 
     The chunk count should match the chunk count reported
     when building Qdrant.

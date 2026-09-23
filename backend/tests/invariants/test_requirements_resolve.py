@@ -56,7 +56,7 @@ def _local_module_names():
     Every importable name that is defined inside backend/ itself -- not
     just top-level modules/packages, but also every .py filename stem
     anywhere under backend/, since several eval/ scripts import siblings
-    directly (e.g. `from bm25_retriever import ...` from within
+    directly (e.g. `from numeric_faithfulness import ...` from within
     backend/eval/), relying on the running script's own directory being on
     sys.path rather than a package-qualified import.
     """

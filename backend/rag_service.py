@@ -14,6 +14,29 @@ from chat_db import save_chat_message, get_chat_history
 from llm_client import call_llm  # NEW: unified LLM abstraction
 from eval.numeric_faithfulness import check_numeric_faithfulness  # #5
 from services.gating import decide as gating_decide, GatingConfig
+from indic_preprocess import normalize_kannada
+from bm25_retriever import BM25Retriever, load_chunks_from_qdrant_upsert
+
+# Categories where BM25+dense fusion replaces the default dense+sparse
+# hybrid (TODO #10, ARCHITECTURE.md Section 11). Verified 2026-09-23 by
+# re-embedding query/chunk pairs directly: BGE-M3's dense embedding
+# confuses structurally-templated disease/pest "cards" that share the
+# same remedy pattern (e.g. two different diseases both "Cultural
+# Control, uproot and burn"), consistently favoring the wrong chunk by
+# a small margin. BM25's exact-term matching doesn't get fooled by
+# shared boilerplate the same way -- the real ablation showed bm25+dense
+# outperforming dense/hybrid specifically on entity-specific queries
+# (pest/disease names). Deliberately NOT applied to fertilizer/general/
+# price: the same ablation showed BM25 fusion measurably HURTING the
+# semantic-query bucket (hit@1 dropped to 0.000), so this is scoped
+# narrowly to where the evidence actually supports it, not applied
+# universally.
+BM25_FUSION_CATEGORIES = frozenset({"pest", "disease"})
+
+# Built once at import time, same convention as vector_db.py's db_client/
+# embed_model -- 43 chunks, pure statistical BM25Okapi, no embedding
+# calls, negligible startup cost.
+_bm25_index = BM25Retriever(load_chunks_from_qdrant_upsert())
 
 # --- Configuration ---
 GENERATION_MODEL = os.getenv("GENERATION_MODEL")  # No fallback — must be set in .env
@@ -243,6 +266,38 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
         fused = [{"score": h.score, "payload": h.payload} for h in hits]
         return fused, hits[0].score if hits else 0.0
 
+    async def execute_bm25_dense_search(d_vec, query_text):
+        """
+        BM25 + dense-only RRF fusion, for BM25_FUSION_CATEGORIES only.
+        Matches the exact configuration validated in
+        eval/run_retrieval_ablation.py's "bm25+dense" config -- BM25
+        fused with dense-only retrieval, not the full dense+sparse
+        hybrid (that combination hasn't been separately validated).
+        """
+        dense_response = await asyncio.to_thread(
+            db_client.query_points,
+            collection_name=COLLECTION_NAME,
+            query=d_vec,
+            using="dense",
+            limit=15,
+        )
+        dense_results = [(str(h.id), float(h.score)) for h in dense_response.points]
+
+        normalized_query = normalize_kannada(query_text)
+        bm25_results = await asyncio.to_thread(_bm25_index.search, normalized_query, 15)
+
+        fused_ids = _bm25_index.rrf_fuse(bm25_results, dense_results, other_weight=1.0, top_k=5)
+
+        fused = []
+        for chunk_id, score in fused_ids:
+            chunk = _bm25_index.get_chunk(chunk_id)
+            if chunk is not None:
+                fused.append({
+                    "score": score,
+                    "payload": {"text": chunk["text"], "category": chunk["category"]},
+                })
+        return fused, fused[0]["score"] if fused else 0.0
+
     async def get_dense_relevance(d_vec):
         """
         Max dense cosine similarity over the retrieved cards, for the
@@ -262,7 +317,10 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
         hits = response.points
         return hits[0].score if hits else None
 
-    top_chunks, best_fused_score = await execute_weighted_search(dense_vec, sparse_indices, sparse_values)
+    if category in BM25_FUSION_CATEGORIES:
+        top_chunks, best_fused_score = await execute_bm25_dense_search(dense_vec, user_query)
+    else:
+        top_chunks, best_fused_score = await execute_weighted_search(dense_vec, sparse_indices, sparse_values)
 
     docs = [p["payload"]["text"] for p in top_chunks]
     # search_score (RRF fusion score) is kept only for logging/telemetry and
