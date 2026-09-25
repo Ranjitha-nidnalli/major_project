@@ -15,7 +15,8 @@ from chat_db import save_chat_message, get_chat_history
 from llm_client import call_llm  # NEW: unified LLM abstraction
 from eval.numeric_faithfulness import check_numeric_faithfulness  # #5
 from services.gating import decide as gating_decide, GatingConfig, UNCALIBRATED_DEFAULT_THRESHOLD
-from services.entity_match import entity_match
+from services.entity_match import entity_match, resolve_entity_category
+from services.judge_parse import parse_judge_score
 from indic_preprocess import normalize_kannada
 from bm25_retriever import BM25Retriever, load_chunks_from_qdrant_upsert
 
@@ -50,6 +51,8 @@ INTERACTIVE_TIMEOUT = int(os.getenv("INTERACTIVE_TIMEOUT", 120))
 # services/gating.py and is driven by dense cosine relevance, not the RRF
 # fusion score. See GATING_CONFIG below and ARCHITECTURE.md Section 21.
 FAITHFULNESS_GATE_THRESHOLD = 0.50
+# Faithfulness judge token budget per attempt; see calculate_faithfulness.
+JUDGE_MAX_TOKENS_PER_ATTEMPT = (1024, 4096)
 
 SAFETY_CRITICAL_CATEGORIES = {"pest", "disease", "fertilizer"}
 
@@ -177,41 +180,32 @@ async def calculate_faithfulness(
         "Return ONLY a number between 0.0 and 1.0. Nothing else."
     )
     user_msg = f"Context:\n{context}\n\nAnswer:\n{answer}"
-    content = await call_llm(
-        messages=[{"role": "system", "content": prompt}, {"role": "user", "content": user_msg}],
-        model=judge_model or GENERATION_MODEL,
-        backend=judge_backend,
-        # Verified defect, 2026-09-21: max_tokens=50 silently returned an
-        # EMPTY completion for the currently-configured GENERATION_MODEL
-        # (openai/gpt-oss-20b, a reasoning model -- it spends tokens on
-        # internal reasoning before emitting visible output and 50 wasn't
-        # enough to reach the actual answer). That parsed as non-numeric,
-        # scored accuracy_score=0.0, which would have made semantic_fail
-        # trigger on EVERY answer (0.0 < FAITHFULNESS_GATE_THRESHOLD is
-        # always true) -- the live faithfulness gate would have refused
-        # every single question regardless of actual answer quality.
-        # The reasoning-token cost scales with context length: 300 still
-        # returned empty for a real ~2.9k-char context (5 of 18 questions
-        # in one eval run), 500 reliably worked on the longest context
-        # tested. Matches EVAL_MAX_PREDICT's existing 500 default.
-        max_tokens=500,
-        temperature=0.0
-    )
-    if content is None:
-        return 0.0
-    try:
-        content = content.strip()
-        return float(content)
-    except ValueError:
-        import re
-        match = re.search(r"(\d+\.\d+|\d+)", content)
-        if match:
-            return float(match.group(1))
-        print(f"⚠️ Judge returned non-numeric: {content}")
-        return 0.0
-    except Exception as e:
-        print(f"⚠️ Judge parse failed: {e}")
-        return 0.0
+    # Token budgets per attempt (TODO #48). The judge model may be a
+    # reasoning model (openai/gpt-oss-20b) that spends tokens on hidden
+    # reasoning before emitting the score; if the budget runs out first,
+    # the visible content is empty. History: 50 and 300 returned empty
+    # (2026-09-21); 500 still did on 2026-09-25 -- replaying all 18 eval
+    # judge calls, reasoning used 101-498 tokens with no clear link to
+    # context length, and pest-4 hit finish_reason=length at 498/500.
+    # Only tokens actually generated are billed, so a higher cap costs
+    # nothing on calls that finish early.
+    for attempt, max_tokens in enumerate(JUDGE_MAX_TOKENS_PER_ATTEMPT, start=1):
+        content = await call_llm(
+            messages=[{"role": "system", "content": prompt}, {"role": "user", "content": user_msg}],
+            model=judge_model or GENERATION_MODEL,
+            backend=judge_backend,
+            max_tokens=max_tokens,
+            temperature=0.0
+        )
+        score = parse_judge_score(content)
+        if score is not None:
+            return score
+        print(f"⚠️ Judge error (attempt {attempt}, max_tokens={max_tokens}): no usable score in {content!r:.80}")
+    # Fail closed: no usable verdict must never let an answer through.
+    # Logged as a judge error above, so it isn't mistaken for a real
+    # "unfaithful" verdict.
+    print("⚠️ Judge failed on every attempt; failing closed (0.0).")
+    return 0.0
 
 
 async def generate_from_context(
@@ -436,11 +430,18 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
         hits = response.points
         return hits[0].score if hits else None
 
+    # Default hybrid retrieval always runs first: its top hit's corpus
+    # category is the router-independent signal for whether this is a
+    # pest/disease question (TODO #47, see resolve_entity_category).
     bm25_relevance = None
+    top_chunks, best_fused_score = await execute_weighted_search(dense_vec, sparse_indices, sparse_values)
+    top_chunk_category = top_chunks[0]["payload"].get("category") if top_chunks else None
+    router_category = category
+    category = resolve_entity_category(router_category, top_chunk_category, BM25_FUSION_CATEGORIES)
+    if category != router_category:
+        print(f"🛡️ Router said {router_category!r}, top chunk is {top_chunk_category!r}; applying {category!r} protections.")
     if category in BM25_FUSION_CATEGORIES:
         top_chunks, best_fused_score, bm25_relevance = await execute_bm25_dense_search(dense_vec, user_query)
-    else:
-        top_chunks, best_fused_score = await execute_weighted_search(dense_vec, sparse_indices, sparse_values)
 
     docs = [p["payload"]["text"] for p in top_chunks]
     # search_score (RRF fusion score) is kept only for logging/telemetry and

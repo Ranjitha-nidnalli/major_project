@@ -56,6 +56,21 @@ Single crop (sugarcane), `sugarcanemerged3.json`, provenance undocumented
 IDs are a deterministic content hash, not `uuid4()` — required so gold labels
 in eval sets survive re-seeding the collection.
 
+**Provenance finding (2026-09-24, zero-cost forensic check, still does not resolve
+provenance — do not cite a source/date from this):** the file has its own embedded
+`metadata` block: `{"last_updated": "2025", "region": "Karnataka", "localized": true}`.
+This block is self-contradicted by the file's own content: `varieties_and_seasons`
+contains a `"Tamil Nadu Regional Recommendations"` entry naming Pudukkottai, Vellore,
+Cuddalore, Villuppuram, Erode, Coimbatore, Thanjavur, Nagapattinam, and Tiruvarur (all
+Tamil Nadu districts, not Karnataka), and cites TNAU (Tamil Nadu Agricultural University)
+variety data elsewhere. `git log --follow` shows the file entering this repo already
+complete in the initial commit (2026-08-06) — no earlier history to trace. Conclusion: the
+corpus's own self-declared `metadata.region` field is demonstrably wrong for at least part
+of its content and must not be trusted as a stand-in for real provenance; `last_updated:
+"2025"` is likewise unverified (and predates the repo's own initial commit by nearly a
+year, which is itself unexplained). TODO #8 stays open — this narrows what's unknown, it
+doesn't answer it.
+
 ## 5. Embeddings
 
 BAAI/bge-m3 via FlagEmbedding: dense + learned sparse in one model call, not

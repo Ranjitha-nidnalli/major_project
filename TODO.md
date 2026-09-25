@@ -262,7 +262,7 @@ removed or renumbered.
 | 5 | ~~Numeric faithfulness checker~~ — ✅ **DONE + VERIFIED** 2026-09-21 (see Already done) | 1 |
 | 6 | ~~Add `.env.example`~~ — ✅ **DONE** (see Already done; `JUDGE_MODEL` gap closed 2026-09-21) | 1 |
 | 7 | ~~Threshold sweep~~ — ✅ **RUN** 2026-09-21/22 against real gold (see "Real evaluation results"). Result: do not adopt the naive F1-optimal threshold (TNR=0 on both subsets); current uncalibrated defaults left unchanged pending more negative examples | 1 |
-| 8 | Data provenance note for `sugarcanemerged3.json` — **still open, correctly**: provenance is genuinely unknown, do not fabricate a source/date | 1 |
+| 8 | Data provenance note for `sugarcanemerged3.json` — **still open, correctly**: provenance is genuinely unknown, do not fabricate a source/date. **New finding 2026-09-24** (ARCHITECTURE.md Section 4): the file's own embedded `metadata` block claims `region: Karnataka`, contradicted by its own Tamil Nadu-specific content (TNAU variety data, named TN districts) -- narrows but does not resolve the open question; the self-declared metadata is now known to be unreliable, not just silent | 1 |
 | 9 | ~~Docker Compose + preflight script~~ — ✅ **DONE** (see Already done) | 1 |
 | 10 | ~~BM25 evaluation, bucketed by query type~~ — ✅ **RUN** 2026-09-21/22 (bm25+dense config only, per prior decision -- see "Real evaluation results"). bm25-alone and bm25+hybrid still not run; add if a fuller ablation is wanted. **Root cause found 2026-09-23** for why bm25+dense outperformed dense/hybrid on entity-specific queries like disease-3: BGE-M3's dense embedding doesn't reliably separate structurally-templated corpus entries. Every disease/pest chunk shares the same "Name: X (Y) Recommendations: Chemical: ... Dosage: ... Notes: ..." template, and when two entries also share the same remedy pattern (e.g. both Smut and Yellow Leaf Disease are "Cultural Control, uproot and burn"), dense cosine similarity is dominated by the shared boilerplate -- verified directly by re-embedding query/chunk pairs outside Qdrant: query-vs-wrong-chunk consistently scored higher than query-vs-gold-chunk (Smut case: 0.500 vs 0.546 wrong; Termites case: 0.489 vs 0.497 wrong). BGE-M3's learned-sparse component doesn't reliably fix this either (razor-thin, sometimes wrong-direction margins). ~~This is now a well-evidenced case for wiring BM25 into the production hybrid fusion~~ — ✅ **DONE 2026-09-23** (commit `c9f209e`), at the project owner's explicit go-ahead. `rag_service.py` now fuses BM25+dense (matching the validated ablation config) for `category in {pest, disease}` only -- NOT applied to fertilizer/general/price, since the same ablation showed BM25 fusion hurting the semantic bucket. Verified against the live corpus with the actual production code: disease-3's gold chunk moved from missing (dense) / rank 5 (hybrid) to rank 3; **pest-2 -- the exact case that hallucinated a different pest's dosage in Step 6's eval run -- now retrieves correctly at rank 1** | 1 |
 | 11 | Manual failure-mode review on existing eval results — still open, blocked on live LLM outputs + human judgment | 1 |
@@ -301,10 +301,116 @@ removed or renumbered.
 | 46 | **`pest-2` refused by an unrelated, uncalibrated threshold — found 2026-09-23, root-caused, opt-in fix shipped (default OFF).** Two real bugs found while investigating: (1) the relevance gate was scoring a *different chunk* than the one BM25+dense fusion actually used to build the answer (fixed, commit `9840812`); (2) `rrf_fuse()`'s tie-breaking was non-deterministic across process restarts due to Python's per-process hash randomization -- the exact same query could retrieve a different top chunk on different runs (fixed, commit `a1afe01`). After both fixes, the TRUE finding holds: `pest-2` (correct) scores relevance=0.489, LOWER than `pest-5` (a wrong-entity hallucination) at 0.597 -- no single threshold value separates them, because `entity_match_hook` (validated 9/9) now does that job instead. Added `ENABLE_LENIENT_PEST_DISEASE_THRESHOLD` (`.env`, **default false**) to lower pest/disease's threshold to the general default (0.35) when explicitly opted into -- verified both states: off leaves `pest-2` refused (unchanged), on answers it correctly while `pest-5` still correctly refuses via entity_mismatch. Left off by default deliberately: this weakens a safety-critical refusal control, and that's the project owner's decision to make explicitly, not something to infer from general delegation ("do what's best") -- confirmed by this session's own safety classifier blocking the first attempt to apply it directly | 1 |
 | 44 | ~~Faithfulness judge prompt doesn't handle refusals~~ — ✅ **FIXED 2026-09-23** (commit `a330b09`). Extracted the exact instructed refusal phrase into `NOT_IN_CONTEXT_PHRASE`; `generate_from_context()` now recognizes it verbatim and skips the judge for that case (scored 1.0) instead of letting a faithfulness judge mis-score a correct refusal as unfaithful. Verified: full test suite + hand-traced through the downstream semantic_fail/numeric_fail logic. **Not yet verified with a live LLM call** (needs a real eval re-run to confirm end-to-end -- next time #2/#6 runs, check price-1/general-5 specifically) | 1 |
 | 45 | ~~OpenRouter cross-judge (#4) needs an architecture change~~ — ✅ **FIXED 2026-09-23** (commit `88a24cd`). Added `backend=` param to `call_llm()`, threaded through `calculate_faithfulness()`/`generate_from_context()`; `run_eval.py` reads an optional `JUDGE_BACKEND` env var. Verified without real API calls: monkeypatched both backend functions, confirmed default routes to `LLM_BACKEND` unchanged and an explicit override routes correctly. **#4 itself (an actual cross-judge run) is still not done** -- that needs paid OpenRouter calls, separately authorized | 2 |
+| 47 | **Router rarely emits pest/disease, so #10 (BM25 fusion) and #43 (entity-match) mostly don't run in production — found 2026-09-25 (live-pipeline eval, see dated section below).** 7 of 8 pest/disease questions were routed to `general`; only disease-2 got `disease`. Both protections key off the *router's* category, and the 2026-09-23/24 #43 verifications mocked the router to the correct category, so they never exercised this path. pest-5 (the reproduced hallucination) was routed `general`, passed the relevance gate, and generated the black-beetle→termite answer again. Fix direction: stop gating these protections on the LLM router's label (CLAUDE.md: an LLM classification must never decide what's reachable/checked) — e.g. run entity-match whenever the retrieved chunks are entity cards, regardless of routed category. Needs re-validation for false positives on fertilizer/general (see the 2026-09-24 scope decision). **FIX IMPLEMENTED 2026-09-25** (`services/entity_match.resolve_entity_category`): hybrid retrieval always runs first; the protections apply if the router says pest/disease OR the top hybrid hit's corpus category is pest/disease — the router can add caution, never remove it. Zero-cost harness (real `get_sugarcane_answer`, router mocked, generation blocked): gate decisions are now identical whether the router says `general` for everything or gives the gold label; pest-5 refused via `entity_mismatch` in both (previously passed the gate when routed `general`). Gate decision correct went from 15/18 to 13/18. Cost, all in the refusal direction: fertilizer-3 (top hit a pest card; relevance 0.456 < 0.50) and general-2 (top hit a disease card; entity_mismatch) newly refused, and pest-2 refused by the 0.50 threshold as documented under #46 (it had only passed because the misroute gave it the 0.35 general threshold). A stricter "≥3 of top-5" rule would remove fertilizer-3 but was deliberately NOT adopted, because it would be tuned on the same 18 questions. Live re-run results: see the dated section below | 1 |
+| 48 | **Faithfulness judge returns empty output, scored 0.0 — found 2026-09-25.** 4/18 live questions (pest-1, pest-4, general-1, pest-5) logged `Judge returned non-numeric:` with an empty string. Suspected (NOT verified) cause: gpt-oss-20b is a reasoning model and exhausts its token budget before emitting the score. Three were correct answers wrongly refused; the fourth was pest-5, which was refused **only** because of this failure — the safe outcome on the safety-critical case was luck, not a working control. Fix: confirm cause, then handle judge failure explicitly (retry / distinct `judge_error` state) rather than silently scoring 0.0. fertilizer-1 also scored 0.0 with non-empty output, although its "3 ಕಂತುಗಳು" schedule exists in the chunk (see the 2026-09-24 note) — a judge false negative. **FIXED 2026-09-25, cause verified.** Replayed the exact production judge call on the 18 (context, answer) pairs from the 09-21 run, capturing the raw Groq response: pest-4 returned `finish_reason=length` with 498 of its 500 completion tokens spent on hidden reasoning and empty content. Reasoning use ranged 101–612 tokens across calls, with no clear link to context length, and varies between runs even at temperature 0 (pest-1: 389 then 254), which is why failures looked random. Fix: `services/judge_parse.parse_judge_score` returns None (not 0.0) for empty, unparseable, out-of-range, or multi-number replies; `calculate_faithfulness` tries `max_tokens` 1024, then retries once at 4096 (only generated tokens are billed, so the higher cap costs nothing on normal calls); if both attempts fail it still fails closed at 0.0, but logs a judge error. The old fallback also took the first number anywhere, so "Score: 10" would have passed the gate; now rejected. Verified: 6 unit tests, a mocked retry check, and the same 18-call replay (all `finish_reason=stop` on the first attempt; pest-4 needed 612 reasoning tokens and scored 0.8). fertilizer-1's non-empty 0.0 is a separate judge-quality issue, not fixed here. **Also found: the judge scores pest-5's wrong-pest answer 1.0 (faithful).** The answer accurately quotes the termite chunk, so a faithfulness judge cannot detect a wrong-entity answer. Only the #47 gate fix catches this case | 1 |
+| 49 | **Numeric checker misses unit abbreviations → false refusals — found 2026-09-25.** Verified against the retrieved context: disease-2 flagged "10 minute" although the context has "10 min"; general-2 flagged "7 ton" although the context has "(5-7 t)". Both correct answers refused (safe direction, but hurts usefulness). Fix: add `min`→minute and `t`→tonne aliases in `eval/numeric_faithfulness.py` with tests; check a bare `t` alias doesn't mis-bind elsewhere. **FIXED 2026-09-25.** Root cause was broader than missing aliases: Latin-script units had no word boundaries, so single letters matched inside ordinary words ("10 min is crucial" → the `l` of "crucial" bound 10 to litre). Fix: Latin units must stand alone (not inside a word, not after an apostrophe); added `min`/`mins`→minute and lowercase-only `t`→tonne. `t` is case-sensitive because the varietal tables use "T Ha" as a field label ("Ccs Percent: 14.2 Ccs T Ha: 17.5"), and a case-insensitive `t` bound the CCS percentage to tonnes, a binding that could let a wrong answer pass. Checked by diffing old vs new extraction over all 43 chunks and every recorded answer: 31/97 texts extract differently, mostly bogus litre/gram bindings from inside words becoming `nounit`; spot-checked every new tonne binding against the chunk text ("100t of cane", "(5-7 t)", "25 t/ha FYM"). Verdicts changed only for the 09-21 run's disease-2 and general-2, both from flagged to passing. 6 regression tests added. **Still open, found while doing this:** (a) the checker assumes a unit FOLLOWS its number, but the corpus's "Label unit: value" layout ("Duration Months: 10 - 11 Cane Yield T Ha: ...") puts it before, so such numbers bind to the next label or to nothing; (b) Kannada units are still unbounded, e.g. `ಜಿ` (granule) can match inside a Kannada word; (c) ~~`run_live_eval.py` stores the refusal message, not the model's pre-refusal answer~~ — fixed 2026-09-25 (commit `f687e9d`): records now include `raw_generation` and the router's raw label. The two 2026-09-25 live runs predate this, so disease-2 is untested against this fix until the next live run | 1 |
+
+### 2026-09-24 — gold-label second-pass verification + fertilizer/general scope decision closed
+
+**Gold-label second AI pass (not human verification — see "Still blocked" #4 below).**
+Independently re-derived the correct chunk match for all 18 `questions.json` entries
+straight from `chunks.jsonl` content (not from memory of the original `a84ba34` labeling
+pass), then re-ran `python eval/check_gold_integrity.py`. Result: **no discrepancies
+found** — all 15 answerable entries' `gold_chunk_id`s contain text that matches
+`expected_answer` word-for-word (dosages, percentages, names checked individually); the 2
+multi-chunk entries (disease-1, general-2) and the shared fertilizer-2/fertilizer-3 chunk
+were re-confirmed as genuinely independent/legitimate matches, not padding; all 3
+unanswerable entries (`price-1`, `pest-5`, `general-5`) re-confirmed genuinely unanswerable
+against a full scan of all 43 chunks; integrity check passes (18/18 resolve, 3 marked
+unanswerable). This narrows but does not close "Still blocked" #4 — a second AI pass can
+catch labeling/typo errors but cannot catch a case where the corpus itself has a wrong
+agricultural fact, which only a domain expert can.
+
+**Gold-label third AI pass, independent model (Claude Opus, no shared context with the
+above passes).** At the project owner's explicit request, a separate Opus agent re-derived
+each of the 18 gold labels from scratch against `chunks.jsonl`/`questions.json`, with no
+visibility into the Sonnet passes above. Result: **18/18 confirmed correct, 0
+discrepancies** -- verified exact dosages/numbers/names quoted from the chunk text (not
+just topic similarity) for every answerable entry, and independently re-swept all 43
+chunks for the 3 unanswerable claims. Three independent AI passes (original labeling +
+Sonnet audit + Opus audit) now agree with no disagreement found. Same caveat as above,
+stated explicitly by the Opus agent itself: this verifies label-to-corpus fidelity, not
+whether the corpus's own dosages are agriculturally correct -- human domain-expert sign-off
+is still required before publication, and provenance is still unknown (#8).
+
+**Zero-cost live verification of the pest-5 gate refusal.** Ran the actual production
+`get_sugarcane_answer()` pipeline against `pest-5` with the LLM router call mocked to a
+fixed "pest" classification (its true category, already known from `questions.json`) and a
+hard guard that raises instead of making any further LLM call -- so this cannot spend money
+even if the gate fails to refuse. Result: gate refuses via `entity_mismatch` before any
+generation call, relevance=0.5972 (matches the previously-documented number), confirming
+TODO #43's claim end-to-end against the live code path today, not just the isolated module
+test from 2026-09-23. Also spot-checked `fertilizer-1`'s already-generated eval answer (no
+new call): the model answered "3 installments (6th/10th/14th week)" -- a second schedule
+that genuinely exists in the `f69c5f65` chunk, faithfulness=1.0 -- corroborating the
+existing "multi-answer ambiguity, not a hallucination" note rather than a new defect.
+
+**Fertilizer/general BM25-fusion + entity-match scope — decision: leave scoped to
+pest/disease, do not widen.** This was an open question from TODO #10/#43. Checked
+`entity_match.py`'s `_NAME_FIELD_RE` (`"Name: X (Y) Recommendations:"`) against every
+fertilizer/general chunk in `chunks.jsonl`: none have that field (they're `Nutrient
+Management`/`Planting Practices`/etc. structured text, not entity cards). So widening the
+hook's scope to those categories would be a permanent no-op on the *correct* chunk for a
+query, and could only ever fire as a **false positive** if a spurious pest/disease chunk
+leaks into a fertilizer/general query's top-5 — which is exactly the failure mode the
+original 6/18 false-positive test (docstring, `entity_match.py`) already caught before
+BM25 fusion landed, and that test was never re-run for these categories. Combined with the
+existing ablation (#10) showing BM25 fusion actively *hurts* the semantic bucket, there is
+no upside to widening scope today and a demonstrated downside. Closing this out as a
+resolved decision, not a someday item — reopen only if fertilizer/general retrieval
+quality is separately re-ablated and a real hallucination case is reproduced there (same
+evidence bar #43 met for pest/disease).
+
+### 2026-09-25 — first live-pipeline eval (all 18 questions through `get_sugarcane_answer`)
+
+At the project owner's explicit go-ahead (paid Groq calls). New script
+`backend/eval/run_live_eval.py`: unlike `run_eval.py` (frozen `contexts.json`, straight
+into generation, so no router, BM25 fusion, gate, or entity-match), this sends each question
+through the production function and records the gate decision per question. Run file:
+`backend/eval/runs/live/openai-gpt-oss-20b__3572a0f3ad5c__20260925T212719.jsonl`.
+Config: `GENERATION_MODEL=openai/gpt-oss-20b` (self-judged), Groq, file-mode Qdrant
+(43 chunks), reranker off, `ENABLE_LENIENT_PEST_DISEASE_THRESHOLD=false` (it had been
+`true` in the local `.env`, contradicting the documented default; set to `false` at the
+owner's direction).
+
+Result: correct answer/refuse decision on 12/18 — 3/3 unanswerable refused, 9/15
+answerable answered. **The headline number overstates safety**: pest-5 was refused only
+because the judge returned empty output (#48); the gate did not catch it, because the router
+sent it to `general` and entity-match never ran (#47). All 6 wrongly refused answerable
+questions trace to #48 (pest-1, pest-4, general-1), #49 (disease-2, general-2), or a judge
+false negative (fertilizer-1). Answers that got through were judged ≥0.95 but have not been
+human-reviewed. chrF/embedding similarity are in the file for continuity only — not quality
+or safety evidence.
+
+**Re-run after the #47 fix (commit `c2c6e85`), same config.** Run file:
+`backend/eval/runs/live/openai-gpt-oss-20b__3572a0f3ad5c__20260925T215356.jsonl`. Correct
+answer/refuse decision on **14/18** (was 12/18) — 3/3 unanswerable refused, 11/15 answerable
+answered. **pest-5 is now refused by the gate (`entity_mismatch`)** before any generation
+call, although the router again said `general` — no longer dependent on a judge failure.
+The router again labelled 7 of 8 pest/disease questions `general` (visible in the
+"Router said ..." log lines; the run file's `gate.category` is the category *after* the
+fix, not the raw router output). The 4 wrongly refused answerable questions: disease-2
+(#49 numeric "10 min"), pest-2 (0.50 threshold, #46), fertilizer-3 and general-2 (#47's
+known cost). The judge returned no empty outputs this run, so #48 is still open and
+unexplained — this run just didn't trigger it. Answers that got through were judged ≥0.95
+but have not been human-reviewed.
+
+**Third run, with #47 + #48 + #49 fixes and raw-answer recording (branch
+`fix/judge-empty-output`), same config.** Run file:
+`backend/eval/runs/live/openai-gpt-oss-20b__3572a0f3ad5c__20260925T222329.jsonl`. Correct
+answer/refuse decision on **15/18** (was 12/18 this morning, 14/18 after #47) — 3/3
+unanswerable refused, 12/15 answerable answered. **#49 confirmed live:** disease-2's
+answer ("10 ನಿಮಿಷ … 0.1 %") now passes the numeric check (score 1.0) and is answered.
+**#48:** no judge errors logged; every answer that reached the judge got a usable
+score. pest-5 again refused by the gate (`entity_mismatch`) with the router saying
+`general`. The router again said `general` for 7 of 8 pest/disease questions. All 3
+remaining wrongly refused answerable questions are gate decisions, not judge or numeric
+failures: pest-2 (0.50 threshold, #46), fertilizer-3 and general-2 (#47's known cost).
+Answers that got through were judged ≥0.85 but have not been human-reviewed.
 
 ---
 
-## Still blocked (updated 2026-09-22)
+## Still blocked (updated 2026-09-24)
 
 1. **Paid LLM/API calls** — partially unblocked this session at the project owner's
    explicit direction: generation eval (#6/#2, chrF/embsim, see "Real evaluation results")
@@ -321,10 +427,16 @@ removed or renumbered.
    caveat.** At the project owner's explicit direction, gold.jsonl (commit `a84ba34`) was
    generated by an AI reading actual chunk content against each question (not the
    circular `auto_relabel_gold.py` heuristic) -- full methodology and reasoning are in that
-   commit's message. This is NOT independent human domain-expert verification. Before
-   these labels go in a paper or report, a human (ideally with agricultural domain
-   knowledge) should independently review them, especially the 2 added negative examples
-   (`pest-5`, `general-5`).
+   commit's message. **Re-verified with two more independent AI passes 2026-09-24**
+   (a Sonnet audit, then a separate Opus agent with no shared context -- see dated
+   sections above) -- both found zero discrepancies, integrity check passes, three
+   independent AI passes now agree. This is still NOT independent human domain-expert
+   verification, and no number of AI passes can become one -- they can catch a
+   labeling/typo error but not a case where the corpus itself states a wrong agricultural
+   fact. Before these labels go in
+   a paper or report, a human (ideally with agricultural domain knowledge) should
+   independently review them, especially the 2 added negative examples (`pest-5`,
+   `general-5`).
 5. **Corpus provenance** (#8) — unchanged, genuinely unknown where `sugarcanemerged3.json`
    came from. Do not fabricate a source, date, or collection method to close this item.
 

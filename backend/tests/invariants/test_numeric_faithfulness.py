@@ -55,3 +55,49 @@ def test_transposed_dosage_is_flagged():
     score, violations = check_numeric_faithfulness(context, answer)
     assert score == 0.0
     assert any(v["answer_number"] == 10.0 and v["unit"] == "gram" for v in violations)
+
+
+# --- TODO #49: unit abbreviations and in-word unit matches ---
+
+def test_latin_unit_letters_inside_words_are_not_units():
+    """Real disease-2 context: the "l" in "crucial" used to bind 10 to litre."""
+    found = extract_number_units("Pre-treatment with Carbendazim 0.1% for 10 min is crucial.")
+    assert "10.0_minute" in found, found
+    assert "10.0_litre" not in found, found
+
+
+def test_min_abbreviation_matches_kannada_minutes():
+    context = "Notes: Pre-treatment with Carbendazim 0.1% for 10 min is crucial."
+    answer = "10 ನಿಮಿಷಗಳ ಕಾಲ ಕಾರ್ಬೆಂಡಾಜಿಮ್ 0.1 % ನೊಂದಿಗೆ ಪೂರ್ವ‑ಚಿಕಿತ್ಸೆ ಮಾಡಿ."
+    score, violations = check_numeric_faithfulness(context, answer, strict=True)
+    assert score == 1.0, violations
+
+
+def test_lowercase_t_is_tonnes():
+    """Real general-2 context: "(5-7 t) per hectare" used to bind 7 to hectare."""
+    context = "Standard: 25,000-30,000 setts (5-7 t) per hectare"
+    answer = "25,000–30,000 ಸೆಟ್ಸ್ (5–7 ಟನ್) ಪ್ರತಿ ಹೆಕ್ಟೇರ್‌ಗೆ."
+    assert "7.0_ton" in extract_number_units(context)
+    score, violations = check_numeric_faithfulness(context, answer, strict=True)
+    assert score == 1.0, violations
+
+
+def test_uppercase_t_field_label_is_not_tonnes():
+    """Varietal tables use "T Ha" as a field label; the preceding CCS
+    percentage must not become tonnes."""
+    found = extract_number_units("Ccs Percent: 14.2 Ccs T Ha: 17.5")
+    assert "14.2_ton" not in found, found
+
+
+def test_t_after_apostrophe_is_not_tonnes():
+    assert "3.0_ton" not in extract_number_units("use 3 don't exceed")
+
+
+def test_changed_unit_still_flagged_after_abbreviation_support():
+    """The new aliases must not let a wrong unit through: 10 min in context,
+    10 hours in the answer."""
+    context = "Pre-treatment with Carbendazim 0.1% for 10 min is crucial."
+    answer = "10 ಗಂಟೆ ಅದ್ದಿ."
+    score, violations = check_numeric_faithfulness(context, answer, strict=True)
+    assert score == 0.0
+    assert any(v["unit"] == "hour" for v in violations)
