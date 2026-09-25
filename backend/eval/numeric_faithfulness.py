@@ -27,6 +27,11 @@ _UNITS = [
     r"ಗ್ರಾಂ", r"ಗ್ರಾಮ", r"gram", r"grams", r"g",
     r"ಕೆಜಿ", r"kg",
     r"ಟನ್", r"ton", r"tons", r"tonne", r"tonnes",
+    # Lowercase only: the corpus writes tonnes as "100t" / "(5-7 t)", but
+    # its varietal tables use "T Ha" as a field LABEL ("Ccs Percent: 14.2
+    # Ccs T Ha: 17.5"), and a case-insensitive "t" bound 14.2 to tonnes.
+    # Written pre-bounded, since _bounded() only wraps plain-letter units.
+    r"(?<![A-Za-z'’])(?-i:t)(?![A-Za-z])",
     r"ಕ್ವಿಂಟಾಲ್", r"quintal", r"quintals",
     # Volume
     r"ಲೀಟರ್", r"ಲೀ", r"litre", r"liter", r"litres", r"liters", r"l",
@@ -40,7 +45,7 @@ _UNITS = [
     r"ಪಿ\.ಪಿ\.ಎಮ್", r"ppm",
     r"ಡಬ್ಲ್ಯೂ\.ಪಿ", r"ಇ\.ಸಿ", r"ಜಿ",
     # Time
-    r"ನಿಮಿಷ", r"minute", r"minutes",
+    r"ನಿಮಿಷ", r"minute", r"minutes", r"mins?",
     r"ಗಂಟೆ", r"hour", r"hours",
     r"ದಿನ", r"day", r"days",
     r"ವಾರ", r"week", r"weeks",
@@ -50,8 +55,23 @@ _UNITS = [
     r"ಸಸಿಗಳು", r"seedlings?",
 ]
 
+def _bounded(unit: str) -> str:
+    """
+    Latin-script units must stand alone, not match inside a word. Without
+    this, single-letter units matched inside ordinary English: in
+    "10 min is crucial" the "l" of "crucial" bound 10 to litre (TODO #49).
+    An apostrophe before the unit also blocks it, so the "t" in "don't" is
+    not read as tonnes. Kannada units are left unbounded: Python's \\w
+    does not treat Kannada vowel signs as word characters, so \\b-style
+    boundaries would split real Kannada words.
+    """
+    if re.fullmatch(r"[A-Za-z?]+", unit):
+        return rf"(?<![A-Za-z'’]){unit}(?![A-Za-z])"
+    return unit
+
+
 _UNIT_PATTERN = re.compile(
-    r"(?:" + "|".join(_UNITS) + r")",
+    r"(?:" + "|".join(_bounded(u) for u in _UNITS) + r")",
     re.IGNORECASE,
 )
 
@@ -84,7 +104,7 @@ def _canonicalize_unit(unit_str: str) -> str:
         return "hectare"
     if u in ("%", "ಪರ್ಸೆಂಟ್", "percent"):
         return "percent"
-    if u in ("ನಿಮಿಷ", "minute", "minutes"):
+    if u in ("ನಿಮಿಷ", "minute", "minutes", "min", "mins"):
         return "minute"
     if u in ("ಗಂಟೆ", "hour", "hours"):
         return "hour"
@@ -96,7 +116,7 @@ def _canonicalize_unit(unit_str: str) -> str:
         return "month"
     if u in ("ಸೆಟ್ಸ್", "setts", "sett"):
         return "sett"
-    if u in ("ಟನ್", "ton", "tons", "tonne", "tonnes"):
+    if u in ("ಟನ್", "ton", "tons", "tonne", "tonnes", "t"):
         return "ton"
     if u in ("ಕ್ವಿಂಟಾಲ್", "quintal", "quintals"):
         return "quintal"
