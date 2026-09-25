@@ -59,3 +59,30 @@ def test_entity_match_false_when_query_names_a_different_entity_than_retrieved()
     query = "ಕಬ್ಬಿನಲ್ಲಿ ಕಪ್ಪು ದುಂಬಿ ಕೀಟ ಕಂಡುಬಂದರೆ ಯಾವ ಔಷಧಿ ಸಿಂಪಡಿಸಬೇಕು?"
     chunks = ["Name: Termites (ಗೆದ್ದಲು) Recommendations: Chemical: Chlorantraniliprole 0.4 G"]
     assert entity_match(query, chunks) is False
+
+
+# --- resolve_entity_category (TODO #47) ---
+from services.entity_match import resolve_entity_category
+
+PROTECTED = frozenset({"pest", "disease"})
+
+
+def test_router_misroute_does_not_disable_protection():
+    """The live failure: router says 'general' for a pest question whose top
+    retrieved chunk is a pest card. Protection must still apply."""
+    assert resolve_entity_category("general", "pest", PROTECTED) == "pest"
+    assert resolve_entity_category("fertilizer", "disease", PROTECTED) == "disease"
+
+
+def test_router_can_add_protection_without_chunk_signal():
+    assert resolve_entity_category("pest", "general", PROTECTED) == "pest"
+    assert resolve_entity_category("disease", None, PROTECTED) == "disease"
+
+
+def test_router_label_kept_when_neither_signal_fires():
+    assert resolve_entity_category("fertilizer", "general", PROTECTED) == "fertilizer"
+    assert resolve_entity_category("general", None, PROTECTED) == "general"
+
+
+def test_router_label_wins_when_both_are_protected():
+    assert resolve_entity_category("pest", "disease", PROTECTED) == "pest"

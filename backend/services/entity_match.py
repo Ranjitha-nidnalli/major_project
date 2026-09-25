@@ -127,3 +127,29 @@ def entity_match(query_text, retrieved_chunk_texts):
         return True
 
     return False
+
+
+def resolve_entity_category(router_category, top_chunk_category, protected_categories):
+    """
+    Category that decides whether the pest/disease protections run (BM25
+    fusion, entity-match, the safety-critical threshold). TODO #47.
+
+    The LLM router alone is not trusted with this: in the 2026-09-25 live
+    eval it routed 7 of 8 pest/disease questions to "general", which
+    silently switched those protections off -- including for pest-5, the
+    reproduced wrong-pest hallucination. The top hybrid hit's own corpus
+    category (a chunking-time label, not an LLM output) is a second
+    signal. Either one can turn protection ON; neither can turn it off.
+    The router may add caution, never remove it.
+
+    Known cost (zero-cost gate harness, 2026-09-25): on the 18-question
+    set, the chunk signal also fires for fertilizer-3 and general-2, whose
+    top hybrid hit is a pest/disease card, and both are then refused.
+    Refusal is the safe direction; do not tune this rule on the same 18
+    questions to remove them.
+    """
+    if router_category in protected_categories:
+        return router_category
+    if top_chunk_category in protected_categories:
+        return top_chunk_category
+    return router_category

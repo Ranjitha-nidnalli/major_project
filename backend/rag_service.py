@@ -15,7 +15,7 @@ from chat_db import save_chat_message, get_chat_history
 from llm_client import call_llm  # NEW: unified LLM abstraction
 from eval.numeric_faithfulness import check_numeric_faithfulness  # #5
 from services.gating import decide as gating_decide, GatingConfig, UNCALIBRATED_DEFAULT_THRESHOLD
-from services.entity_match import entity_match
+from services.entity_match import entity_match, resolve_entity_category
 from indic_preprocess import normalize_kannada
 from bm25_retriever import BM25Retriever, load_chunks_from_qdrant_upsert
 
@@ -436,11 +436,18 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
         hits = response.points
         return hits[0].score if hits else None
 
+    # Default hybrid retrieval always runs first: its top hit's corpus
+    # category is the router-independent signal for whether this is a
+    # pest/disease question (TODO #47, see resolve_entity_category).
     bm25_relevance = None
+    top_chunks, best_fused_score = await execute_weighted_search(dense_vec, sparse_indices, sparse_values)
+    top_chunk_category = top_chunks[0]["payload"].get("category") if top_chunks else None
+    router_category = category
+    category = resolve_entity_category(router_category, top_chunk_category, BM25_FUSION_CATEGORIES)
+    if category != router_category:
+        print(f"🛡️ Router said {router_category!r}, top chunk is {top_chunk_category!r}; applying {category!r} protections.")
     if category in BM25_FUSION_CATEGORIES:
         top_chunks, best_fused_score, bm25_relevance = await execute_bm25_dense_search(dense_vec, user_query)
-    else:
-        top_chunks, best_fused_score = await execute_weighted_search(dense_vec, sparse_indices, sparse_values)
 
     docs = [p["payload"]["text"] for p in top_chunks]
     # search_score (RRF fusion score) is kept only for logging/telemetry and
