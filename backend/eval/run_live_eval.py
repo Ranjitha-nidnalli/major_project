@@ -86,6 +86,34 @@ def _recording_decide(**kwargs):
 
 rag_service.gating_decide = _recording_decide
 
+# Record the router's raw label and the top chunk's corpus category, since
+# gate.category above is the category AFTER resolve_entity_category (#47).
+_route_log = []
+_real_resolve = rag_service.resolve_entity_category
+
+
+def _recording_resolve(router_category, top_chunk_category, protected_categories):
+    _route_log.append({"router_category": router_category, "top_chunk_category": top_chunk_category})
+    return _real_resolve(router_category, top_chunk_category, protected_categories)
+
+
+rag_service.resolve_entity_category = _recording_resolve
+
+# Record the model's answer and judge score BEFORE the faithfulness/numeric
+# gate can replace it with the refusal message, so numeric checks on a live
+# run can be replayed later (TODO #49 note).
+_gen_log = []
+_real_generate = rag_service.generate_from_context
+
+
+async def _recording_generate(*args, **kwargs):
+    result = await _real_generate(*args, **kwargs)
+    _gen_log.append({"raw_answer": result.get("answer"), "raw_accuracy_score": result.get("accuracy_score")})
+    return result
+
+
+rag_service.generate_from_context = _recording_generate
+
 
 async def main():
     with open(QUESTIONS_PATH, "rb") as f:
@@ -118,6 +146,8 @@ async def main():
     try:
         for q in questions:
             _gate_log.clear()
+            _route_log.clear()
+            _gen_log.clear()
             t0 = time.time()
             resp = await get_sugarcane_answer(
                 q["question"], f"live_eval_{q['id']}_{meta['run_timestamp']}",
@@ -139,7 +169,10 @@ async def main():
                 "generated_answer": answer,
                 "refused": refused,
                 "refusal_correct": refused == expected_refusal,
+                "route": _route_log[-1] if _route_log else None,
                 "gate": gate,
+                # None when the gate refused before generation ran.
+                "raw_generation": _gen_log[-1] if _gen_log else None,
                 "accuracy_score": resp.get("accuracy_score"),
                 "numeric_faithfulness": resp.get("numeric_faithfulness"),
                 "source_chunks": resp.get("source_chunks"),
@@ -150,7 +183,8 @@ async def main():
             results.append(record)
             g = gate or {}
             print(
-                f"[{q['id']}] routed={g.get('category')} gate={g.get('reason')} "
+                f"[{q['id']}] router={(record['route'] or {}).get('router_category')} "
+                f"category={g.get('category')} gate={g.get('reason')} "
                 f"refused={refused} expected_refusal={expected_refusal} "
                 f"faith={record['accuracy_score']} latency={latency:.1f}s",
                 flush=True,
