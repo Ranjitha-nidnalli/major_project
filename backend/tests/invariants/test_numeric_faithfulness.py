@@ -101,3 +101,43 @@ def test_changed_unit_still_flagged_after_abbreviation_support():
     score, violations = check_numeric_faithfulness(context, answer, strict=True)
     assert score == 0.0
     assert any(v["unit"] == "hour" for v in violations)
+
+
+# --- TODO #49a: "Label unit: value" layout, ranges, g_granule crash ---
+
+def test_label_unit_before_number():
+    found = extract_number_units("Duration Months: 10 Cane Yield T Ha: 123.5 Ccs Percent: 14.2 Ccs T Ha: 17.5")
+    assert {"10.0_month", "123.5_ton", "14.2_percent", "17.5_ton"} <= found, found
+    assert "123.5_percent" not in found, found
+
+
+def test_range_shares_unit_from_label():
+    """Real varietal context: the answer states the same range in months."""
+    context = "Id: COC 85061 Duration Months: 10 - 11 Cane Yield T Ha: 128.5"
+    answer = "ಅವಧಿ 10‑11 ತಿಂಗಳು."
+    assert {"10.0_month", "11.0_month"} <= extract_number_units(context)
+    score, violations = check_numeric_faithfulness(context, answer, strict=True)
+    assert score == 1.0, violations
+
+
+def test_wrong_duration_still_flagged():
+    context = "Id: COC 85061 Duration Months: 10 - 11 Cane Yield T Ha: 128.5"
+    answer = "ಅವಧಿ 14 ತಿಂಗಳು."
+    score, violations = check_numeric_faithfulness(context, answer, strict=True)
+    assert score == 0.0
+    assert any(v["answer_number"] == 14.0 and v["unit"] == "month" for v in violations)
+
+
+def test_non_breaking_hyphen_range_matches_ascii_range():
+    """Live pest-3 answer used U+2011; the context used "-"."""
+    context = "Bio-control: Release Micromus igorotus predators 500-1000 per acre"
+    answer = "Micromus igorotus predators (500\u20111000 / acre)"
+    score, violations = check_numeric_faithfulness(context, answer, strict=True)
+    assert score == 1.0, violations
+
+
+def test_granule_unit_violation_does_not_crash():
+    """"50.0_g_granule".rsplit("_", 1) left "50.0_g" as the number."""
+    score, violations = check_numeric_faithfulness("ಫೋರೇಟ್ 10 ಜಿ", "ಫೋರೇಟ್ 50 ಜಿ", strict=True)
+    assert score == 0.0
+    assert violations[0]["answer_number"] == 50.0

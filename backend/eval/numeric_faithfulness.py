@@ -81,6 +81,20 @@ _UNIT_PATTERN = re.compile(
 # different, later number/quantity in the same sentence.
 _SENTENCE_BOUNDARY = re.compile(r"[.!?।]")
 
+# A field label ending in a unit, directly before a number: "Duration
+# Months: 10", "Ccs Percent: 14.2", "Seed Rate Tonnes: 5". "T Ha" (the
+# varietal tables' tonnes-per-hectare label) is group 1.
+_LABEL_UNIT_BEFORE = re.compile(
+    r"(?:(?<![A-Za-z])(T\s+Ha)"
+    r"|(?<![A-Za-z])(months?|percent|tonnes?|tons?|days?|weeks?|hours?|minutes?))"
+    r"\s*:\s*$",
+    re.IGNORECASE,
+)
+
+# What may sit between the two ends of a range: "10 - 11", "5–7", "10 to 11".
+# Includes U+2010-U+2012: gpt-oss writes ranges with "‑" (non-breaking hyphen).
+_RANGE_CONNECTOR = re.compile(r"\s*(?:[-‐‑‒–—]|to)\s*", re.IGNORECASE)
+
 
 def _normalize_kannada_number(s: str) -> str:
     """Convert Kannada digits to Arabic numerals for comparison."""
@@ -139,13 +153,22 @@ def extract_number_units(text: str) -> Set[str]:
     never to a unit that actually belongs to a different number later in
     the sentence.
     """
-    found = set()
     number_matches = list(_NUMBER_PATTERN.finditer(text))
+    items = []  # (match, value, unit or "")
     for i, m in enumerate(number_matches):
         num_norm = _normalize_kannada_number(m.group())
         try:
             num_val = float(num_norm)
         except ValueError:
+            continue
+
+        # "Label unit: value" layout (TODO #49a): the corpus's structured
+        # fields put the unit in the label BEFORE the number ("Duration
+        # Months: 10", "Ccs Percent: 14.2", "Cane Yield T Ha: 123.5"). An
+        # explicit field label wins over looking ahead.
+        label = _LABEL_UNIT_BEFORE.search(text[max(0, m.start() - 30):m.start()])
+        if label:
+            items.append((m, num_val, "ton" if label.group(1) else _canonicalize_unit(label.group(2))))
             continue
 
         window_end = number_matches[i + 1].start() if i + 1 < len(number_matches) else len(text)
@@ -164,10 +187,23 @@ def extract_number_units(text: str) -> Set[str]:
             unit_norm = _canonicalize_unit(unit_match.group())
         else:
             unit_norm = ""
+        items.append((m, num_val, unit_norm))
 
-        key = f"{num_val}_{unit_norm}" if unit_norm else f"{num_val}_nounit"
-        found.add(key)
-    return found
+    # Ranges share one unit: "Months: 10 - 11" (unit on the first end) and
+    # "10-11 ತಿಂಗಳು" (unit on the last end) must both yield 10 and 11 in
+    # months, or a context and answer that state the same range disagree.
+    # Only fills a missing unit; never replaces one.
+    for _ in range(2):  # both directions
+        for j in range(len(items) - 1):
+            (a, av, au), (b, bv, bu) = items[j], items[j + 1]
+            if not _RANGE_CONNECTOR.fullmatch(text[a.end():b.start()]):
+                continue
+            if au and not bu:
+                items[j + 1] = (b, bv, au)
+            elif bu and not au:
+                items[j] = (a, av, bu)
+
+    return {f"{v}_{u}" if u else f"{v}_nounit" for _, v, u in items}
 
 
 def check_numeric_faithfulness(context: str, answer: str, strict: bool = True) -> Tuple[float, List[Dict]]:
@@ -201,7 +237,9 @@ def check_numeric_faithfulness(context: str, answer: str, strict: bool = True) -
     unsupported = ans_nums - ctx_nums
 
     for item in unsupported:
-        parts = item.rsplit("_", 1)
+        # split, not rsplit: units can contain "_" ("g_granule"), and
+        # rsplit left "50.0_g" as the number, which crashed float().
+        parts = item.split("_", 1)
         num_val = float(parts[0])
         unit = parts[1] if len(parts) > 1 else "nounit"
 
