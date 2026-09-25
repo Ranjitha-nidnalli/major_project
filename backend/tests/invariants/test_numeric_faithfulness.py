@@ -141,3 +141,27 @@ def test_granule_unit_violation_does_not_crash():
     score, violations = check_numeric_faithfulness("ಫೋರೇಟ್ 10 ಜಿ", "ಫೋರೇಟ್ 50 ಜಿ", strict=True)
     assert score == 0.0
     assert violations[0]["answer_number"] == 50.0
+
+
+# --- TODO #49b: Kannada units inside other words ---
+
+def test_kannada_unit_inside_chemical_name_is_not_a_unit():
+    """Real corpus text: "ಜಿ" (granule) inside ಕಾರ್ಬೆಂಡೈಜಿಮ್ (Carbendazim)."""
+    found = extract_number_units("50 WP Chemical Kannada: ಕಾರ್ಬೆಂಡೈಜಿಮ್")
+    assert "50.0_g_granule" not in found, found
+
+
+def test_standalone_granule_unit_still_matches():
+    assert "10.0_g_granule" in extract_number_units("ಫೋರೇಟ್ 10 ಜಿ")
+    assert "10.0_g_granule" in extract_number_units("ಫೋರೇಟ್ 10ಜಿ")
+
+
+def test_short_kannada_unit_does_not_start_unrelated_word():
+    """"ಜಿಲ್ಲೆ" (district) begins with ಜಿ but is not a granule."""
+    assert "5.0_g_granule" not in extract_number_units("5 ಜಿಲ್ಲೆಗಳಲ್ಲಿ")
+
+
+def test_kannada_unit_with_case_suffix_still_matches():
+    """Kannada attaches suffixes to units; those must still count."""
+    found = extract_number_units("10 ನಿಮಿಷಗಳ ಕಾಲ ಅದ್ದಿ, 500 ಗ್ರಾಂ/ಎಕರೆಗೆ ಬಳಸಿ")
+    assert {"10.0_minute", "500.0_gram"} <= found, found

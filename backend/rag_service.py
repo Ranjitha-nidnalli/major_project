@@ -17,6 +17,7 @@ from eval.numeric_faithfulness import check_numeric_faithfulness  # #5
 from services.gating import decide as gating_decide, GatingConfig, UNCALIBRATED_DEFAULT_THRESHOLD
 from services.entity_match import entity_match, resolve_entity_category
 from services.judge_parse import parse_judge_score
+from services.router_parse import parse_router_category
 from indic_preprocess import normalize_kannada
 from bm25_retriever import BM25Retriever, load_chunks_from_qdrant_upsert
 
@@ -53,6 +54,8 @@ INTERACTIVE_TIMEOUT = int(os.getenv("INTERACTIVE_TIMEOUT", 120))
 FAITHFULNESS_GATE_THRESHOLD = 0.50
 # Faithfulness judge token budget per attempt; see calculate_faithfulness.
 JUDGE_MAX_TOKENS_PER_ATTEMPT = (1024, 4096)
+# LLM router token budget per attempt; see get_sugarcane_answer.
+ROUTER_MAX_TOKENS_PER_ATTEMPT = (1024, 4096)
 
 SAFETY_CRITICAL_CATEGORIES = {"pest", "disease", "fertilizer"}
 
@@ -292,25 +295,34 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
     # ==========================================
     # 1. THE SWITCHBOARD (Router)
     # ==========================================
+    # Category only. The router used to also return English search
+    # keywords, but nothing read them after the web fallback was removed,
+    # and asking for them roughly doubled the router's reasoning tokens.
     router_prompt = (
         "Classify the user query into: 'price', 'disease', 'pest', 'fertilizer', or 'general'.\n"
-        "Also translate the query to English keywords for web search purposes.\n"
-        "Format: CATEGORY | ENGLISH_KEYWORDS"
+        "Reply with ONLY the category word."
     )
 
-    route_content = await call_llm(
-        messages=[{"role": "system", "content": router_prompt}, {"role": "user", "content": user_query}],
-        max_tokens=100,
-        temperature=0.0
-    )
-
-    if route_content:
-        route_parts = route_content.strip().split('|')
-        category = route_parts[0].strip().lower()
-        english_search_query = route_parts[1].strip() if len(route_parts) > 1 else user_query
-    else:
-        print("⚠️ Router failed, defaulting to general")
-        category, english_search_query = "general", user_query
+    # Same token-budget problem as the judge (TODO #48): with max_tokens=100
+    # the reasoning model returned empty content for 14 of 18 eval questions
+    # (finish_reason=length), silently routed "general". With room to
+    # finish, it used 42-350 reasoning tokens and got 15/18 right.
+    category = None
+    for attempt, max_tokens in enumerate(ROUTER_MAX_TOKENS_PER_ATTEMPT, start=1):
+        route_content = await call_llm(
+            messages=[{"role": "system", "content": router_prompt}, {"role": "user", "content": user_query}],
+            max_tokens=max_tokens,
+            temperature=0.0
+        )
+        category = parse_router_category(route_content)
+        if category is not None:
+            break
+        print(f"⚠️ Router error (attempt {attempt}, max_tokens={max_tokens}): no valid category in {route_content!r:.80}")
+    if category is None:
+        # Safe: resolve_entity_category (TODO #47) still applies the
+        # pest/disease protections when the retrieved chunks call for them.
+        print("⚠️ Router failed on every attempt, defaulting to general")
+        category = "general"
 
     # ==========================================
     # 2. RETRIEVAL WITH BGE-M3 HYBRID

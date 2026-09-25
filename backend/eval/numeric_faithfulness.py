@@ -55,18 +55,38 @@ _UNITS = [
     r"ಸಸಿಗಳು", r"seedlings?",
 ]
 
+# Kannada letters, vowel signs, virama, plus ZWNJ/ZWJ (used inside words
+# like "ಸೆಟ್ಸ್‌ಗಳನ್ನು").
+_KN = r"ಀ-೿‌‍"
+
+# Kannada units short enough to also begin unrelated words ("ಜಿಲ್ಲೆ" =
+# district, "ಲೀನ" ...): these must stand alone on both sides.
+_SHORT_KANNADA_UNITS = {r"ಜಿ", r"ಲೀ"}
+
+
 def _bounded(unit: str) -> str:
     """
-    Latin-script units must stand alone, not match inside a word. Without
-    this, single-letter units matched inside ordinary English: in
-    "10 min is crucial" the "l" of "crucial" bound 10 to litre (TODO #49).
-    An apostrophe before the unit also blocks it, so the "t" in "don't" is
-    not read as tonnes. Kannada units are left unbounded: Python's \\w
-    does not treat Kannada vowel signs as word characters, so \\b-style
-    boundaries would split real Kannada words.
+    Units must not match inside a word.
+
+    Latin script: bounded on both sides. Without this, single-letter units
+    matched inside ordinary English: in "10 min is crucial" the "l" of
+    "crucial" bound 10 to litre (TODO #49). An apostrophe before the unit
+    also blocks it, so the "t" in "don't" is not read as tonnes.
+
+    Kannada (TODO #49b): bounded BEFORE only. Kannada attaches suffixes to
+    the unit ("ನಿಮಿಷಗಳ", "ಎಕರೆಗೆ", "ಲೀಟರ್‌ಗೆ"), so letters after it are
+    normal, but letters before it mean it's inside another word ("ಜಿ" in
+    "ಕಾರ್ಬೆಂಡೈಜಿಮ್"). The shortest units are bounded on both sides.
+    Python's \b is not used: it doesn't treat Kannada vowel signs as word
+    characters and would split real words.
     """
     if re.fullmatch(r"[A-Za-z?]+", unit):
         return rf"(?<![A-Za-z'’]){unit}(?![A-Za-z])"
+    if re.search(r"[ಀ-೿]", unit):
+        bounded = rf"(?<![{_KN}]){unit}"
+        if unit in _SHORT_KANNADA_UNITS:
+            bounded += rf"(?![{_KN}])"
+        return bounded
     return unit
 
 
