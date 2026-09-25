@@ -395,6 +395,19 @@ known cost). The judge returned no empty outputs this run, so #48 is still open 
 unexplained — this run just didn't trigger it. Answers that got through were judged ≥0.95
 but have not been human-reviewed.
 
+**Third run, with #47 + #48 + #49 fixes and raw-answer recording (branch
+`fix/judge-empty-output`), same config.** Run file:
+`backend/eval/runs/live/openai-gpt-oss-20b__3572a0f3ad5c__20260925T222329.jsonl`. Correct
+answer/refuse decision on **15/18** (was 12/18 this morning, 14/18 after #47) — 3/3
+unanswerable refused, 12/15 answerable answered. **#49 confirmed live:** disease-2's
+answer ("10 ನಿಮಿಷ … 0.1 %") now passes the numeric check (score 1.0) and is answered.
+**#48:** no judge errors logged; every answer that reached the judge got a usable
+score. pest-5 again refused by the gate (`entity_mismatch`) with the router saying
+`general`. The router again said `general` for 7 of 8 pest/disease questions. All 3
+remaining wrongly refused answerable questions are gate decisions, not judge or numeric
+failures: pest-2 (0.50 threshold, #46), fertilizer-3 and general-2 (#47's known cost).
+Answers that got through were judged ≥0.85 but have not been human-reviewed.
+
 ---
 
 ## Still blocked (updated 2026-09-24)
