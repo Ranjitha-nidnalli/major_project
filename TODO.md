@@ -301,6 +301,9 @@ removed or renumbered.
 | 46 | **`pest-2` refused by an unrelated, uncalibrated threshold — found 2026-09-23, root-caused, opt-in fix shipped (default OFF).** Two real bugs found while investigating: (1) the relevance gate was scoring a *different chunk* than the one BM25+dense fusion actually used to build the answer (fixed, commit `9840812`); (2) `rrf_fuse()`'s tie-breaking was non-deterministic across process restarts due to Python's per-process hash randomization -- the exact same query could retrieve a different top chunk on different runs (fixed, commit `a1afe01`). After both fixes, the TRUE finding holds: `pest-2` (correct) scores relevance=0.489, LOWER than `pest-5` (a wrong-entity hallucination) at 0.597 -- no single threshold value separates them, because `entity_match_hook` (validated 9/9) now does that job instead. Added `ENABLE_LENIENT_PEST_DISEASE_THRESHOLD` (`.env`, **default false**) to lower pest/disease's threshold to the general default (0.35) when explicitly opted into -- verified both states: off leaves `pest-2` refused (unchanged), on answers it correctly while `pest-5` still correctly refuses via entity_mismatch. Left off by default deliberately: this weakens a safety-critical refusal control, and that's the project owner's decision to make explicitly, not something to infer from general delegation ("do what's best") -- confirmed by this session's own safety classifier blocking the first attempt to apply it directly | 1 |
 | 44 | ~~Faithfulness judge prompt doesn't handle refusals~~ — ✅ **FIXED 2026-09-23** (commit `a330b09`). Extracted the exact instructed refusal phrase into `NOT_IN_CONTEXT_PHRASE`; `generate_from_context()` now recognizes it verbatim and skips the judge for that case (scored 1.0) instead of letting a faithfulness judge mis-score a correct refusal as unfaithful. Verified: full test suite + hand-traced through the downstream semantic_fail/numeric_fail logic. **Not yet verified with a live LLM call** (needs a real eval re-run to confirm end-to-end -- next time #2/#6 runs, check price-1/general-5 specifically) | 1 |
 | 45 | ~~OpenRouter cross-judge (#4) needs an architecture change~~ — ✅ **FIXED 2026-09-23** (commit `88a24cd`). Added `backend=` param to `call_llm()`, threaded through `calculate_faithfulness()`/`generate_from_context()`; `run_eval.py` reads an optional `JUDGE_BACKEND` env var. Verified without real API calls: monkeypatched both backend functions, confirmed default routes to `LLM_BACKEND` unchanged and an explicit override routes correctly. **#4 itself (an actual cross-judge run) is still not done** -- that needs paid OpenRouter calls, separately authorized | 2 |
+| 47 | **Router rarely emits pest/disease, so #10 (BM25 fusion) and #43 (entity-match) mostly don't run in production — found 2026-09-25 (live-pipeline eval, see dated section below).** 7 of 8 pest/disease questions were routed to `general`; only disease-2 got `disease`. Both protections key off the *router's* category, and the 2026-09-23/24 #43 verifications mocked the router to the correct category, so they never exercised this path. pest-5 (the reproduced hallucination) was routed `general`, passed the relevance gate, and generated the black-beetle→termite answer again. Fix direction: stop gating these protections on the LLM router's label (CLAUDE.md: an LLM classification must never decide what's reachable/checked) — e.g. run entity-match whenever the retrieved chunks are entity cards, regardless of routed category. Needs re-validation for false positives on fertilizer/general (see the 2026-09-24 scope decision) | 1 |
+| 48 | **Faithfulness judge returns empty output, scored 0.0 — found 2026-09-25.** 4/18 live questions (pest-1, pest-4, general-1, pest-5) logged `Judge returned non-numeric:` with an empty string. Suspected (NOT verified) cause: gpt-oss-20b is a reasoning model and exhausts its token budget before emitting the score. Three were correct answers wrongly refused; the fourth was pest-5, which was refused **only** because of this failure — the safe outcome on the safety-critical case was luck, not a working control. Fix: confirm cause, then handle judge failure explicitly (retry / distinct `judge_error` state) rather than silently scoring 0.0. fertilizer-1 also scored 0.0 with non-empty output, although its "3 ಕಂತುಗಳು" schedule exists in the chunk (see the 2026-09-24 note) — a judge false negative | 1 |
+| 49 | **Numeric checker misses unit abbreviations → false refusals — found 2026-09-25.** Verified against the retrieved context: disease-2 flagged "10 minute" although the context has "10 min"; general-2 flagged "7 ton" although the context has "(5-7 t)". Both correct answers refused (safe direction, but hurts usefulness). Fix: add `min`→minute and `t`→tonne aliases in `eval/numeric_faithfulness.py` with tests; check a bare `t` alias doesn't mis-bind elsewhere | 1 |
 
 ### 2026-09-24 — gold-label second-pass verification + fertilizer/general scope decision closed
 
@@ -357,6 +360,27 @@ no upside to widening scope today and a demonstrated downside. Closing this out 
 resolved decision, not a someday item — reopen only if fertilizer/general retrieval
 quality is separately re-ablated and a real hallucination case is reproduced there (same
 evidence bar #43 met for pest/disease).
+
+### 2026-09-25 — first live-pipeline eval (all 18 questions through `get_sugarcane_answer`)
+
+At the project owner's explicit go-ahead (paid Groq calls). New script
+`backend/eval/run_live_eval.py`: unlike `run_eval.py` (frozen `contexts.json`, straight
+into generation, so no router, BM25 fusion, gate, or entity-match), this sends each question
+through the production function and records the gate decision per question. Run file:
+`backend/eval/runs/live/openai-gpt-oss-20b__3572a0f3ad5c__20260925T212719.jsonl`.
+Config: `GENERATION_MODEL=openai/gpt-oss-20b` (self-judged), Groq, file-mode Qdrant
+(43 chunks), reranker off, `ENABLE_LENIENT_PEST_DISEASE_THRESHOLD=false` (it had been
+`true` in the local `.env`, contradicting the documented default; set to `false` at the
+owner's direction).
+
+Result: correct answer/refuse decision on 12/18 — 3/3 unanswerable refused, 9/15
+answerable answered. **The headline number overstates safety**: pest-5 was refused only
+because the judge returned empty output (#48); the gate did not catch it, because the router
+sent it to `general` and entity-match never ran (#47). All 6 wrongly refused answerable
+questions trace to #48 (pest-1, pest-4, general-1), #49 (disease-2, general-2), or a judge
+false negative (fertilizer-1). Answers that got through were judged ≥0.95 but have not been
+human-reviewed. chrF/embedding similarity are in the file for continuity only — not quality
+or safety evidence.
 
 ---
 
