@@ -382,6 +382,19 @@ false negative (fertilizer-1). Answers that got through were judged ≥0.95 but 
 human-reviewed. chrF/embedding similarity are in the file for continuity only — not quality
 or safety evidence.
 
+**Re-run after the #47 fix (commit `c2c6e85`), same config.** Run file:
+`backend/eval/runs/live/openai-gpt-oss-20b__3572a0f3ad5c__20260925T215356.jsonl`. Correct
+answer/refuse decision on **14/18** (was 12/18) — 3/3 unanswerable refused, 11/15 answerable
+answered. **pest-5 is now refused by the gate (`entity_mismatch`)** before any generation
+call, although the router again said `general` — no longer dependent on a judge failure.
+The router again labelled 7 of 8 pest/disease questions `general` (visible in the
+"Router said ..." log lines; the run file's `gate.category` is the category *after* the
+fix, not the raw router output). The 4 wrongly refused answerable questions: disease-2
+(#49 numeric "10 min"), pest-2 (0.50 threshold, #46), fertilizer-3 and general-2 (#47's
+known cost). The judge returned no empty outputs this run, so #48 is still open and
+unexplained — this run just didn't trigger it. Answers that got through were judged ≥0.95
+but have not been human-reviewed.
+
 ---
 
 ## Still blocked (updated 2026-09-24)
