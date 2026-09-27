@@ -52,10 +52,20 @@ INTERACTIVE_TIMEOUT = int(os.getenv("INTERACTIVE_TIMEOUT", 120))
 # services/gating.py and is driven by dense cosine relevance, not the RRF
 # fusion score. See GATING_CONFIG below and ARCHITECTURE.md Section 21.
 FAITHFULNESS_GATE_THRESHOLD = 0.50
-# Faithfulness judge token budget per attempt; see calculate_faithfulness.
-JUDGE_MAX_TOKENS_PER_ATTEMPT = (1024, 4096)
-# LLM router token budget per attempt; see get_sugarcane_answer.
-ROUTER_MAX_TOKENS_PER_ATTEMPT = (1024, 4096)
+# Token budgets per attempt for the reasoning-model judge and router (see
+# calculate_faithfulness / get_sugarcane_answer). Sized from measured use,
+# not set generously: Groq's rate limiter counts the REQUESTED max_tokens
+# against the daily quota up front (429 "Requested 1711" for a 1024-token
+# call, 2026-09-25), so oversized caps burn quota even when unused.
+# Measured completion tokens (reasoning + visible), 2026-09-25:
+#   judge:  99-624 over 36 calls; varies run to run at temperature 0
+#           (pest-4: 500+ then 624), so the first try keeps ~1.6x headroom.
+#   router: 54-361 over 18 calls with the category-only prompt.
+# A router failure falls back to "general", which is safe because
+# resolve_entity_category (#47) still applies the pest/disease checks; a
+# judge failure fails closed. The retry covers the rare long case.
+JUDGE_MAX_TOKENS_PER_ATTEMPT = (1024, 2048)
+ROUTER_MAX_TOKENS_PER_ATTEMPT = (512, 2048)
 
 SAFETY_CRITICAL_CATEGORIES = {"pest", "disease", "fertilizer"}
 
@@ -190,8 +200,9 @@ async def calculate_faithfulness(
     # (2026-09-21); 500 still did on 2026-09-25 -- replaying all 18 eval
     # judge calls, reasoning used 101-498 tokens with no clear link to
     # context length, and pest-4 hit finish_reason=length at 498/500.
-    # Only tokens actually generated are billed, so a higher cap costs
-    # nothing on calls that finish early.
+    # Budgets are sized from measured use, since Groq's rate limiter counts
+    # the requested cap against the daily quota; see
+    # JUDGE_MAX_TOKENS_PER_ATTEMPT.
     for attempt, max_tokens in enumerate(JUDGE_MAX_TOKENS_PER_ATTEMPT, start=1):
         content = await call_llm(
             messages=[{"role": "system", "content": prompt}, {"role": "user", "content": user_msg}],
