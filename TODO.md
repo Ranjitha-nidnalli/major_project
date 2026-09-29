@@ -409,6 +409,25 @@ remaining wrongly refused answerable questions are gate decisions, not judge or 
 failures: pest-2 (0.50 threshold, #46), fertilizer-3 and general-2 (#47's known cost).
 Answers that got through were judged ≥0.85 but have not been human-reviewed.
 
+**Fourth run, 2026-09-29, with #50 router fix + lowered token budgets (branch
+`fix/token-budgets`), same config.** Run file:
+`backend/eval/runs/live/openai-gpt-oss-20b__3572a0f3ad5c__20260929T213512.jsonl`. Correct
+answer/refuse decision on **14/18** — 3/3 unanswerable refused, 11/15 answerable answered.
+43 Groq calls, no 429s, no router failures, no judge errors, no retries needed at the
+lowered (512 / 1024) first-try budgets. **#50 confirmed live:** the router answered all 18,
+and its only misses are the three measured zero-cost (pest-3→disease, general-2→fertilizer,
+general-3→disease); pest/disease questions are no longer silently routed `general`. pest-5
+refused by the gate (`entity_mismatch`), this time with the router itself saying `pest`.
+The drop from 15/18 is general-3, refused via `entity_mismatch` after the router's
+`disease` label, exactly as predicted in #50. The 4 wrongly refused answerable questions
+are all gate decisions, all in the refusal direction: pest-2 (0.489 < 0.50, #46),
+fertilizer-3 (top hit a pest card, 0.456 < 0.50, #47 cost), general-2 and general-3
+(`entity_mismatch`). Answers that got through were judged ≥0.6 (disease-3 0.6, general-1
+0.6, pest-4 0.7; the gate is 0.50) and all passed the numeric check; none have been
+human-reviewed. A first attempt crashed on its first Groq call because stdout was
+redirected in cp1252 and the log line's emoji could not be encoded (0-record file
+removed; run again with `PYTHONIOENCODING=utf-8`).
+
 ---
 
 ## Still blocked (updated 2026-09-24)
