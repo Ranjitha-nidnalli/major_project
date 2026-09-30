@@ -19,6 +19,10 @@ Design: ARCHITECTURE.md Section 24. Branch `feat/v2-verified-facts`.
   shoot borer row; the termite row has no dose.
 - [ ] HUMAN: check the 13 chemicals against the CIB&RC approved-uses list (sugarcane + that pest);
   every pesticide dose stays blocked until 'currently registered' is yes.
+  Helper: `knowledge/registration_helper.csv` (CIB&RC lists as on 31.03.2026). Leads: CTPR 0.4 G and
+  fipronil 0.3 G are listed for sugarcane early shoot borer, not termites; NO sugarcane entry found for
+  dimethoate, malathion, carbendazim, copper oxychloride, mancozeb; acephate 75 WP, thiamethoxam 25 WG
+  and 2,4-D 80% WP appear only as other formulations. Confirm each on the PDF page.
 - [ ] HUMAN: review `knowledge/intents.json` names/keywords and the Kannada messages in
   `services/fact_answer.py`.
 - [ ] HUMAN: ~30 NEW test questions not shown to Claude (the 40 held-out ones were read during

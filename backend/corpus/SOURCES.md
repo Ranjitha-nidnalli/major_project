@@ -27,6 +27,20 @@ Phorate, metasystox (oxydemeton-methyl) and benomyl are not registered in India.
 that recommended them were moved to `rejected_records` in `backend/knowledge/facts_uasd_2020.json`
 (benomyl was already omitted from the smut record); a test keeps them out.
 
+## CIB&RC registration lists (for the "currently registered?" check)
+Downloaded 2026-09-30 into `backend/corpus/cibrc/` (gitignored) from
+https://ppqs.gov.in/divisions/cib-rc/major-uses-of-pesticides and
+https://ppqs.gov.in/divisions/cib-rc/registered-products :
+- Major Uses of Pesticides, as on 31.03.2026: insecticides
+  (`updated_mup_insecticide_as_on_31.03.2026_c.pdf`), fungicides
+  (`2._chemical_mup_fungicide_as_on_31.03.2026_0.pdf`), herbicides
+  (`4._herbicides_mup_as_on_31.03.2026.pdf`), bio-insecticides (`6._mup_bio_insecticide_31.03.2026.pdf`).
+- Banned, refused registration and restricted in use, as on 31.07.2026
+  (`list_of_pesticides_which_are_banned_refused_registration_and_restricted_in_use.pdf`).
+`backend/knowledge/registration_helper.py` lists the sugarcane entries for each chemical our
+records use (`knowledge/registration_helper.csv`). It is a pointer list: the yes/no decision is
+made by a person on the PDF page.
+
 ## Conflict rule (owner decision 2026-09-30)
 When UAS and ICAR (or other cross-check sources) disagree, the bot gives the **UAS**
 recommendation and may note that ICAR's national advisory differs. Cross-check sources never
