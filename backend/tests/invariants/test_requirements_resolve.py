@@ -35,6 +35,7 @@ EXCLUDED_DIRS = {"_archive_stale", "__pycache__", ".git"}
 # Only needed where the import name differs from the PyPI distribution name.
 IMPORT_TO_DISTRIBUTION = {
     "dotenv": "python-dotenv",
+    "fitz": "pymupdf",
     "indicnlp": "indic-nlp-library",
     "rouge_score": "rouge-score",
     "qdrant_client": "qdrant-client",

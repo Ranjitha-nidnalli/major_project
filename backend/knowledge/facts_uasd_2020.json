@@ -5,6 +5,7 @@
   "display_name_kn": "ಕೃಷಿ ವಿಜ್ಞಾನಗಳ ವಿಶ್ವವಿದ್ಯಾಲಯ, ಧಾರವಾಡ: ಬೇಸಾಯ ಕ್ರಮಗಳು 2020",
   "region_kn": "ಉತ್ತರ ಕರ್ನಾಟಕ",
   "converted_text": "backend/corpus/converted/uasd_pop2020_sugarcane.txt",
+  "pdf": "corpus/PoP Agriculture cover page2020.cdr.pdf",
   "note": "DRAFT records written by Claude from the Nudi-converted text. Pages are two-column spreads, so table columns are interleaved in the converted text; excerpts are kept to contiguous lines. Every record must be checked against the printed page by a person before status becomes CONFIRMED. This is a 2020 book: every pesticide must also be checked against the current CIB&RC registration list.",
   "records": [
     {

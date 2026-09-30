@@ -5,6 +5,7 @@
   "display_name_kn": "ಕೃಷಿ ವಿಶ್ವವಿದ್ಯಾನಿಲಯ, ಬೆಂಗಳೂರು: ಬೇಸಾಯ ಕ್ರಮಗಳು 2025",
   "region_kn": "ದಕ್ಷಿಣ ಕರ್ನಾಟಕ",
   "converted_text": "backend/corpus/converted/uasb_pop2025_sugarcane.txt",
+  "pdf": "corpus/UASB_POP_2025_official_full.pdf",
   "note": "DRAFT records written by Claude from the Nudi-converted text. Every record must be checked against the printed page by a person before status becomes CONFIRMED. text_kn is the farmer-facing wording; excerpts are exact source text.",
   "records": [
     {

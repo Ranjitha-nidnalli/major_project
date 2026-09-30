@@ -9,8 +9,16 @@ Design: ARCHITECTURE.md Section 24. Branch `feat/v2-verified-facts`.
 - [x] 92 draft fact records + checker + review sheet (`backend/knowledge/`).
 - [x] Name/topic lists (`knowledge/intents.json`) and the no-LLM answer path
   (`services/fact_answer.py`, `ANSWER_MODE=facts`), 23 tests.
-- [ ] **HUMAN: review `knowledge/review_sheet.csv` against the printed pages** (6 SAFETY rows
-  first), save as `review_sheet_REVIEWED.csv`. Until then v2 refuses everything.
+- [ ] **HUMAN: review `knowledge/review_sheet.csv` against the printed pages**, save as
+  `review_sheet_REVIEWED.csv`. Until then v2 refuses everything. A ChatGPT pass (2026-09-30) is kept
+  as `knowledge/review_sheet_AI_prereview_chatgpt.csv`: it only compared text to text (it never
+  saw the pages), so it is NOT a confirmation and the bot does not read it. Use the review pack
+  (`python knowledge/build_review_pack.py --ai-prereview knowledge/review_sheet_AI_prereview_chatgpt.csv`,
+  opens `corpus/converted/review_pack/index.html`): page images upright, records underneath,
+  41 priority rows marked. Page 174 checked by rendering: the granule doses are in the early
+  shoot borer row; the termite row has no dose.
+- [ ] HUMAN: check the 13 chemicals against the CIB&RC approved-uses list (sugarcane + that pest);
+  every pesticide dose stays blocked until 'currently registered' is yes.
 - [ ] HUMAN: review `knowledge/intents.json` names/keywords and the Kannada messages in
   `services/fact_answer.py`.
 - [ ] HUMAN: ~30 NEW test questions not shown to Claude (the 40 held-out ones were read during
