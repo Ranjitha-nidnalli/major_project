@@ -9,6 +9,7 @@ from FlagEmbedding import BGEM3FlagModel
 from sentence_transformers import CrossEncoder
 
 from indic_preprocess import normalize_kannada
+from corpus_exclusions import apply_exclusions
 
 
 # ============================================================
@@ -705,7 +706,8 @@ def load_and_chunk_data(
             section_chunks
         )
 
-    return all_chunks
+    return apply_exclusions(all_chunks)
+
 
 
 # ============================================================

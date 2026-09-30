@@ -58,6 +58,27 @@ expert-written held-out questions with expert ratings, plus a no-retrieval basel
   open it from the browser).
 - [ ] Expert sheets (corpus facts / question writing / answer rating).
 
+**Corpus review (2026-09-30), branch `fix/corpus-exclusions`**
+- [x] Applied SUBTRACTIVE part only: the 12 rows the review marked `remove` are withheld from
+  both indexes via `backend/corpus_exclusions.json` (43 → 31 chunks; pest cards 5 → 1: only
+  Early Shoot Borer). No replacement text or dose from the review was added.
+- [ ] **BLOCKER for calling it expert-verified:** the review file reads partly AI-drafted (notes
+  like "My previous version incorrectly…"). Expert must confirm each verdict row by row. Until
+  then the paper must say "withheld pending expert confirmation", not "expert-verified".
+- [ ] Expert decision needed: replacement texts in the review (seed rate 45,000–50,000 setts/ha,
+  NPK 250:115:115, spacing, YLD/Smut wording, sett treatment) are NOT applied. Also the kept
+  fertilizer Application Schedule row, which the review says holds two conflicting schedules and
+  which now answers fertilizer-1: withhold it too, or keep?
+- Old 18-question gold: 5 gold chunks now excluded (disease-2, pest-2, pest-3, pest-4,
+  fertilizer-1). Not relabelled (human task); the 18 are now a pipeline sanity check only.
+  Zero-cost harness: disease-2/pest-3/pest-4 refused by entity_mismatch, pest-2/pest-5 by
+  relevance — correct behaviour once their cards are gone.
+- Held-out questions may have 'answerable' labels that relied on excluded rows; after the
+  day-7 run, list refused-answerable questions whose answer only existed in excluded chunks for
+  the expert to confirm (do not relabel automatically).
+- Noted, not fixed: the pipeline reads `backend/sugarcanemerged3.json` (untracked); the tracked
+  root copy has identical parsed content, and it is what run_live_eval.py hashes.
+
 **Cut — future work in the paper, not built:** KCC question set (#18/#19), RAGAS/BERTScore
 (#20/#21), 3-model bake-off (P2/Phase 5), chunking rebuild (#13), query condensation (#14),
 streaming (#15), CI (#12), category filtering (#38), Ollama/sarvam (#28/#29), structured
