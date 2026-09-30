@@ -1,0 +1,103 @@
+{
+  "_about": "Chunks withheld from BOTH indexes (Qdrant and BM25) by vector_db.load_and_chunk_data. Subtractive only: nothing here adds or changes a fact. Source: rows marked 'remove' in backend/eval/expert/corpus_fact_sheet_reviewed_v2.csv (review of 2026-09-30). STATUS: that review is NOT yet confirmed as the agri expert's own row-by-row judgment -- parts of it read as AI-drafted. Until confirmed, do not describe these exclusions as expert-verified. Removing a chunk can only make the system refuse more, so it is applied now; the reverse (adding the review's replacement doses) is NOT done and must wait for the expert.",
+  "review_file": "backend/eval/expert/corpus_fact_sheet_reviewed_v2.csv",
+  "status": "pending_expert_confirmation",
+  "excluded": [
+    {
+      "chunk_id": "3f1f2ff1-8e1b-5dff-bfa9-83f8c96759b2",
+      "category": "pest",
+      "topic_start": "Pest Management Name: Root Borer (ಬೇರು ಕೊರಕ) Recommendations: Chemical",
+      "review_verdict": "partly",
+      "review_note": "The checked sources show root-borer management options, but they do not establish this exact formulation/dose as a current Karnataka recommendation. The current row also has no dose.",
+      "review_source": "ICAR AICRP Crop Science material; APEDA Integrated Pest Management portal."
+    },
+    {
+      "chunk_id": "4f561376-8884-5fc4-8be1-b7d4f3450ea7",
+      "category": "pest",
+      "topic_start": "Pest Management Name: White Woolly Aphid (ಬಿಳಿ ಉಣ್ಣೆ ಹೇನು) Recommendat",
+      "review_verdict": "partly",
+      "review_note": "The chemicals/doses are not fabricated, but the supporting source is Tamil Nadu-specific. Do not label them Karnataka recommendations without a Karnataka source.",
+      "review_source": "TNAU Agritech Portal, Sugarcane Woolly Aphid; ICAR/Karnataka material checked."
+    },
+    {
+      "chunk_id": "9026361d-041f-5f5c-894c-03b9abf6886a",
+      "category": "pest",
+      "topic_start": "Pest Management Name: Top Shoot Borer (ಮೇಲಿನ ಸುಳಿ ಕೊರಕ) Recommendation",
+      "review_verdict": "partly",
+      "review_note": "My previous version incorrectly converted this into a Chlorantraniliprole correction. That was not a direct correction of the source row and has been removed.",
+      "review_source": "ICAR Kharif Agro-Advisory 2025; ICAR Sugarcane Research material."
+    },
+    {
+      "chunk_id": "f7f0a90b-586a-5e16-88fa-a2ae5616a056",
+      "category": "pest",
+      "topic_start": "Pest Management Name: Termites (ಗೆದ್ದಲು) Recommendations: Chemical: Ch",
+      "review_verdict": "no",
+      "review_note": "The PPQS label checked supports Chlorantraniliprole 0.4% GR in sugarcane for early/top borer, not termites. Therefore it cannot be used to justify the current termite row.",
+      "review_source": "PPQS Chlorantraniliprole 0.4% GR primary label; ICAR/Karnataka agronomy material checked."
+    },
+    {
+      "chunk_id": "07fa4330-7093-5e82-b5c6-96ea91b86712",
+      "category": "disease",
+      "topic_start": "Disease Management Name: Leaf Spot (ಎಲೆ ಚುಕ್ಕೆ ರೋಗ) Recommendations: C",
+      "review_verdict": "partly",
+      "review_note": "The previous version appropriately avoided inventing a replacement dose. The row should remain out of the safety corpus until the exact leaf-spot formulation/dose is source-matched.",
+      "review_source": "ICAR Kharif Agro-Advisory 2025; ICAR AICRP Crop Science."
+    },
+    {
+      "chunk_id": "e789559c-f692-51de-a0b9-bea27330583b",
+      "category": "disease",
+      "topic_start": "Disease Management Name: Wilt / Grassy Shoot / Red Rot (ಕೆಂಪು ಕೊಳೆ / ಸ",
+      "review_verdict": "no",
+      "review_note": "Red rot, grassy shoot and wilt are distinct diseases and require separate management. Combining them is unsafe for retrieval/generation.",
+      "review_source": "ICAR Kharif Agro-Advisory 2025; ICAR AICRP Crop Science."
+    },
+    {
+      "chunk_id": "e0c0eb3d-3300-5b94-8636-9e6cb5c46255",
+      "category": "fertilizer",
+      "topic_start": "Nutrient Management General Profiles: Variety: All Varieties Season: Y",
+      "review_verdict": "no",
+      "review_note": "The current 100:40:50 kg/acre universal profile and four-way N split do not match the checked ICAR 2025 advisory. If retaining an alternative Karnataka POP recommendation, it needs its own explicit source.",
+      "review_source": "ICAR Kharif Agro-Advisory 2025."
+    },
+    {
+      "chunk_id": "f5e26de6-ffe6-501d-8518-a7f7e2a43f0f",
+      "category": "fertilizer",
+      "topic_start": "Nutrient Management Regional Profiles: Region: Mandya N: 250 P: 100 K:",
+      "review_verdict": "partly",
+      "review_note": "The regional profiles may be useful, but the current row mixes regional recommendations with an unsourced universal Karnataka value.",
+      "review_source": "ICAR Kharif Agro-Advisory 2025; Karnataka regional agronomy material."
+    },
+    {
+      "chunk_id": "9cfcbace-9e7f-5cb3-b396-68e082c452e4",
+      "category": "weed",
+      "topic_start": "Weed Management Stage: Pre-emergence Chemical: Atrazine 50 WP OR Metri",
+      "review_verdict": "no",
+      "review_note": "The previous version inserted a 2,4-D label range from a separate source, which was not necessary to answer this row and could be misleading. Removed from the correction.",
+      "review_source": "ICAR Kharif Agro-Advisory 2025; PPQS registered-use/primary-label material."
+    },
+    {
+      "chunk_id": "225ee53a-eb10-51fd-baf0-174fdad79d2a",
+      "category": "general",
+      "topic_start": "Ratooning Management Practices: Trash Burning: Advised if plant crop i",
+      "review_verdict": "no",
+      "review_note": "The row contains several strong numeric/generalized claims that require source-specific validation.",
+      "review_source": "ICAR/Karnataka agronomy material checked."
+    },
+    {
+      "chunk_id": "d073f1c8-0f60-528b-b2c1-4326b867be50",
+      "category": "general",
+      "topic_start": "Varieties And Seasons Tamil Nadu Regional Recommendations: All Distric",
+      "review_verdict": "yes",
+      "review_note": "This row is explicitly a Tamil Nadu regional recommendation block, not Karnataka-specific knowledge.",
+      "review_source": "Tamil Nadu Agricultural University (TNAU) regional sugarcane recommendations."
+    },
+    {
+      "chunk_id": "0ad22349-a120-53e8-9f51-9ed56ab022ae",
+      "category": "general",
+      "topic_start": "Weather And Seasonal Advice Title: ಹವಾಮಾನ ಮತ್ತು ಋತು ಸಲಹೆ Optimal Range",
+      "review_verdict": "partly",
+      "review_note": "The weather row contains an unsupported immediate fungicide instruction. Climate ranges also need source attribution before being treated as a Karnataka prescription.",
+      "review_source": "ICAR Kharif Agro-Advisory 2025; crop-climate guidance checked."
+    }
+  ]
+}
