@@ -1,0 +1,4 @@
+﻿id,category (pest / disease / fertilizer / weed / general / price / other),question_kannada,should_the_system_refuse (yes / no),expected_answer_kannada (leave empty if it should refuse),source_you_used (book / document / page),notes
+H-01,,,,,,
+H-02,,,,,,
+H-03,,,,,,
