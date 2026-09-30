@@ -33,13 +33,19 @@ expert-written held-out questions with expert ratings, plus a no-retrieval basel
 | 14 (Oct 14) | Buffer | Submit |
 
 **Now (days 1–2)**
-- [ ] A. Entity-match refuses questions that name no pest/disease (general-2, general-3,
+- [x] A. Entity-match refuses questions that name no pest/disease (general-2, general-3,
   run 2026-09-29): it ignores chunks without a `Name:` field even when one is ranked #1 and
   holds the answer. Fix: refuse only when the top hit is a non-matching entity card;
   otherwise drop non-matching entity cards from the context and answer from the rest.
-- [ ] B. fertilizer-3 is gated on a context it never used: pest/disease mode is chosen from
+- [x] B. fertilizer-3 is gated on a context it never used: pest/disease mode is chosen from
   the default search's top hit, but the BM25 re-search returns no pest/disease cards. Fix:
   resolve the category from the final context.
+  A+B fixed 2026-10-01 (branch `fix/gate-entity-scope`). Zero-cost harness (real retrieval +
+  gate, router mocked to the 09-29 labels, stopped before generation): exactly general-2,
+  general-3, fertilizer-3 flip refused→passed; no other decision changes; pest-5 still refused
+  (entity_mismatch). Gate now passes 14/15 answerable (pest-2 remains, #46). price-1 and
+  general-5 pass the gate as before and were refused by the model in every live run. Measured on
+  the same 18 questions, so this shows the fixes work, not accuracy. Not yet run live.
 - [x] Refresh ARCHITECTURE.md: Section 3 (router no longer emits an English gloss),
   Section 11 (BM25 is wired in for pest/disease), Section 21 (Layer 3 is implemented),
   Section 40 (points here).

@@ -224,7 +224,7 @@ the context by at most ~0.07 (fertilizer-3: 0.456 vs 0.523).
    gave the termite dose; the LLM faithfulness judge rated that answer 1.0,
    since it quoted its chunk accurately. Scoped to pest/disease because it
    produced false positives elsewhere before BM25 fusion. Known flaw (run
-   2026-09-29, being fixed): it also refuses questions that name no
+   2026-09-29, fixed 2026-10-01): it also refused questions that name no
    pest/disease at all when one unrelated card is in the top 5
    (general-2, general-3). Signature: `(query_entities, retrieved_entities)
    -> bool`; `None` means entity matching is skipped entirely — never
