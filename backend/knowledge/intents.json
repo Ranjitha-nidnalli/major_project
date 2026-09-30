@@ -1,5 +1,5 @@
 {
-  "note": "DRAFT, needs review by a person. Maps farmer wording to fact records. Matching is longest-phrase-first, and a matched phrase is consumed so shorter phrases inside it cannot also match. Plain strings match as substrings (so Kannada suffixes still match); strings starting with '=' must be a whole word. Never add a generic word (worm, pest, disease, spray, medicine) as a pest/disease alias: that is exactly how a wrong-pest dose got through before (H-38). Symptom words (wilting, dead heart, bunchy top, whip) are deliberately NOT aliases: a symptom can have several causes, and mapping it to one disease's chemical would be diagnosis. organism_words (worm, pest, fly...) signal a pest/disease question: with no named subject the bot refuses, even if a topic keyword also matched, so a weed or fertilizer answer is never given to a pest question. Action words (spray, medicine) are deliberately not in that list. neutral_phrases (disease-free, earthworm...) are consumed first so they do not count as organism words.",
+  "note": "DRAFT, needs review by a person. Maps farmer wording to fact records. Matching is longest-phrase-first, and a matched phrase is consumed so shorter phrases inside it cannot also match. Plain strings match as substrings (so Kannada suffixes still match); strings starting with '=' must be a whole word. Never add a generic word (worm, pest, disease, spray, medicine) as a pest/disease alias: that is exactly how a wrong-pest dose got through before (H-38). Symptom words (wilting, dead heart, bunchy top, whip) are deliberately NOT aliases: a symptom can have several causes, and mapping it to one disease's chemical would be diagnosis. organism_words (worm, pest, fly...) signal a pest/disease question: with no named subject the bot refuses, even if a topic keyword also matched, so a weed or fertilizer answer is never given to a pest question. Action words (spray, medicine) are deliberately not in that list. neutral_phrases (disease-free, earthworm...) are consumed first so they do not count as organism words. Intents marked refuse (price, scheme, weather) refuse the whole question even if a topic keyword also matched, so 'price of a urea bag' never gets a fertilizer dose. A question naming another crop (other_crops) without naming sugarcane (own_crop) is refused.",
   "organism_words": [
     "ಹುಳು",
     "ಹುಳ",
@@ -22,7 +22,11 @@
     "beetle",
     "aphid",
     "borer",
-    "fungus"
+    "fungus",
+    "ಗ್ರಬ್",
+    "ಬಗ್",
+    "ಏಫಿಡ್",
+    "ಮಿಡತೆ"
   ],
   "neutral_phrases": [
     "ರೋಗರಹಿತ",
@@ -143,7 +147,8 @@
       "aliases": [
         "ಗೊಣ್ಣೆ",
         "white grub",
-        "ವೈಟ್ ಗ್ರಬ್"
+        "ವೈಟ್ ಗ್ರಬ್",
+        "ಬಿಳಿ ಗ್ರಬ್"
       ],
       "records": [
         "uasb-white-grub",
@@ -455,7 +460,9 @@
         "ಮಳೆಯಾಶ್ರಿತ",
         "ಮಳೆ ಆಶ್ರಿತ",
         "ಖುಷ್ಕಿ",
-        "rainfed"
+        "rainfed",
+        "ಮಳೆಆಧಾರಿತ",
+        "ಮಳೆ ಆಧಾರಿತ"
       ],
       "records": [
         "uasd-rainfed"
@@ -471,7 +478,14 @@
         "ಬಿತ್ತನೆ ಕಬ್ಬು ಎಷ್ಟು",
         "ಕಣ್ಣಿನ ತುಂಡು",
         "seed rate",
-        "how many setts"
+        "how many setts",
+        "ಸೆಟ್ ಬೇಕ",
+        "ಸೆಟ್ಸ್ ಬೇಕ",
+        "ಸೆಟ್ಗಳ ಸಂಖ್ಯೆ",
+        "ಮೊಗ್ಗಿನ ಸೆಟ್",
+        "ಕಣ್ಣಿನ ಸೆಟ್",
+        "ಟನ್ ಸೆಟ್",
+        "ತುಂಡು ಬೇಕ"
       ],
       "records": [
         "uasb-seed-rate",
@@ -488,7 +502,9 @@
         "seed treatment",
         "ಬಿತ್ತನೆ ತುಂಡು ಆಯ್ಕೆ",
         "ಉಷ್ಣೋಪಚಾರ",
-        "ಶಾಖೋಪಚಾರ"
+        "ಶಾಖೋಪಚಾರ",
+        "ಬೀಜದ ಕಡ್ಡಿ",
+        "ಚಿಕಿತ್ಸೆ"
       ],
       "records": [
         "uasb-sett-treatment",
@@ -511,7 +527,15 @@
         "ಎನ್.ಪಿ.ಕೆ",
         "fertilizer",
         "fertiliser",
-        "ಗೊಬ್ಬರ"
+        "ಗೊಬ್ಬರ",
+        "ಫಾಸ್ಫರಸ್",
+        "ಪಾಸ್ಫರಸ್",
+        "ಪೊಟ್ಯಾಸಿಯಂ",
+        "ಪೊಟ್ಯಾಸಿಯಮ್",
+        "ನೈಟ್ರೋಜನ್",
+        "nitrogen",
+        "phosphorus",
+        "potassium"
       ],
       "records": [
         "uasb-npk",
@@ -707,7 +731,13 @@
         "ಉಳುಮೆ",
         "spacing",
         "planting method",
-        "land preparation"
+        "land preparation",
+        "ಸಾಲುಗಳ ಅಂತರ",
+        "ಅಂತರ ಎಷ್ಟು",
+        "ಸೆಂ.ಮೀ. ಅಂತರ",
+        "ಅಡಿ ಅಂತರ",
+        "ಅಂತರ ಇಡ",
+        "row spacing"
       ],
       "records": [
         "uasb-land-preparation",
@@ -835,9 +865,15 @@
         "ಮಾರುಕಟ್ಟೆ",
         "price",
         "=rate",
-        "frp"
+        "frp",
+        "ರೂಪಾಯಿ",
+        "ರೂ.",
+        "=ಹಣ",
+        "rupee",
+        "ಎಷ್ಟು ಹಣ"
       ],
-      "records": []
+      "records": [],
+      "refuse": true
     },
     "scheme": {
       "keywords": [
@@ -847,7 +883,8 @@
         "subsidy",
         "scheme"
       ],
-      "records": []
+      "records": [],
+      "refuse": true
     },
     "weather": {
       "keywords": [
@@ -855,7 +892,8 @@
         "ಮಳೆ ಬರ",
         "weather"
       ],
-      "records": []
+      "records": [],
+      "refuse": true
     }
   },
   "composites": [
@@ -900,6 +938,20 @@
         "timing"
       ],
       "use": "fertilizer_timing"
+    },
+    {
+      "when": [
+        "irrigation",
+        "fertilizer"
+      ],
+      "use": "fertilizer"
+    },
+    {
+      "when": [
+        "rainfed",
+        "fertilizer"
+      ],
+      "use": "rainfed"
     }
   ],
   "regions": {
@@ -939,5 +991,47 @@
       "haveri",
       "north karnataka"
     ]
-  }
+  },
+  "other_crops": [
+    "ಭತ್ತ",
+    "ಮೆಕ್ಕೆಜೋಳ",
+    "=ಜೋಳ",
+    "ಜೋಳಕ್ಕೆ",
+    "=ರಾಗಿ",
+    "ರಾಗಿಗೆ",
+    "ಗೋಧಿ",
+    "ಟೊಮ್ಯಾಟೊ",
+    "ಟೊಮೆಟೊ",
+    "ಟೊಮಾಟೊ",
+    "ಹತ್ತಿ ಬೆಳೆ",
+    "=ಹತ್ತಿ",
+    "ಹತ್ತಿಗೆ",
+    "ತೆಂಗು",
+    "ತೆಂಗಿನ",
+    "ಅಡಿಕೆ",
+    "ಬಾಳೆ",
+    "ಮೆಣಸಿನ",
+    "ಶೇಂಗಾ",
+    "ಕಡಲೆ",
+    "ತೊಗರಿ",
+    "ಸೂರ್ಯಕಾಂತಿ",
+    "paddy",
+    "=rice",
+    "maize",
+    "=corn",
+    "wheat",
+    "tomato",
+    "cotton",
+    "banana",
+    "coconut",
+    "arecanut",
+    "groundnut",
+    "chilli",
+    "=ragi"
+  ],
+  "own_crop": [
+    "ಕಬ್ಬ",
+    "sugarcane",
+    "=cane"
+  ]
 }

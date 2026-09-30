@@ -108,6 +108,8 @@ class Knowledge:
             entries += [(k, "intent", key) for k in intent["keywords"]]
         entries += [(w, "organism", None) for w in self.intents["organism_words"]]
         entries += [(w, "neutral", None) for w in self.intents["neutral_phrases"]]
+        entries += [(w, "other_crop", None) for w in self.intents.get("other_crops", [])]
+        entries += [(w, "own_crop", None) for w in self.intents.get("own_crop", [])]
         compiled = []
         for kw, kind, owner in entries:
             whole = kw.startswith("=")
@@ -156,7 +158,7 @@ def match(knowledge, query):
     """
     q = normalize(query)
     taken = [False] * len(q)
-    subjects, intents, organism = [], [], False
+    subjects, intents, organism, other_crop, own_crop = [], [], False, False, False
     for _, pattern, kind, owner in knowledge._entries:
         for m in pattern.finditer(q):
             if any(taken[m.start():m.end()]):
@@ -169,6 +171,10 @@ def match(knowledge, query):
                 intents.append(owner)
             elif kind == "organism":
                 organism = True
+            elif kind == "other_crop":
+                other_crop = True
+            elif kind == "own_crop":
+                own_crop = True
     for comp in knowledge.intents["composites"]:
         if all(w in intents for w in comp["when"]):
             intents = [i for i in intents if i not in comp["when"]] + [comp["use"]]
@@ -181,6 +187,7 @@ def match(knowledge, query):
         if any(normalize(n) in q for n in names):
             region = reg if region is None else "both"
     return {"subjects": subjects, "intents": intents, "organism_word": organism,
+            "other_crop": other_crop and not own_crop,
             "region": None if region == "both" else region}
 
 
@@ -191,6 +198,12 @@ def answer(knowledge, query, region=None, include_drafts=False):
     """
     m = match(knowledge, query)
     region = region or m["region"]
+    table = knowledge.intents["intents"]
+
+    if m["other_crop"]:
+        return _refusal(MSG_OUT_OF_SCOPE, "refused_out_of_scope", m)
+    if any(table[i].get("refuse") for i in m["intents"]):
+        return _refusal(MSG_NOT_VERIFIED, "refused_not_verified", m)
 
     if m["subjects"]:
         wanted = _records_for(knowledge.intents["subjects"], m["subjects"])

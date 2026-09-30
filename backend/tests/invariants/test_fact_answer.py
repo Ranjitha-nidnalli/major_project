@@ -67,7 +67,6 @@ def test_no_alias_is_a_generic_organism_word():
     "ಕಬ್ಬಿನ ಹೊಲದಲ್ಲಿ ಕಬ್ಬಿನ ಜಿಗಣೆ ಹುಳು ಬಂದಿದೆ, ಏನು ಮಾಡಬೇಕು?",          # H-38
     "ಕಬ್ಬಿನಲ್ಲಿ ಕಪ್ಪು ದುಂಬಿ ಕೀಟ ಕಂಡುಬಂದರೆ ಯಾವ ಔಷಧಿ ಸಿಂಪಡಿಸಬೇಕು?",     # pest-5
     "ಬಿಳಿ ನೊಣಕ್ಕೆ ಅಟ್ರಾಜಿನ್ ಹಾಕಬಹುದಾ?",                               # unknown pest + weed keyword
-    "ಭತ್ತಕ್ಕೆ ಕಂದು ಚುಕ್ಕೆ ರೋಗ ಬಂದರೆ ಏನು ಮಾಡಬೇಕು?",
 ])
 def test_unknown_pest_is_refused_even_with_drafts(query):
     r = answer(K, query, include_drafts=True)
@@ -175,3 +174,23 @@ def test_rejected_pesticides_can_never_be_shown():
     for text in (r["text_kn"] + " " + r.get("product_kn", "") for r in K.records.values()):
         for banned in ("ಫೊರೇಟ್", "ಮೆಟಾಸಿಸ್ಟಾಕ್ಸ್", "ಬೆನೋಮಿಲ್"):
             assert banned not in text
+
+
+@pytest.mark.parametrize("query", [
+    "ಯೂರಿಯಾ ಒಂದು ಚೀಲ ಈಗ ಎಷ್ಟು ರೂಪಾಯಿ?",        # price wins over the fertilizer keyword
+    "ಮೆಕ್ಕೆಜೋಳಕ್ಕೆ ಯಾವ ಗೊಬ್ಬರ ಹೆಚ್ಚು ಒಳ್ಳೆಯದು?",  # another crop gets no sugarcane dose
+    "ಭತ್ತಕ್ಕೆ ಎಷ್ಟು ಯೂರಿಯಾ ಹಾಕಬೇಕು?",
+    "ಭತ್ತಕ್ಕೆ ಕಂದು ಚುಕ್ಕೆ ರೋಗ ಬಂದರೆ ಏನು ಮಾಡಬೇಕು?",   # other crop is refused before the pest check
+])
+def test_price_or_other_crop_never_gets_a_dose(query):
+    r = answer(K, query, include_drafts=True)
+    assert r["status"].startswith("refused")
+    assert r["record_ids"] == []
+
+
+def test_other_crop_is_allowed_when_sugarcane_is_named():
+    assert match(K, "ಭತ್ತದ ನಂತರ ಕಬ್ಬಿಗೆ ಎಷ್ಟು ಗೊಬ್ಬರ?")["other_crop"] is False
+
+
+def test_other_crop_word_inside_another_word_does_not_trigger():
+    assert match(K, "ತಯಾರಾಗಿ ಕಬ್ಬಿಗೆ ಗೊಬ್ಬರ")["other_crop"] is False   # 'ರಾಗಿ' inside 'ತಯಾರಾಗಿ'
