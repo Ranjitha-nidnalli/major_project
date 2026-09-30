@@ -62,7 +62,12 @@ expert-written held-out questions with expert ratings, plus a no-retrieval basel
 - [x] Applied SUBTRACTIVE part only: the 12 rows the review marked `remove` are withheld from
   both indexes via `backend/corpus_exclusions.json` (43 → 31 chunks; pest cards 5 → 1: only
   Early Shoot Borer). No replacement text or dose from the review was added.
-- [ ] **BLOCKER for calling it expert-verified:** the review file reads partly AI-drafted (notes
+- **Decided 2026-09-30:** the review and held-out questions are a mix of expert, owner, and AI
+  work, and no more expert time is available. Proceed with them, disclosed as an "AI-assisted
+  source review with partial expert input; expert confirmation pending" (a paper limitation).
+  Final run uses `heldout_questions_source_reviewed.csv` (latest revision). Held-out results are
+  indicative, not validated accuracy.
+- [ ] ~~BLOCKER~~ (superseded by the decision above): the review file reads partly AI-drafted (notes
   like "My previous version incorrectly…"). Expert must confirm each verdict row by row. Until
   then the paper must say "withheld pending expert confirmation", not "expert-verified".
 - [ ] Expert decision needed: replacement texts in the review (seed rate 45,000–50,000 setts/ha,
