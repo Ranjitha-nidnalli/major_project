@@ -37,3 +37,6 @@ env/
 # up at repo root if vector_db.py is ever run from outside backend/.
 qdrant_sugarcane_db/
 sugarcane_vector_db/
+
+# v2 corpus: text converted from downloaded PDFs (derived raw data, not committed)
+backend/corpus/converted/
