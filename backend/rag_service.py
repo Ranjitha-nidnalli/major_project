@@ -15,7 +15,9 @@ from chat_db import save_chat_message, get_chat_history
 from llm_client import call_llm  # NEW: unified LLM abstraction
 from eval.numeric_faithfulness import check_numeric_faithfulness  # #5
 from services.gating import decide as gating_decide, GatingConfig, UNCALIBRATED_DEFAULT_THRESHOLD
-from services.entity_match import entity_match, resolve_entity_category
+from services.entity_match import (
+    entity_match, drop_mismatched_entity_cards, resolve_entity_category, resolve_final_category,
+)
 from services.judge_parse import parse_judge_score
 from services.router_parse import parse_router_category
 from indic_preprocess import normalize_kannada
@@ -465,6 +467,14 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
         print(f"🛡️ Router said {router_category!r}, top chunk is {top_chunk_category!r}; applying {category!r} protections.")
     if category in BM25_FUSION_CATEGORIES:
         top_chunks, best_fused_score, bm25_relevance = await execute_bm25_dense_search(dense_vec, user_query)
+        final_category = resolve_final_category(
+            router_category, category,
+            [p["payload"].get("category") for p in top_chunks], BM25_FUSION_CATEGORIES,
+        )
+        if final_category != category:
+            print(f"🛡️ No pest/disease card left after re-retrieval; gating as {final_category!r}.")
+            category = final_category
+            bm25_relevance = None
 
     docs = [p["payload"]["text"] for p in top_chunks]
     # search_score (RRF fusion score) is kept only for logging/telemetry and
@@ -509,6 +519,14 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
         }
 
     print(f"🟢 DB Hit! Relevance (dense cosine): {dense_relevance:.2f} | RRF score (telemetry only): {search_score:.2f}")
+    if category in BM25_FUSION_CATEGORIES:
+        # Same scope as _entity_match_hook. The gate passed a question whose
+        # top chunk names no pest/disease; keep other pests' cards (and
+        # their doses) out of the prompt.
+        kept = drop_mismatched_entity_cards(user_query, docs)
+        if len(kept) < len(docs):
+            print(f"🛡️ Dropped {len(docs) - len(kept)} pest/disease card(s) not named in the query.")
+            docs = kept
     context_text = "\n\n".join([f"{doc}" for doc in docs])
 
     # ==========================================

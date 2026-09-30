@@ -1,10 +1,76 @@
 # Krishi Mitra — Complete TODO List
 
-Ranked master list of every open task discussed, split into two tracks:
-**Track 1** — 2-week plan to have a good, defensible model to show the professor.
-**Track 2** — the month before submitting a research paper.
+## ▶ THE PLAN (2026-10-01 → 2026-10-14) — this is the only plan being followed
 
-Items already completed are listed at the top for reference and not repeated below.
+Final deadline ~2026-10-14: complete project, college report, and IEEE paper. Everything
+below this section (ranked list, Track 1/2, dated logs) is the **detailed log and
+backlog**, not the work order. `PROJECT_PLAN.md` is superseded. New findings get added
+here first and a deliberate decision is made whether they jump the queue.
+
+**Paper thesis (to confirm):** a case study of safety-first evaluation for a low-resource-
+language agricultural RAG. Claims rest on findings, not on an accuracy number:
+(1) standard metrics fail on Kannada (ROUGE-L self-score 0 on 6/16; chrF/BLEU score a 10x
+overdose above a valid paraphrase); (2) failure modes found and fixed, each with its safety
+effect (RRF-as-confidence, silent router/judge token exhaustion, wrong-entity answer that
+the LLM judge scored 1.0 and only the lexical entity check caught); (3) results on
+expert-written held-out questions with expert ratings, plus a no-retrieval baseline.
+
+**Rules for these two weeks**
+- **Code freeze after day 7 (2026-10-07).** After that, nothing gets fixed; findings go
+  into the paper's limitations section.
+- Every HUMAN task (CLAUDE.md) goes to the agri expert: dose verification, gold answers,
+  answer ratings, source/corpus decisions. Never automated and presented as verified.
+- The held-out questions are not seen by Claude before the day-7 run, and nothing is tuned
+  on them afterwards.
+
+| Days | Claude (code/docs) | Owner + agri expert (human) |
+|---|---|---|
+| 1–2 (Oct 1–2) | Consolidate plan ✔ · fix gate bugs A+B (below) · refresh stale ARCHITECTURE.md sections · build 3 expert sheets (corpus facts, question writing, answer rating) | Confirm thesis · book expert time (~6–8 h over days 3–9) · send corpus sheet · share IEEE template + college report format |
+| 3–6 (Oct 3–6) | Apply expert's corpus corrections verbatim, re-seed, re-check gold IDs · no-retrieval baseline script · draft paper method/system sections | **Expert:** verify every chemical/dose/unit in corpus; mark Tamil Nadu content keep/remove · write ~40 questions with expected answers, **≥15 that must be refused** |
+| 7 (Oct 7) | **FREEZE.** Final live run on held-out set + baseline | Approve the Groq calls (free tier ≈ 2–3 full runs/day: split across 2 days or use paid tier) |
+| 8–9 (Oct 8–9) | Compute results; threshold analysis reported as a finding, not re-tuned | **Expert:** rate answers (~2 h) |
+| 10–13 (Oct 10–13) | Draft paper (IEEE) and report from results | Revise; end-to-end demo check |
+| 14 (Oct 14) | Buffer | Submit |
+
+**Now (days 1–2)**
+- [x] A. Entity-match refuses questions that name no pest/disease (general-2, general-3,
+  run 2026-09-29): it ignores chunks without a `Name:` field even when one is ranked #1 and
+  holds the answer. Fix: refuse only when the top hit is a non-matching entity card;
+  otherwise drop non-matching entity cards from the context and answer from the rest.
+- [x] B. fertilizer-3 is gated on a context it never used: pest/disease mode is chosen from
+  the default search's top hit, but the BM25 re-search returns no pest/disease cards. Fix:
+  resolve the category from the final context.
+  A+B fixed 2026-10-01 (branch `fix/gate-entity-scope`). Zero-cost harness (real retrieval +
+  gate, router mocked to the 09-29 labels, stopped before generation): exactly general-2,
+  general-3, fertilizer-3 flip refused→passed; no other decision changes; pest-5 still refused
+  (entity_mismatch). Gate now passes 14/15 answerable (pest-2 remains, #46). price-1 and
+  general-5 pass the gate as before and were refused by the model in every live run. Measured on
+  the same 18 questions, so this shows the fixes work, not accuracy. Not yet run live.
+- [x] Day-7 prep: `eval/question_sets.py` loads questions.json or the expert CSV (fails loudly on
+  bad rows); `run_live_eval.py --questions PATH`; `run_no_retrieval_baseline.py` (#17, same
+  model, neutral prompt, no context/gates, stored per record). Formats received: report
+  (5 chapters, Overleaf) and 6-page IEEE paper, in `report/`. Both need a 20–25 paper
+  literature survey — real, verified references only (CLAUDE.md: never invent citations).
+- [x] Refresh ARCHITECTURE.md: Section 3 (router no longer emits an English gloss),
+  Section 11 (BM25 is wired in for pest/disease), Section 21 (Layer 3 is implemented),
+  Section 40 (points here).
+- [ ] Merge PR for `eval/live-run-2026-09-29` (needs `gh auth login` as the repo owner, or
+  open it from the browser).
+- [ ] Expert sheets (corpus facts / question writing / answer rating).
+
+**Cut — future work in the paper, not built:** KCC question set (#18/#19), RAGAS/BERTScore
+(#20/#21), 3-model bake-off (P2/Phase 5), chunking rebuild (#13), query condensation (#14),
+streaming (#15), CI (#12), category filtering (#38), Ollama/sarvam (#28/#29), structured
+dose extraction (#40), everything in Phase 4.
+
+**Known, accepted for the paper (not to be fixed):** the relevance score does not separate
+answerable from unanswerable on the current 18 questions (unanswerable 0.499/0.547/0.597
+vs answerable 0.456–0.668); report the held-out analysis instead of re-tuning (#46).
+
+---
+
+Items already completed are listed below for reference and not repeated in the ranked list.
+The ranked list and Track 1/2 sections below predate THE PLAN and are kept as backlog only.
 
 ---
 

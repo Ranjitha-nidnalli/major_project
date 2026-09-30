@@ -1,5 +1,10 @@
 # Kannada Agricultural RAG — Work Order & Target Outcome
 
+> **SUPERSEDED 2026-10-01.** The work order is now "THE PLAN" at the top of `TODO.md`.
+> This file describes the project as of 2026-08-25 (local Ollama, 16 questions, Tavily
+> fallback, none of which is current). Kept only because code comments and ARCHITECTURE.md
+> cite its section numbers (e.g. P3.1). Do not work from it.
+
 Handoff doc for Claude Code. Read this fully before making changes.
 Work the tasks **in order**. P0 blocks everything downstream.
 

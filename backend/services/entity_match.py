@@ -103,30 +103,48 @@ def extract_chunk_entity_tokens(chunk_text):
     return _tokens(match.group(1))
 
 
+def _any_entity_card_matches(query_tokens, chunk_texts):
+    return any(query_tokens & extract_chunk_entity_tokens(t) for t in chunk_texts)
+
+
 def entity_match(query_text, retrieved_chunk_texts):
     """
     services/gating.py's entity_match_hook signature:
     (query_entities, retrieved_entities) -> bool, True = pass.
 
-    True if at least one retrieved chunk has no declared entity (nothing
-    to check) or matches the query; False only when every retrieved
-    chunk that DOES declare an entity fails to match it.
+    True if any retrieved card's declared entity appears in the query, or
+    no card declares an entity. When no declared entity matches, refuse
+    only if the TOP-ranked chunk is itself an entity card: the answer would
+    then come from a card about a different pest/disease (pest-5, "black
+    beetle" -> Termites card). If the top chunk declares no entity, the
+    question names no pest/disease (general-2 seed rate, general-3 sett
+    treatment, run 2026-09-29) and passes; the caller then removes the
+    non-matching entity cards with drop_mismatched_entity_cards, so the
+    wrong pest's dose never reaches generation.
+
+    Before 2026-10-01 this refused whenever no entity card matched, even
+    when a card-less chunk ranked first and held the answer.
+    """
+    if not retrieved_chunk_texts:
+        return True
+    query_tokens = _tokens(query_text)
+    if _any_entity_card_matches(query_tokens, retrieved_chunk_texts):
+        return True
+    return not extract_chunk_entity_tokens(retrieved_chunk_texts[0])
+
+
+def drop_mismatched_entity_cards(query_text, chunk_texts):
+    """
+    Chunks to keep for generation. When no entity card matches the query,
+    every entity card is dropped: none of them is about what was asked.
+    When some card matches, the chunks are returned unchanged (behaviour
+    validated 2026-09-23 for the answerable pest/disease questions).
+    Order is preserved.
     """
     query_tokens = _tokens(query_text)
-    saw_any_entity = False
-
-    for chunk_text in retrieved_chunk_texts:
-        entity_tokens = extract_chunk_entity_tokens(chunk_text)
-        if not entity_tokens:
-            continue
-        saw_any_entity = True
-        if query_tokens & entity_tokens:
-            return True
-
-    if not saw_any_entity:
-        return True
-
-    return False
+    if _any_entity_card_matches(query_tokens, chunk_texts):
+        return list(chunk_texts)
+    return [t for t in chunk_texts if not extract_chunk_entity_tokens(t)]
 
 
 def resolve_entity_category(router_category, top_chunk_category, protected_categories):
@@ -146,10 +164,37 @@ def resolve_entity_category(router_category, top_chunk_category, protected_categ
     set, the chunk signal also fires for fertilizer-3 and general-2, whose
     top hybrid hit is a pest/disease card, and both are then refused.
     Refusal is the safe direction; do not tune this rule on the same 18
-    questions to remove them.
+    questions to remove them. (2026-10-01: both now pass, but through two
+    consistency fixes, not a change to this rule: resolve_final_category
+    for fertilizer-3, and entity_match's top-chunk rule for general-2.)
     """
     if router_category in protected_categories:
         return router_category
     if top_chunk_category in protected_categories:
         return top_chunk_category
     return router_category
+
+
+def resolve_final_category(router_category, upgraded_category, final_chunk_categories, protected_categories):
+    """
+    Category for the gate once the pest/disease re-retrieval has run.
+
+    resolve_entity_category upgrades on the DEFAULT search's top hit, but
+    the pest/disease path then replaces the context with a BM25+dense
+    search. If that final context holds no pest/disease card at all, the
+    gate was judging a context the model never sees: fertilizer-3 (run
+    2026-09-29) was upgraded to "pest", re-retrieved five non-pest chunks,
+    and was still gated as pest on the #1 chunk (Ratooning, 0.456) while
+    the answer sat at #3. The protections exist to stop a wrong pest's
+    dose reaching generation; with no pest/disease card in the context
+    there is none to stop, so fall back to the router's category.
+
+    Not a tuned rule: it only makes the gate's category agree with the
+    context it gates. The router can still never remove protection: a
+    router pest/disease label is always kept.
+    """
+    if router_category in protected_categories:
+        return router_category
+    if upgraded_category in protected_categories and not (set(final_chunk_categories) & protected_categories):
+        return router_category
+    return upgraded_category
