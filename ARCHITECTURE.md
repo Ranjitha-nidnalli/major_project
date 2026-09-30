@@ -280,6 +280,35 @@ written (and PROJECT_PLAN.md P3.1's explicit "every answer" spec). Fixed in
 `rag_service.py`'s generation branch; the now-dead `CONFIDENT_SEARCH_THRESHOLD`
 constant and `is_medium_confidence` variable were removed with it.
 
+## 24. v2: answer only from confirmed fact records (2026-09-30)
+
+**Why.** The held-out run on the v1 pipeline (29/40, TODO.md) gave one wrong-pest dose that
+passed every layer (H-38), and the owner's goal changed to "small, but it must work right".
+The root causes were the corpus (unsourced; its termite dose came from misreading a merged
+UAS table where the granules belong to early shoot borer) and letting an LLM write doses.
+
+**Design.** `ANSWER_MODE=facts` (default) bypasses retrieval and generation:
+- Knowledge = typed fact records (`backend/knowledge/facts_*.json`) drafted from UAS Bengaluru
+  POP 2025 (South) and UAS Dharwad POP 2020 (North), each with verbatim source excerpts and the
+  printed page. `verify_facts.py` checks every excerpt is on its page and every number in the
+  farmer-facing text is in the excerpts (catches transcription slips, not agronomy).
+- A person marks each record CONFIRMED in the review sheet (CLAUDE.md HUMAN task). The
+  confirmation is bound to a hash of the record's farmer-visible fields, so any edit voids it;
+  records with a product also need "currently registered = yes" (CIB&RC).
+- `services/fact_answer.py` matches the question deterministically against
+  `knowledge/intents.json` (pest/disease names, topic keywords, districts), longest phrase first.
+  Pest/disease records are reachable only through a named pest/disease alias; a question that
+  mentions an organism without a known name is refused (fixes the H-38/pest-5 class by
+  construction). Symptom words are not aliases (that would be diagnosis).
+- Answers show record text exactly as stored, grouped by source with region headings (South and
+  North are never merged), page citations, the pesticide-safety line, and the KCC number.
+- No LLM call anywhere in this path. v1 (`ANSWER_MODE=rag`) is kept for comparison runs only.
+
+**Known limits.** Coverage is only what the two chapters contain; phrasing outside the keyword
+lists is refused (safe direction, measurable on new questions); symptom-based questions are
+refused; the Kannada UI strings in `fact_answer.py` and the keyword lists need a Kannada
+speaker's review.
+
 ---
 
 ## 30. Repo hygiene

@@ -17,8 +17,15 @@ Choosing sources is a HUMAN task (CLAUDE.md). The status column records the owne
 | `Sugarcane.pdf` | NIPHM, *AESA based IPM Package: Sugarcane* (English, 66 pp., 2014) | https://niphm.gov.in/IPMPackages/Sugarcane.pdf | `0c1bfe634185444da43ff217c9910eed6dd1a5a356437f81cd16c0668a672609` | cross-check only (2014; not Karnataka-specific) |
 | `07_Sugarcane.pdf` | TNAU Crop Production Guide, ch. 7 Sugarcane (English, Tamil Nadu) | owner download | `2915f7e1b36338c487eaa998880c3ab19bbcb76b2d9a81b171be8f3ffd0634f5` | cross-check only (Tamil Nadu) |
 | `…SP_Sugarcane2017.pdf` | Status Paper on Sugarcane 2017 (national, all states; likely Directorate of Sugarcane Development) | owner download | `e92fa9905cd73650fdd29cf416b6e4ba3fdfebb436c1fcae5f5565d90e0d9cef` | report background only, not a dose source |
+| `recom.txt` | Plain-text sugarcane recommendations labelled https://aau.in/recommendations. Variety codes (84A, 87A, 2003V, 2005T, '2009V 127 (Ranga)') point to Andhra Pradesh research stations, not Karnataka; the URL's university and the content do not obviously match. Differs from UAS (carbendazim 0.5 g/L vs 1 g/L; atrazine 2 kg/acre vs 1 kg) | owner, copied text | — | cross-check only, never a dose source (not Karnataka; provenance unclear) |
+| `Screenshot (404).png` | ICAR Kharif Agro-Advisories 2025, multi-language edition, p. 133 (Karnataka sugarcane section, Kannada) | owner screenshot | — | cross-check only (see ICAR row) |
 | `crop-practice-sugarcane.pdf` | Nigerian extension leaflet (2016) recommending Endosulfan (banned in India since 2011) and Nuvacron | owner download (deleted 2026-09-30) | — | **REJECTED — unsafe, never index** |
 | `sugarcane-crop-plan-fertigation.pdf` | Fertilizer company product plan ("Krista") | owner download (deleted 2026-09-30) | — | **REJECTED — commercial, never index** |
+
+## Banned pesticides (owner + agri expert, 2026-09-30)
+Phorate, metasystox (oxydemeton-methyl) and benomyl are not registered in India. Records
+that recommended them were moved to `rejected_records` in `backend/knowledge/facts_uasd_2020.json`
+(benomyl was already omitted from the smut record); a test keeps them out.
 
 ## Conflict rule (owner decision 2026-09-30)
 When UAS and ICAR (or other cross-check sources) disagree, the bot gives the **UAS**

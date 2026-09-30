@@ -2,6 +2,8 @@
   "source": "uasd2020",
   "source_title": "UAS Dharwad, Package of Practices 2020, Sugarcane chapter (printed pp. 225-241)",
   "region": "north_karnataka",
+  "display_name_kn": "ಕೃಷಿ ವಿಜ್ಞಾನಗಳ ವಿಶ್ವವಿದ್ಯಾಲಯ, ಧಾರವಾಡ: ಬೇಸಾಯ ಕ್ರಮಗಳು 2020",
+  "region_kn": "ಉತ್ತರ ಕರ್ನಾಟಕ",
   "converted_text": "backend/corpus/converted/uasd_pop2020_sugarcane.txt",
   "note": "DRAFT records written by Claude from the Nudi-converted text. Pages are two-column spreads, so table columns are interleaved in the converted text; excerpts are kept to contiguous lines. Every record must be checked against the printed page by a person before status becomes CONFIRMED. This is a 2020 book: every pesticide must also be checked against the current CIB&RC registration list.",
   "records": [
@@ -398,7 +400,7 @@
         "ಕಪ್ಪುಪುಡಿ ಬಾರಕೋಲಿನಂತಿರುವ ಸಸ್ಯಾಂಗದ ಸುತ್ತಲೂ"
       ],
       "flags": [
-        "source also lists BENOMYL 1 g/L as an alternative; omitted from text_kn because benomyl may no longer be registered in India. Check CIB&RC before adding it back",
+        "source also lists BENOMYL 1 g/L; omitted because benomyl is not registered in India (owner and agri expert, 2026-09-30)",
         "entry continues from page 231-232 onto 233-234; columns interleaved",
         "heat-therapy temperature garbled ('500 ಸೆಂ.'); left out of text_kn",
         "check current CIB&RC registration status of carbendazim"
@@ -554,27 +556,6 @@
       ]
     },
     {
-      "id": "uasd-wwa-metasystox",
-      "group": "uasd-wwa-chem",
-      "pdf_page_index": 5,
-      "printed_page": "235-236",
-      "topic": "pest",
-      "subject_kn": "ಬಿಳಿ ಉಣ್ಣೆ ಹೇನು",
-      "subject_en": "Sugarcane woolly aphid",
-      "product_kn": "ಮೆಟಾಸಿಸ್ಟಾಕ್ಸ್ 25 ಇ.ಸಿ",
-      "per_litre": "1.5 ಮಿ.ಲೀ",
-      "water_per_acre": "400 ಲೀ",
-      "text_kn": "ಬಿಳಿ ಉಣ್ಣೆ ಹೇನು: ಬಾಧಿತ ಕ್ಷೇತ್ರ ಹಾಗೂ ಸುತ್ತಲಿನ 5 ಮೀಟರ್ ವರೆಗೆ ಮಾತ್ರ 1.5 ಮಿ.ಲೀ. ಮೆಟಾಸಿಸ್ಟಾಕ್ಸ್ 25 ಇ.ಸಿ. ಅನ್ನು ಒಂದು ಲೀಟರ್ ನೀರಿನಲ್ಲಿ ಬೆರೆಸಿ ಸಿಂಪಡಿಸಬೇಕು. ಪ್ರತಿ ಎಕರೆಗೆ 400 ಲೀ. ಸಿಂಪರಣಾ ದ್ರಾವಣ ಬೇಕಾಗುತ್ತದೆ.",
-      "excerpts": [
-        "ಆ ಕ್ಷೇತ್ರಕ್ಕೆ ಹಾಗೂ ಸುತ್ತಲಿನ 5 ಮೀಟರ್ ಸುತ್ತಳತೆವರೆಗೆ",
-        "1.5 ಮಿ. ಲೀ. ಮೆಟಾಸಿಸ್ಟಾಕ್ಸ್ 25 ಇ. ಸಿ. ಅಥವಾ",
-        "ಒಂದು ಲೀ. ನೀರಿನಲ್ಲಿ ಬೆರೆಸಿ ಸಿಂಪಡಿಸಬೇಕು. ಪ್ರತಿ ಎಕರೆಗೆ 400 ಲೀ. ಸಿಂಪರಣಾ ದ್ರಾವಣ ಬೇಕಾಗುವುದು."
-      ],
-      "flags": [
-        "SAFETY: Metasystox (oxydemeton-methyl) is a trade name for a highly hazardous organophosphate; its current registration status in India must be checked with CIB&RC before this record can be CONFIRMED"
-      ]
-    },
-    {
       "id": "uasd-wwa-thiamethoxam",
       "group": "uasd-wwa-chem",
       "pdf_page_index": 5,
@@ -610,24 +591,6 @@
       ],
       "flags": [
         "check current CIB&RC registration status"
-      ]
-    },
-    {
-      "id": "uasd-wwa-phorate",
-      "group": "uasd-wwa-chem",
-      "pdf_page_index": 5,
-      "printed_page": "235-236",
-      "topic": "pest",
-      "subject_kn": "ಬಿಳಿ ಉಣ್ಣೆ ಹೇನು",
-      "subject_en": "Sugarcane woolly aphid, granules",
-      "product_kn": "ಶೇ.10 ರ ಫೊರೇಟ್ ಹರಳು",
-      "per_acre": "10 ಕಿ.ಗ್ರಾಂ",
-      "text_kn": "ಬಿಳಿ ಉಣ್ಣೆ ಹೇನು: ಶೇ.10 ರ ಫೊರೇಟ್ ಹರಳು ಪ್ರತಿ ಎಕರೆಗೆ 10 ಕಿ.ಗ್ರಾಂ.",
-      "excerpts": [
-        "ಶೇ. 10 ರ ಫೊರೇಟ್ ಹರಳು 10 ಕಿ. ಗ್ರಾಂ ಪ್ರತಿ ಎಕರೆಗೆ ಬೇಕಾಗುವುದು."
-      ],
-      "flags": [
-        "SAFETY: phorate is, to Claude's knowledge, among the pesticides India banned (effective end of 2020). Do NOT confirm this record unless CIB&RC shows it is currently registered for sugarcane"
       ]
     },
     {
@@ -805,6 +768,49 @@
         "phosphorus (56) higher than nitrogen (60) is unusual for rainfed cane; confirm on the page",
         "planting months line has a glyph glitch ('ನವೆÀ್ಹಂಬರ್')"
       ]
+    }
+  ],
+  "rejected_records": [
+    {
+      "id": "uasd-wwa-metasystox",
+      "group": "uasd-wwa-chem",
+      "pdf_page_index": 5,
+      "printed_page": "235-236",
+      "topic": "pest",
+      "subject_kn": "ಬಿಳಿ ಉಣ್ಣೆ ಹೇನು",
+      "subject_en": "Sugarcane woolly aphid",
+      "product_kn": "ಮೆಟಾಸಿಸ್ಟಾಕ್ಸ್ 25 ಇ.ಸಿ",
+      "per_litre": "1.5 ಮಿ.ಲೀ",
+      "water_per_acre": "400 ಲೀ",
+      "text_kn": "ಬಿಳಿ ಉಣ್ಣೆ ಹೇನು: ಬಾಧಿತ ಕ್ಷೇತ್ರ ಹಾಗೂ ಸುತ್ತಲಿನ 5 ಮೀಟರ್ ವರೆಗೆ ಮಾತ್ರ 1.5 ಮಿ.ಲೀ. ಮೆಟಾಸಿಸ್ಟಾಕ್ಸ್ 25 ಇ.ಸಿ. ಅನ್ನು ಒಂದು ಲೀಟರ್ ನೀರಿನಲ್ಲಿ ಬೆರೆಸಿ ಸಿಂಪಡಿಸಬೇಕು. ಪ್ರತಿ ಎಕರೆಗೆ 400 ಲೀ. ಸಿಂಪರಣಾ ದ್ರಾವಣ ಬೇಕಾಗುತ್ತದೆ.",
+      "excerpts": [
+        "ಆ ಕ್ಷೇತ್ರಕ್ಕೆ ಹಾಗೂ ಸುತ್ತಲಿನ 5 ಮೀಟರ್ ಸುತ್ತಳತೆವರೆಗೆ",
+        "1.5 ಮಿ. ಲೀ. ಮೆಟಾಸಿಸ್ಟಾಕ್ಸ್ 25 ಇ. ಸಿ. ಅಥವಾ",
+        "ಒಂದು ಲೀ. ನೀರಿನಲ್ಲಿ ಬೆರೆಸಿ ಸಿಂಪಡಿಸಬೇಕು. ಪ್ರತಿ ಎಕರೆಗೆ 400 ಲೀ. ಸಿಂಪರಣಾ ದ್ರಾವಣ ಬೇಕಾಗುವುದು."
+      ],
+      "flags": [
+        "SAFETY: Metasystox (oxydemeton-methyl) is a trade name for a highly hazardous organophosphate; its current registration status in India must be checked with CIB&RC before this record can be CONFIRMED"
+      ],
+      "rejected_reason": "Not registered for use in India, per the owner and agri expert (2026-09-30). Kept out of the knowledge base so it can never be confirmed or shown."
+    },
+    {
+      "id": "uasd-wwa-phorate",
+      "group": "uasd-wwa-chem",
+      "pdf_page_index": 5,
+      "printed_page": "235-236",
+      "topic": "pest",
+      "subject_kn": "ಬಿಳಿ ಉಣ್ಣೆ ಹೇನು",
+      "subject_en": "Sugarcane woolly aphid, granules",
+      "product_kn": "ಶೇ.10 ರ ಫೊರೇಟ್ ಹರಳು",
+      "per_acre": "10 ಕಿ.ಗ್ರಾಂ",
+      "text_kn": "ಬಿಳಿ ಉಣ್ಣೆ ಹೇನು: ಶೇ.10 ರ ಫೊರೇಟ್ ಹರಳು ಪ್ರತಿ ಎಕರೆಗೆ 10 ಕಿ.ಗ್ರಾಂ.",
+      "excerpts": [
+        "ಶೇ. 10 ರ ಫೊರೇಟ್ ಹರಳು 10 ಕಿ. ಗ್ರಾಂ ಪ್ರತಿ ಎಕರೆಗೆ ಬೇಕಾಗುವುದು."
+      ],
+      "flags": [
+        "SAFETY: phorate is, to Claude's knowledge, among the pesticides India banned (effective end of 2020). Do NOT confirm this record unless CIB&RC shows it is currently registered for sugarcane"
+      ],
+      "rejected_reason": "Not registered for use in India, per the owner and agri expert (2026-09-30). Kept out of the knowledge base so it can never be confirmed or shown."
     }
   ]
 }

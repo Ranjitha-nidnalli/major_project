@@ -20,6 +20,7 @@ from services.entity_match import (
 )
 from services.judge_parse import parse_judge_score
 from services.router_parse import parse_router_category
+from services.fact_answer import Knowledge, answer as answer_from_facts
 from indic_preprocess import normalize_kannada
 from bm25_retriever import BM25Retriever, load_chunks_from_qdrant_upsert
 
@@ -131,6 +132,15 @@ print(f"[Krishi Mitra] Loaded with GENERATION_MODEL={GENERATION_MODEL}")
 # ARCHITECTURE.md Section 31. Re-implement with a real search call if web
 # fallback is needed in future; don't reintroduce an unused flag.
 ENABLE_RERANKER = os.getenv("ENABLE_RERANKER", "false").lower() == "true"
+
+# v2 answer path (services/fact_answer.py, THE PLAN in TODO.md). "facts"
+# answers only from person-confirmed fact records in backend/knowledge/,
+# with no LLM call; anything unconfirmed or unknown is refused. "rag" is
+# the v1 pipeline below, kept for comparison runs. FACTS_INCLUDE_DRAFTS
+# shows unconfirmed records under a DRAFT banner for local preview only;
+# never enable it where farmers can see the bot.
+ANSWER_MODE = os.getenv("ANSWER_MODE", "facts").lower()
+FACTS_INCLUDE_DRAFTS = os.getenv("FACTS_INCLUDE_DRAFTS", "false").lower() == "true"
 RERANK_THRESHOLD = 0.5
 
 # --- System Prompts & Messages ---
@@ -304,7 +314,30 @@ async def generate_from_context(
         raise
 
 
+async def _answer_from_facts(user_query, session_id, return_context, interactive):
+    # Reloaded per request (92 records, a few ms) so a newly saved review
+    # sheet takes effect without restarting the server.
+    result = answer_from_facts(Knowledge.load(), user_query, include_drafts=FACTS_INCLUDE_DRAFTS)
+    print(f"📗 facts: {result['status']} records={result['record_ids']} match={result['match']}")
+    if interactive:
+        await save_chat_message(session_id, "user", user_query)
+        await save_chat_message(session_id, "assistant", result["answer"])
+    return {
+        "answer": result["answer"],
+        "search_score": None,
+        "relevance": None,
+        "accuracy_score": None,
+        "facts_status": result["status"],
+        "record_ids": result["record_ids"],
+        "context": "\n".join(result["citations"]) if return_context else None,
+        "source_chunks": result["citations"] if return_context else None,
+    }
+
+
 async def get_sugarcane_answer(user_query: str, session_id: str, return_context: bool = False, interactive: bool = True):
+    if ANSWER_MODE == "facts":
+        return await _answer_from_facts(user_query, session_id, return_context, interactive)
+
     # ==========================================
     # 1. THE SWITCHBOARD (Router)
     # ==========================================

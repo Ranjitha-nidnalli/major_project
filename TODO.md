@@ -1,5 +1,22 @@
 # Krishi Mitra — Complete TODO List
 
+## ▶ v2 (2026-09-30, supersedes the day-by-day table below): small, correct, usable bot
+
+Owner decision: deadline can move; build a bot farmers can use, small scope, must be correct.
+Design: ARCHITECTURE.md Section 24. Branch `feat/v2-verified-facts`.
+- [x] Sources chosen by owner: UAS Bengaluru POP 2025 (South), UAS Dharwad POP 2020 (North);
+  `backend/corpus/SOURCES.md`.
+- [x] 92 draft fact records + checker + review sheet (`backend/knowledge/`).
+- [x] Name/topic lists (`knowledge/intents.json`) and the no-LLM answer path
+  (`services/fact_answer.py`, `ANSWER_MODE=facts`), 23 tests.
+- [ ] **HUMAN: review `knowledge/review_sheet.csv` against the printed pages** (6 SAFETY rows
+  first), save as `review_sheet_REVIEWED.csv`. Until then v2 refuses everything.
+- [ ] HUMAN: review `knowledge/intents.json` names/keywords and the Kannada messages in
+  `services/fact_answer.py`.
+- [ ] HUMAN: ~30 NEW test questions not shown to Claude (the 40 held-out ones were read during
+  analysis and are no longer blind); then run `eval/run_live_eval.py --questions ...`.
+- [ ] Optional: 2-3 farmers try it; log what breaks.
+
 ## ▶ THE PLAN (2026-10-01 → 2026-10-14) — this is the only plan being followed
 
 Final deadline ~2026-10-14: complete project, college report, and IEEE paper. Everything

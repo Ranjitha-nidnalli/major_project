@@ -24,8 +24,8 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
-  searchScore?: number;
-  accuracyScore?: number;
+  searchScore?: number | null;
+  accuracyScore?: number | null;
   sources?: string[];  // NEW: sources from backend
 }
 

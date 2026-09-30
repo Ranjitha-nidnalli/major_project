@@ -31,9 +31,15 @@ phase roadmap. This file holds current facts and working rules only.
 - Tests: `cd backend && pytest` (pure invariant tests, no live services needed)
 
 ## Pipeline (`rag_service.get_sugarcane_answer`)
-LLM router -> embed query -> hybrid RRF top-5 (no category filter) -> abstention gate
-(`services/gating.py`, dense-cosine relevance) -> LLM generation -> LLM faithfulness judge +
-regex numeric check -> save to Mongo.
+`ANSWER_MODE=facts` (default, v2, since 2026-09-30): `services/fact_answer.py` matches the
+question against `knowledge/intents.json` and answers ONLY from fact records a person marked
+CONFIRMED in `knowledge/review_sheet_REVIEWED.csv` (no LLM); everything else is refused with
+the KCC number. Records: `knowledge/facts_*.json`, drafted from UAS Bengaluru POP 2025 and UAS
+Dharwad POP 2020 (`backend/corpus/SOURCES.md`); `knowledge/verify_facts.py` checks them.
+
+`ANSWER_MODE=rag` (v1, kept for comparison): LLM router -> embed query -> hybrid RRF top-5 ->
+abstention gate (`services/gating.py`) -> LLM generation -> LLM faithfulness judge + regex
+numeric check -> save to Mongo.
 
 ## Known defects
 Fixed 2026-09-20/21 (see ARCHITECTURE.md for the numbered design rationale):

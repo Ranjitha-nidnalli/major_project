@@ -6,13 +6,14 @@ import { ChevronDown, ChevronUp, ShieldAlert, BookOpen } from "lucide-react";
 interface ChatMessageProps {
   role: "user" | "assistant";
   content: string;
-  searchScore?: number;
-  accuracyScore?: number;
+  searchScore?: number | null;
+  accuracyScore?: number | null;
   sources?: string[];
 }
 
-function getConfidenceBadge(score: number | undefined) {
-  if (score === undefined) return null;
+function getConfidenceBadge(score: number | null | undefined) {
+  // null = the v2 fact path, which has no retrieval score to show
+  if (score == null) return null;
   if (score >= 0.5) {
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
@@ -62,7 +63,7 @@ export default function ChatMessage({
             {/* Confidence & faithfulness badges */}
             <div className="flex flex-wrap gap-2">
               {getConfidenceBadge(searchScore)}
-              {accuracyScore !== undefined && (
+              {accuracyScore != null && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
                   <ShieldAlert className="h-3 w-3" />
                   Faithfulness: {(accuracyScore * 100).toFixed(0)}%

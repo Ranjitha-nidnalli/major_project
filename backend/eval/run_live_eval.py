@@ -135,6 +135,8 @@ async def main(questions_path):
         "corpus_hash": corpus_hash,
         "lenient_pest_disease_threshold": rag_service.ENABLE_LENIENT_PEST_DISEASE_THRESHOLD,
         "reranker_enabled": os.getenv("ENABLE_RERANKER", "false"),
+        "answer_mode": rag_service.ANSWER_MODE,
+        "facts_include_drafts": rag_service.FACTS_INCLUDE_DRAFTS,
         "run_timestamp": time.strftime("%Y%m%dT%H%M%S"),
     }
     print(json.dumps(meta, indent=2))
@@ -160,7 +162,9 @@ async def main(questions_path):
             answer = resp["answer"]
             gate = _gate_log[-1] if _gate_log else None
             expected_refusal = q["expected_refusal"]
-            refused = is_refusal(answer)
+            # v2 fact path reports its own status; v1 is detected by its refusal text.
+            facts_status = resp.get("facts_status")
+            refused = facts_status.startswith("refused") if facts_status else is_refusal(answer)
 
             record = {
                 **meta,
@@ -176,6 +180,8 @@ async def main(questions_path):
                 "gate": gate,
                 # None when the gate refused before generation ran.
                 "raw_generation": _gen_log[-1] if _gen_log else None,
+                "facts_status": facts_status,
+                "record_ids": resp.get("record_ids"),
                 "accuracy_score": resp.get("accuracy_score"),
                 "numeric_faithfulness": resp.get("numeric_faithfulness"),
                 "source_chunks": resp.get("source_chunks"),

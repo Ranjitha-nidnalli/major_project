@@ -1,0 +1,943 @@
+{
+  "note": "DRAFT, needs review by a person. Maps farmer wording to fact records. Matching is longest-phrase-first, and a matched phrase is consumed so shorter phrases inside it cannot also match. Plain strings match as substrings (so Kannada suffixes still match); strings starting with '=' must be a whole word. Never add a generic word (worm, pest, disease, spray, medicine) as a pest/disease alias: that is exactly how a wrong-pest dose got through before (H-38). Symptom words (wilting, dead heart, bunchy top, whip) are deliberately NOT aliases: a symptom can have several causes, and mapping it to one disease's chemical would be diagnosis. organism_words (worm, pest, fly...) signal a pest/disease question: with no named subject the bot refuses, even if a topic keyword also matched, so a weed or fertilizer answer is never given to a pest question. Action words (spray, medicine) are deliberately not in that list. neutral_phrases (disease-free, earthworm...) are consumed first so they do not count as organism words.",
+  "organism_words": [
+    "ಹುಳು",
+    "ಹುಳ",
+    "ಕೀಟ",
+    "ರೋಗ",
+    "ಹೇನು",
+    "ನೊಣ",
+    "ದುಂಬಿ",
+    "ತಿಗಣೆ",
+    "ಬಾಧೆ",
+    "ಕೊರಕ",
+    "ಕೊರೆಯುವ",
+    "ಶಿಲೀಂಧ್ರ",
+    "pest",
+    "disease",
+    "insect",
+    "worm",
+    "bug",
+    "fly",
+    "beetle",
+    "aphid",
+    "borer",
+    "fungus"
+  ],
+  "neutral_phrases": [
+    "ರೋಗರಹಿತ",
+    "ರೋಗ ರಹಿತ",
+    "ರೋಗ ನಿರೋಧಕ",
+    "ರೋಗನಿರೋಧಕ",
+    "ಆರೋಗ್ಯ",
+    "ಎರೆಹುಳು",
+    "disease-free",
+    "disease free",
+    "disease resistant"
+  ],
+  "subjects": {
+    "early_shoot_borer": {
+      "name_kn": "ಆದಿ ಸುಳಿ ಕೊರೆಯುವ ಹುಳು",
+      "aliases": [
+        "ಆದಿ ಸುಳಿ",
+        "ಸುಳಿ ಕೊರೆಯುವ",
+        "ಸುಳಿಕೊರೆಯುವ",
+        "early shoot borer",
+        "ಅರ್ಲಿ ಶೂಟ್ ಬೋರರ್"
+      ],
+      "records": [
+        "uasb-esb-chlorpyrifos",
+        "uasb-esb-trichogramma",
+        "uasb-esb-chlorantraniliprole",
+        "uasb-esb-fipronil",
+        "uasd-esb"
+      ]
+    },
+    "top_shoot_borer": {
+      "name_kn": "ಮೇಲಿನ ಸುಳಿ ಕೊರಕ",
+      "aliases": [
+        "ಮೇಲಿನ ಸುಳಿ",
+        "top shoot borer",
+        "top borer",
+        "ಟಾಪ್ ಶೂಟ್ ಬೋರರ್",
+        "ಟಾಪ್ ಬೋರರ್"
+      ],
+      "records": [
+        "uasb-top-shoot-borer"
+      ]
+    },
+    "shoot_borer_ambiguous": {
+      "name_kn": "ಸುಳಿ ಕೊರಕ (ಆದಿ ಅಥವಾ ಮೇಲಿನ)",
+      "aliases": [
+        "ಸುಳಿ ಕೊರಕ",
+        "ಸುಳಿಕೊರಕ",
+        "shoot borer",
+        "ಶೂಟ್ ಬೋರರ್"
+      ],
+      "records": [
+        "uasb-esb-chlorpyrifos",
+        "uasb-esb-trichogramma",
+        "uasb-esb-chlorantraniliprole",
+        "uasb-esb-fipronil",
+        "uasd-esb",
+        "uasb-top-shoot-borer"
+      ]
+    },
+    "termite": {
+      "name_kn": "ಗೆದ್ದಲು",
+      "aliases": [
+        "ಗೆದ್ದಲ",
+        "ಗೆದ್ದಿಲ",
+        "termite",
+        "ಟರ್ಮೈಟ್",
+        "white ant"
+      ],
+      "records": [
+        "uasb-termite",
+        "uasd-termite"
+      ]
+    },
+    "scale_mealybug": {
+      "name_kn": "ಶಲ್ಕ ಕೀಟ / ಹಿಟ್ಟು ತಿಗಣೆ",
+      "aliases": [
+        "ಶಲ್ಕ",
+        "ಹಿಟ್ಟು ತಿಗಣೆ",
+        "ಹಿಟ್ಟುತಿಗಣೆ",
+        "scale insect",
+        "mealybug",
+        "mealy bug",
+        "ಮೀಲಿಬಗ್",
+        "ಮೀಲಿ ಬಗ್",
+        "ಸ್ಕೇಲ್ ಕೀಟ"
+      ],
+      "records": [
+        "uasb-scale-mealybug-chlorpyrifos",
+        "uasb-scale-mealybug-dimethoate"
+      ]
+    },
+    "woolly_aphid": {
+      "name_kn": "ಬಿಳಿ ಉಣ್ಣೆ ಹೇನು",
+      "aliases": [
+        "ಉಣ್ಣೆ ಹೇನ",
+        "ಉಣ್ಣೆಹೇನ",
+        "ಬಿಳಿ ಉಣ್ಣೆ",
+        "woolly aphid",
+        "wooly aphid",
+        "ವೂಲಿ ಏಫಿಡ್",
+        "ವುಲ್ಲಿ ಏಫಿಡ್"
+      ],
+      "records": [
+        "uasb-wwa-chlorpyrifos",
+        "uasb-wwa-dimethoate",
+        "uasb-wwa-biocontrol",
+        "uasd-wwa-acephate",
+        "uasd-wwa-chlorpyrifos",
+        "uasd-wwa-malathion",
+        "uasd-wwa-thiamethoxam",
+        "uasd-wwa-malathion-dust",
+        "uasd-wwa-biocontrol"
+      ]
+    },
+    "white_grub": {
+      "name_kn": "ಗೊಣ್ಣೆ ಹುಳು",
+      "aliases": [
+        "ಗೊಣ್ಣೆ",
+        "white grub",
+        "ವೈಟ್ ಗ್ರಬ್"
+      ],
+      "records": [
+        "uasb-white-grub",
+        "uasd-white-grub"
+      ]
+    },
+    "pineapple_disease": {
+      "name_kn": "ಅನಾನಸ್ ರೋಗ",
+      "aliases": [
+        "ಅನಾನಸ್",
+        "pineapple",
+        "sett rot",
+        "ತುಂಡು ಕೊಳೆ"
+      ],
+      "records": [
+        "uasb-pineapple-disease",
+        "uasd-pineapple-disease"
+      ]
+    },
+    "leaf_spot": {
+      "name_kn": "ಎಲೆ ಚುಕ್ಕೆ ರೋಗ",
+      "aliases": [
+        "ಎಲೆ ಚುಕ್ಕೆ",
+        "ಎಲೆಚುಕ್ಕೆ",
+        "leaf spot",
+        "ಲೀಫ್ ಸ್ಪಾಟ್"
+      ],
+      "records": [
+        "uasb-leaf-spot-copper",
+        "uasb-leaf-spot-mancozeb"
+      ]
+    },
+    "yellow_leaf": {
+      "name_kn": "ಹಳದಿ ನಂಜು ರೋಗ",
+      "aliases": [
+        "ಹಳದಿ ನಂಜು",
+        "ಹಳದಿ ಎಲೆ ರೋಗ",
+        "ಹಳದಿ ಗರಿ ರೋಗ",
+        "yellow leaf",
+        "=yld"
+      ],
+      "records": [
+        "uasb-yellow-leaf-disease"
+      ]
+    },
+    "smut": {
+      "name_kn": "ಕಾಡಿಗೆ ರೋಗ",
+      "aliases": [
+        "ಕಾಡಿಗೆ",
+        "smut",
+        "ಸ್ಮಟ್"
+      ],
+      "records": [
+        "uasb-smut",
+        "uasd-smut"
+      ]
+    },
+    "grassy_shoot": {
+      "name_kn": "ಹುಲ್ಲು ನಂಜು ರೋಗ",
+      "aliases": [
+        "ಹುಲ್ಲು ನಂಜು",
+        "grassy shoot",
+        "ಗ್ರಾಸಿ ಶೂಟ್"
+      ],
+      "records": [
+        "uasd-grassy-shoot"
+      ]
+    },
+    "wilt": {
+      "name_kn": "ಸಿಡಿ ರೋಗ",
+      "aliases": [
+        "ಸಿಡಿ ರೋಗ",
+        "wilt",
+        "ವಿಲ್ಟ್"
+      ],
+      "records": [
+        "uasd-wilt"
+      ]
+    },
+    "ratoon_stunting": {
+      "name_kn": "ಕೂಳೆ ಕುಂಠಿತ ರೋಗ",
+      "aliases": [
+        "ಕೂಳೆ ಕುಂಠಿತ",
+        "ಕುಳೆ ಕುಂಠಿತ",
+        "ratoon stunting",
+        "=rsd"
+      ],
+      "records": [
+        "uasd-ratoon-stunting"
+      ]
+    },
+    "red_rot": {
+      "name_kn": "ಕೆಂಪು ಕೊಳೆ ರೋಗ",
+      "aliases": [
+        "ಕೆಂಪು ಕೊಳೆ",
+        "red rot",
+        "ರೆಡ್ ರಾಟ್"
+      ],
+      "records": []
+    },
+    "root_borer": {
+      "name_kn": "ಬೇರು ಕೊರಕ",
+      "aliases": [
+        "ಬೇರು ಕೊರಕ",
+        "ಬೇರು ಕೊರೆ",
+        "root borer"
+      ],
+      "records": []
+    },
+    "internode_borer": {
+      "name_kn": "ಗಿಣ್ಣು ಕೊರಕ",
+      "aliases": [
+        "ಗಿಣ್ಣು ಕೊರಕ",
+        "internode borer"
+      ],
+      "records": []
+    },
+    "pyrilla": {
+      "name_kn": "ಪೈರಿಲ್ಲಾ",
+      "aliases": [
+        "ಪೈರಿಲ್ಲಾ",
+        "pyrilla",
+        "ಜಿಗಿ ಹುಳು",
+        "leafhopper"
+      ],
+      "records": []
+    },
+    "rust": {
+      "name_kn": "ತುಕ್ಕು ರೋಗ",
+      "aliases": [
+        "ತುಕ್ಕು ರೋಗ",
+        "rust disease"
+      ],
+      "records": []
+    }
+  },
+  "intents": {
+    "variety": {
+      "keywords": [
+        "ತಳಿ",
+        "variety",
+        "varieties",
+        "ವೆರೈಟಿ",
+        "ಕಬ್ಬಿನ ಜಾತಿ"
+      ],
+      "records": [
+        "uasb-variety-co62175",
+        "uasb-variety-co86032",
+        "uasb-variety-co8371",
+        "uasb-variety-covc99463",
+        "uasb-variety-vcf0517",
+        "uasb-variety-covc16061",
+        "uasb-variety-covc16062",
+        "uasb-variety-covc18061",
+        "uasd-varieties",
+        "uasd-rainfed"
+      ]
+    },
+    "variety_co62175": {
+      "keywords": [
+        "=62175"
+      ],
+      "records": [
+        "uasb-variety-co62175"
+      ]
+    },
+    "variety_co86032": {
+      "keywords": [
+        "=86032",
+        "ನಯನ",
+        "nayana"
+      ],
+      "records": [
+        "uasb-variety-co86032",
+        "uasd-varieties",
+        "uasd-variety-yields"
+      ]
+    },
+    "variety_co8371": {
+      "keywords": [
+        "=8371",
+        "ಭೀಮ",
+        "bhima"
+      ],
+      "records": [
+        "uasb-variety-co8371"
+      ]
+    },
+    "variety_covc99463": {
+      "keywords": [
+        "=99463",
+        "ವಿಶಾಲ್",
+        "vishal"
+      ],
+      "records": [
+        "uasb-variety-covc99463"
+      ]
+    },
+    "variety_vcf0517": {
+      "keywords": [
+        "=0517",
+        "=517",
+        "ಬಾಹುಬಲಿ",
+        "bahubali"
+      ],
+      "records": [
+        "uasb-variety-vcf0517"
+      ]
+    },
+    "variety_covc16061": {
+      "keywords": [
+        "=16061"
+      ],
+      "records": [
+        "uasb-variety-covc16061"
+      ]
+    },
+    "variety_covc16062": {
+      "keywords": [
+        "=16062"
+      ],
+      "records": [
+        "uasb-variety-covc16062"
+      ]
+    },
+    "variety_covc18061": {
+      "keywords": [
+        "=18061"
+      ],
+      "records": [
+        "uasb-variety-covc18061"
+      ]
+    },
+    "variety_coc671": {
+      "keywords": [
+        "=671"
+      ],
+      "records": [
+        "uasd-varieties",
+        "uasd-variety-yields",
+        "uasd-rainfed"
+      ]
+    },
+    "variety_co94012": {
+      "keywords": [
+        "=94012"
+      ],
+      "records": [
+        "uasd-varieties",
+        "uasd-variety-yields",
+        "uasd-rainfed"
+      ]
+    },
+    "variety_snk044": {
+      "keywords": [
+        "=044"
+      ],
+      "records": [
+        "uasd-varieties",
+        "uasd-variety-yields",
+        "uasd-rainfed",
+        "uasd-wwa-biocontrol"
+      ]
+    },
+    "variety_snk632": {
+      "keywords": [
+        "=632"
+      ],
+      "records": [
+        "uasd-varieties",
+        "uasd-variety-yields"
+      ]
+    },
+    "variety_co88028": {
+      "keywords": [
+        "=88028"
+      ],
+      "records": [
+        "uasd-rainfed"
+      ]
+    },
+    "planting_season": {
+      "keywords": [
+        "ನಾಟಿ ಕಾಲ",
+        "ನಾಟಿ ಮಾಡುವ ಕಾಲ",
+        "ಯಾವ ತಿಂಗಳು",
+        "ಯಾವ ತಿಂಗಳಲ್ಲಿ",
+        "ಯಾವಾಗ ನಾಟಿ",
+        "ಯಾವಾಗ ನೆಡ",
+        "planting time",
+        "planting season",
+        "when to plant"
+      ],
+      "records": [
+        "uasd-varieties",
+        "uasd-rainfed",
+        "uasb-variety-co62175",
+        "uasb-variety-co86032",
+        "uasb-variety-co8371",
+        "uasb-variety-covc99463",
+        "uasb-variety-vcf0517",
+        "uasb-variety-covc16061",
+        "uasb-variety-covc16062",
+        "uasb-variety-covc18061"
+      ]
+    },
+    "rainfed": {
+      "keywords": [
+        "ಮಳೆಯಾಶ್ರಿತ",
+        "ಮಳೆ ಆಶ್ರಿತ",
+        "ಖುಷ್ಕಿ",
+        "rainfed"
+      ],
+      "records": [
+        "uasd-rainfed"
+      ]
+    },
+    "seed_rate": {
+      "keywords": [
+        "ಬಿತ್ತನೆ ಪ್ರಮಾಣ",
+        "ಬೀಜದ ಪ್ರಮಾಣ",
+        "ಎಷ್ಟು ತುಂಡು",
+        "ಎಷ್ಟು ಸೆಟ್",
+        "ಎಷ್ಟು ಕಬ್ಬು ಬೇಕು",
+        "ಬಿತ್ತನೆ ಕಬ್ಬು ಎಷ್ಟು",
+        "ಕಣ್ಣಿನ ತುಂಡು",
+        "seed rate",
+        "how many setts"
+      ],
+      "records": [
+        "uasb-seed-rate",
+        "uasb-seed-rate-wide-row",
+        "uasd-seed-rate"
+      ]
+    },
+    "sett_treatment": {
+      "keywords": [
+        "ಬೀಜೋಪಚಾರ",
+        "ಉಪಚಾರ",
+        "ಅದ್ದ",
+        "sett treatment",
+        "seed treatment",
+        "ಬಿತ್ತನೆ ತುಂಡು ಆಯ್ಕೆ",
+        "ಉಷ್ಣೋಪಚಾರ",
+        "ಶಾಖೋಪಚಾರ"
+      ],
+      "records": [
+        "uasb-sett-treatment",
+        "uasb-sett-selection",
+        "uasd-sett-treatment",
+        "uasd-sett-selection"
+      ]
+    },
+    "fertilizer": {
+      "keywords": [
+        "ರಸಗೊಬ್ಬರ",
+        "ರಾಸಾಯನಿಕ ಗೊಬ್ಬರ",
+        "ಸಾರಜನಕ",
+        "ರಂಜಕ",
+        "ಪೊಟ್ಯಾಷ್",
+        "ಪೋಟ್ಯಾಷ್",
+        "ಯೂರಿಯಾ",
+        "=npk",
+        "ಎನ್ಪಿಕೆ",
+        "ಎನ್.ಪಿ.ಕೆ",
+        "fertilizer",
+        "fertiliser",
+        "ಗೊಬ್ಬರ"
+      ],
+      "records": [
+        "uasb-npk",
+        "uasb-fertilizer-schedule",
+        "uasd-npk",
+        "uasd-fertilizer-schedule"
+      ]
+    },
+    "fertilizer_timing": {
+      "keywords": [
+        "ಮೇಲುಗೊಬ್ಬರ",
+        "top dressing"
+      ],
+      "records": [
+        "uasb-fertilizer-schedule",
+        "uasd-fertilizer-schedule"
+      ]
+    },
+    "timing": {
+      "helper": true,
+      "keywords": [
+        "ಯಾವಾಗ",
+        "ಯಾವ ಸಮಯ",
+        "ಎಷ್ಟು ದಿನ",
+        "ಕಂತು",
+        "when"
+      ],
+      "records": []
+    },
+    "manure": {
+      "keywords": [
+        "ಕೊಟ್ಟಿಗೆ ಗೊಬ್ಬರ",
+        "ಸಾವಯವ ಗೊಬ್ಬರ",
+        "ಕಾಂಪೋಸ್ಟ್",
+        "ಎರೆಹುಳು ಗೊಬ್ಬರ",
+        "ಪ್ರೆಸ್ಮಡ್",
+        "ಮಳ್ಳಿಗೊಬ್ಬರ",
+        "farmyard manure",
+        "=fym",
+        "compost"
+      ],
+      "records": [
+        "uasb-manure",
+        "uasd-organic-manure"
+      ]
+    },
+    "biofertilizer": {
+      "keywords": [
+        "ಜೈವಿಕ ಗೊಬ್ಬರ",
+        "ಅಜಟೋ",
+        "ಅಜೋಟೋ",
+        "ಅಜೋಸ್ಪ",
+        "ಅಝೋಸ್ಪ",
+        "ರಂಜಕ ಕರಗಿಸುವ",
+        "azoto",
+        "azospir",
+        "biofertilizer",
+        "=psb"
+      ],
+      "records": [
+        "uasb-biofertilizer",
+        "uasb-biofertilizer-timing",
+        "uasd-organic-manure"
+      ]
+    },
+    "green_manure": {
+      "keywords": [
+        "ಹಸಿರೆಲೆ ಗೊಬ್ಬರ",
+        "ಹಸಿರೆಲೆ",
+        "ಸಣಬು",
+        "ಡೈಂಚಾ",
+        "ಚಂಬೆ",
+        "green manure"
+      ],
+      "records": [
+        "uasd-green-manure",
+        "uasb-land-preparation"
+      ]
+    },
+    "micronutrient": {
+      "keywords": [
+        "ಲಘು ಪೋಷಕ",
+        "ಸತುವಿನ",
+        "=ಸತು",
+        "ಕಬ್ಬಿಣದ ಸಲ್ಫೇಟ್",
+        "ಫೆರಸ್",
+        "ಬೋರಾನ್",
+        "ಬೋರ್ಯಾಕ್ಸ್",
+        "zinc",
+        "micronutrient",
+        "boron"
+      ],
+      "records": [
+        "uasd-micronutrients"
+      ]
+    },
+    "leaf_colour_chart": {
+      "keywords": [
+        "ಎಲೆ ಬಣ್ಣದ ಪಟ್ಟಿ",
+        "leaf colour chart",
+        "leaf color chart",
+        "=lcc"
+      ],
+      "records": [
+        "uasd-leaf-colour-chart"
+      ]
+    },
+    "irrigation": {
+      "keywords": [
+        "ನೀರಾವರಿ",
+        "ನೀರು ಹಾಯಿಸ",
+        "ನೀರು ಕೊಡ",
+        "ನೀರು ಬಿಡ",
+        "ಎಷ್ಟು ದಿನಕ್ಕೆ ನೀರು",
+        "irrigation",
+        "watering"
+      ],
+      "records": [
+        "uasb-irrigation",
+        "uasd-irrigation"
+      ]
+    },
+    "drought": {
+      "keywords": [
+        "ಬರಗಾಲ",
+        "ಬರ ನಿರ್ವಹಣೆ",
+        "ನೀರಿನ ಕೊರತೆ",
+        "drought"
+      ],
+      "records": [
+        "uasb-irrigation",
+        "uasd-drought"
+      ]
+    },
+    "weed": {
+      "keywords": [
+        "ಕಳೆನಾಶ",
+        "ಕಳೆ ನಿಯಂತ್ರ",
+        "ಕಳೆ ನಿರ್ವಹ",
+        "ಕಳೆಗಳ",
+        "=ಕಳೆ",
+        "weed",
+        "herbicide",
+        "ಅಟ್ರಾಜಿನ್",
+        "ಅಟ್ರ್ಯಾಜಿನ್",
+        "atrazine",
+        "2,4-d",
+        "2, 4-ಡಿ",
+        "2,4-ಡಿ"
+      ],
+      "records": [
+        "uasb-weed-atrazine",
+        "uasb-weed-metribuzin",
+        "uasb-weed-diuron",
+        "uasb-weed-24d-post",
+        "uasd-weed-atrazine",
+        "uasd-weed-24d"
+      ]
+    },
+    "striga": {
+      "keywords": [
+        "ಉರಿಮಲ್ಲಿಗೆ",
+        "striga"
+      ],
+      "records": [
+        "uasd-striga"
+      ]
+    },
+    "soil": {
+      "keywords": [
+        "ಯಾವ ಮಣ್ಣ",
+        "ಮಣ್ಣು ಸೂಕ್ತ",
+        "ಮಣ್ಣಿನ ವಿಧ",
+        "ರಸಸಾರ",
+        "=ph",
+        "which soil",
+        "soil type"
+      ],
+      "records": [
+        "uasb-soil"
+      ]
+    },
+    "planting": {
+      "keywords": [
+        "ನಾಟಿ ಪದ್ಧತಿ",
+        "ನಾಟಿ ವಿಧಾನ",
+        "ಸಾಲಿನ ಅಂತರ",
+        "ಸಾಲು ಅಂತರ",
+        "ಅಗಲ ಸಾಲು",
+        "ಜೋಡಿ ಸಾಲು",
+        "ಜೋಡು ಸಾಲು",
+        "ಭೂಮಿ ಸಿದ್ಧತೆ",
+        "ಉಳುಮೆ",
+        "spacing",
+        "planting method",
+        "land preparation"
+      ],
+      "records": [
+        "uasb-land-preparation",
+        "uasb-wide-row",
+        "uasd-planting-furrows"
+      ]
+    },
+    "pit_planting": {
+      "keywords": [
+        "ಗುಣಿ ನಾಟಿ",
+        "ಗುಣಿ ಪದ್ಧತಿ",
+        "pit planting",
+        "pit method"
+      ],
+      "records": [
+        "uasd-pit-planting"
+      ]
+    },
+    "earthing_up": {
+      "keywords": [
+        "ಮಣ್ಣು ಏರ",
+        "ಅಂತರ ಬೇಸಾಯ",
+        "earthing up",
+        "intercultivation"
+      ],
+      "records": [
+        "uasd-intercultivation",
+        "uasb-fertilizer-schedule"
+      ]
+    },
+    "harvest": {
+      "keywords": [
+        "ಕಟಾವ",
+        "ಕೊಯ್ಲು",
+        "harvest",
+        "ಕಡಿಯುವ ಸಮಯ"
+      ],
+      "records": [
+        "uasb-harvest",
+        "uasd-harvest"
+      ]
+    },
+    "yield": {
+      "keywords": [
+        "ಇಳುವರಿ",
+        "yield"
+      ],
+      "records": [
+        "uasd-variety-yields",
+        "uasb-variety-co62175",
+        "uasb-variety-co86032",
+        "uasb-variety-co8371",
+        "uasb-variety-covc99463",
+        "uasb-variety-vcf0517",
+        "uasb-variety-covc18061",
+        "uasd-rainfed"
+      ]
+    },
+    "ratoon": {
+      "keywords": [
+        "ಕೂಳೆ",
+        "ಕುಳೆ",
+        "ratoon",
+        "ರಟೂನ್"
+      ],
+      "records": [
+        "uasb-ratoon-basics",
+        "uasb-ratoon-care",
+        "uasd-ratoon-basics",
+        "uasd-ratoon-trash",
+        "uasd-ratoon-gap-filling"
+      ]
+    },
+    "ratoon_fertilizer": {
+      "keywords": [],
+      "records": [
+        "uasb-ratoon-fertilizer",
+        "uasd-ratoon-fertilizer"
+      ]
+    },
+    "ratoon_weed": {
+      "keywords": [],
+      "records": [
+        "uasb-ratoon-care",
+        "uasd-ratoon-weed"
+      ]
+    },
+    "ratoon_micronutrient": {
+      "keywords": [],
+      "records": [
+        "uasd-ratoon-micronutrients"
+      ]
+    },
+    "ratoon_yield": {
+      "keywords": [],
+      "records": [
+        "uasb-ratoon-yield",
+        "uasd-ratoon-yield"
+      ]
+    },
+    "trash": {
+      "keywords": [
+        "ರವದಿ",
+        "ತರಗು",
+        "trash"
+      ],
+      "records": [
+        "uasd-ratoon-trash",
+        "uasd-drought",
+        "uasb-irrigation"
+      ]
+    },
+    "intercrop": {
+      "keywords": [
+        "ಅಂತರ ಬೆಳೆ",
+        "ಮಿಶ್ರ ಬೆಳೆ",
+        "intercrop"
+      ],
+      "records": []
+    },
+    "price": {
+      "keywords": [
+        "ಬೆಲೆ",
+        "=ದರ",
+        "ಮಾರುಕಟ್ಟೆ",
+        "price",
+        "=rate",
+        "frp"
+      ],
+      "records": []
+    },
+    "scheme": {
+      "keywords": [
+        "ಸಬ್ಸಿಡಿ",
+        "ಸಹಾಯಧನ",
+        "ಯೋಜನೆ",
+        "subsidy",
+        "scheme"
+      ],
+      "records": []
+    },
+    "weather": {
+      "keywords": [
+        "ಹವಾಮಾನ",
+        "ಮಳೆ ಬರ",
+        "weather"
+      ],
+      "records": []
+    }
+  },
+  "composites": [
+    {
+      "when": [
+        "ratoon",
+        "fertilizer"
+      ],
+      "use": "ratoon_fertilizer"
+    },
+    {
+      "when": [
+        "ratoon",
+        "fertilizer_timing"
+      ],
+      "use": "ratoon_fertilizer"
+    },
+    {
+      "when": [
+        "ratoon",
+        "weed"
+      ],
+      "use": "ratoon_weed"
+    },
+    {
+      "when": [
+        "ratoon",
+        "micronutrient"
+      ],
+      "use": "ratoon_micronutrient"
+    },
+    {
+      "when": [
+        "ratoon",
+        "yield"
+      ],
+      "use": "ratoon_yield"
+    },
+    {
+      "when": [
+        "fertilizer",
+        "timing"
+      ],
+      "use": "fertilizer_timing"
+    }
+  ],
+  "regions": {
+    "south_karnataka": [
+      "ಮಂಡ್ಯ",
+      "ಮೈಸೂರು",
+      "ಚಾಮರಾಜನಗರ",
+      "ಹಾಸನ",
+      "ತುಮಕೂರು",
+      "ಬೆಂಗಳೂರು",
+      "ದಕ್ಷಿಣ ಕರ್ನಾಟಕ",
+      "mandya",
+      "mysuru",
+      "mysore",
+      "chamarajanagar",
+      "hassan",
+      "south karnataka"
+    ],
+    "north_karnataka": [
+      "ಬೆಳಗಾವಿ",
+      "ಬೆಳಗಾಂ",
+      "ಬಾಗಲಕೋಟೆ",
+      "ವಿಜಯಪುರ",
+      "ಬಿಜಾಪುರ",
+      "ಧಾರವಾಡ",
+      "ಹಾವೇರಿ",
+      "ಗದಗ",
+      "ಕಲಬುರಗಿ",
+      "ಬೀದರ್",
+      "ಉತ್ತರ ಕರ್ನಾಟಕ",
+      "belagavi",
+      "belgaum",
+      "bagalkot",
+      "vijayapura",
+      "bijapur",
+      "dharwad",
+      "haveri",
+      "north karnataka"
+    ]
+  }
+}

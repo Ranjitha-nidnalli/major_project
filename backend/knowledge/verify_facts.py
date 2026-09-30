@@ -20,6 +20,9 @@ import os
 import re
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from services.fact_answer import record_hash  # noqa: E402
+
 KNOWLEDGE_DIR = os.path.dirname(os.path.abspath(__file__))
 BACKEND_DIR = os.path.dirname(KNOWLEDGE_DIR)
 REPO_DIR = os.path.dirname(BACKEND_DIR)
@@ -99,14 +102,16 @@ def main():
                     "product_kn", "per_litre", "per_acre", "water_per_acre", "text_kn (what the bot will say)",
                     "source_excerpts", "flags (read these)", "auto_check",
                     "REVIEW: status (CONFIRMED / WRONG / UNSURE)", "REVIEW: correct text or dose if WRONG",
-                    "REVIEW: pesticide currently registered? (yes / no / n.a.)", "REVIEW: notes"])
+                    "REVIEW: pesticide currently registered? (yes / no / n.a.)", "REVIEW: notes",
+                    "record_hash (do not edit)"])
         for data, r, problems in all_rows:
             w.writerow([r["id"], data["source"], data["region"], r["printed_page"], r["topic"],
                         r.get("subject_en", ""), r.get("subject_kn", ""), r.get("product_kn", ""),
                         r.get("per_litre", ""), r.get("per_acre", ""), r.get("water_per_acre", ""),
                         r["text_kn"], "\n".join(r["excerpts"]), "\n".join(r.get("flags", [])),
                         "PASS" if not problems else "FAIL: " + "; ".join(problems),
-                        "", "", "" if r.get("product_kn") else "n.a.", ""])
+                        "", "", "" if r.get("product_kn") else "n.a.", "",
+                        record_hash(data["source"], r)])
     print(f"{len(all_rows)} records, {failures} failing. Review sheet: {REVIEW_SHEET}")
     return 1 if failures else 0
 

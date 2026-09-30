@@ -2,6 +2,8 @@
   "source": "uasb2025",
   "source_title": "UAS Bengaluru, Package of Practices 2025, ch. 34 Sugarcane",
   "region": "south_karnataka",
+  "display_name_kn": "ಕೃಷಿ ವಿಶ್ವವಿದ್ಯಾನಿಲಯ, ಬೆಂಗಳೂರು: ಬೇಸಾಯ ಕ್ರಮಗಳು 2025",
+  "region_kn": "ದಕ್ಷಿಣ ಕರ್ನಾಟಕ",
   "converted_text": "backend/corpus/converted/uasb_pop2025_sugarcane.txt",
   "note": "DRAFT records written by Claude from the Nudi-converted text. Every record must be checked against the printed page by a person before status becomes CONFIRMED. text_kn is the farmer-facing wording; excerpts are exact source text.",
   "records": [
@@ -541,7 +543,7 @@
         "600 ಮಿ.ಲೀ 9 ಕಿ.ಗ್ರಾಂ 10ಕಿ.ಗ್ರಾಂ"
       ],
       "flags": [
-        "SAFETY: merged table cells. Extraction places these granules in the EARLY SHOOT BORER column; the termite column only says 'see the supplementary manual'. The original corpus attached this dose to TERMITES. Confirm on printed page 174 which pest it belongs to",
+        "Checked 2026-09-30 by rendering printed page 174: the 9 kg / 10 kg granule doses sit inside the EARLY SHOOT BORER row (item 2, apply at planting and 60 days after); the termite row is one merged cell saying 'see the separate chapter'. The reviewer should still confirm on the page.",
         "check current CIB&RC registration status"
       ]
     },
@@ -562,7 +564,7 @@
         "600 ಮಿ.ಲೀ 9 ಕಿ.ಗ್ರಾಂ 10ಕಿ.ಗ್ರಾಂ"
       ],
       "flags": [
-        "SAFETY: same merged-cell issue as uasb-esb-chlorantraniliprole; confirm the pest on printed page 174",
+        "Checked 2026-09-30 by rendering printed page 174: the 9 kg / 10 kg granule doses sit inside the EARLY SHOOT BORER row (item 2, apply at planting and 60 days after); the termite row is one merged cell saying 'see the separate chapter'. The reviewer should still confirm on the page.",
         "check current CIB&RC registration status"
       ]
     },
