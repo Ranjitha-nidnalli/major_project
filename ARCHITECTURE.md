@@ -37,16 +37,25 @@ Ollama (local). See `CLAUDE.md` for exact current versions/models.
 ## 3. Pipeline
 
 ```
-query -> LLM router (category + English gloss)
+query -> LLM router (category word only)
       -> embed query (BGE-M3 dense + sparse)
       -> hybrid retrieval, RRF fusion, top-5           [Section 12]
-      -> abstention / confidence gate                   [Section 21]
+      -> category = router's, upgraded to pest/disease
+         if the top hit is a pest/disease card (TODO #47)
+      -> pest/disease only: re-retrieve with
+         BM25 + dense fusion                            [Section 11]
+      -> abstention gate: relevance threshold +
+         entity-match (pest/disease)                    [Section 21]
       -> (optional) cross-encoder rerank                [Section 13]
       -> LLM generation, Kannada, context-only
       -> LLM faithfulness judge + numeric checker        [Section 22]
       -> escalation line appended                        [Section 23]
       -> save to MongoDB, return
 ```
+
+Updated 2026-10-01 to match the code. The router's English-keyword gloss was
+dropped with the web fallback (TODO #50); the router's label can add the
+pest/disease protections but never remove them.
 
 ## 4. Corpus
 
@@ -95,13 +104,17 @@ document ranked first by both signals scores 1.0 *regardless of actual
 relevance*. This is a load-bearing fact for Section 21 — do not reuse the RRF
 fusion score as a relevance signal anywhere else in the pipeline.
 
-## 11. BM25 (not wired in)
+## 11. BM25 — wired in for pest/disease only
 
-Not currently part of production retrieval. TODO #10 calls for a bucketed
-evaluation (exact-term chemical/dosage queries vs. semantic/general queries)
-before deciding whether to add it to the hybrid fusion — a flat aggregate
-score would wash out exactly the signal that would justify including it
-(BM25 is expected to win on exact-term lookups specifically, not in general).
+**Updated 2026-10-01** (this section previously said "not wired in"). The
+bucketed evaluation TODO #10 called for was run 2026-09-21/22: BM25 + dense
+fusion beat dense and hybrid on entity-specific (pest/disease name) queries,
+where BGE-M3's dense vectors confuse templated cards that share remedy
+boilerplate, and measurably hurt the semantic bucket (hit@1 fell to 0.000).
+So `rag_service.BM25_FUSION_CATEGORIES = {pest, disease}`: for those
+categories the default hybrid top-5 is replaced by a BM25Okapi + dense
+fusion (`bm25_retriever.py`); every other category keeps pure hybrid RRF.
+These buckets were measured on the 18-question set only.
 
 ## 12. Category filtering in retrieval — Option A: remove it
 
@@ -187,9 +200,13 @@ gate never fired. This is a safety-critical failure mode in a domain where
 **Fix:** `backend/services/gating.py` — a pure function
 `(relevance, category, config) -> decision`, with no Qdrant/embedding/LLM
 dependency (unit-testable in isolation, see `tests/invariants/test_gating.py`).
-Callers compute `relevance` as max dense cosine similarity over retrieved
-cards (dense vector space is COSINE distance, so this is a genuine relevance
-score) — never the RRF fusion score.
+Callers compute `relevance` as a dense cosine similarity (dense vector space
+is COSINE distance, so this is a genuine relevance score) — never the RRF
+fusion score. As implemented (checked 2026-10-01), it is not the max over the
+retrieved cards: for pest/disease it is the cosine of the top BM25+dense
+fused card; otherwise it is the top hit of a separate dense-only query over
+the whole collection. On the 18 questions the two differ from a max over
+the context by at most ~0.07 (fertilizer-3: 0.456 vs 0.523).
 
 **Defense-in-depth layers, by phase:**
 
@@ -197,15 +214,21 @@ score) — never the RRF fusion score.
 2. **Layer 2 (live, Phase 1):** stricter `safety_critical_threshold` for
    `SAFETY_CRITICAL_CATEGORIES = {pest, disease, fertilizer}`, plus a
    `category_thresholds` override hook for future per-category calibration.
-3. **Layer 3 (Phase 4, not implemented):** `entity_match_hook` extension
-   point — refuse if the query's entity (e.g. a specific chemical name) does
-   not appear in any retrieved card, regardless of relevance score. This is
-   the highest-value addition not yet built: a relevance score alone can be
-   fooled by a card that is topically close but doesn't actually name the
-   thing the farmer asked about. Signature when implemented:
-   `(query_entities, retrieved_entities) -> bool`. `None` (current default)
-   means entity matching is skipped entirely — never silently treated as a
-   pass.
+3. **Layer 3 (live since 2026-09-23, pest/disease only):** entity match
+   (`services/entity_match.py`, TODO #43) — refuse if the retrieved
+   pest/disease cards declare named entities (`Name: X (Y)`) and none of
+   them appear in the query, regardless of relevance score. Pure lexical
+   token overlap, no LLM call. Built because a relevance score alone was
+   fooled: a query about a pest not in the corpus ("black beetle",
+   pest-5) retrieved the Termites card at relevance 0.597 and the model
+   gave the termite dose; the LLM faithfulness judge rated that answer 1.0,
+   since it quoted its chunk accurately. Scoped to pest/disease because it
+   produced false positives elsewhere before BM25 fusion. Known flaw (run
+   2026-09-29, being fixed): it also refuses questions that name no
+   pest/disease at all when one unrelated card is in the top 5
+   (general-2, general-3). Signature: `(query_entities, retrieved_entities)
+   -> bool`; `None` means entity matching is skipped entirely — never
+   silently treated as a pass.
 
 **All current thresholds are explicitly UNCALIBRATED placeholders.**
 `backend/eval/threshold_sweep.py` implements the sweep methodology (pick by
@@ -304,8 +327,13 @@ compared across incompatible runs.
 
 ## 40. Phase roadmap
 
-Full task-level detail lives in `TODO.md` (ranked, two-track) and
-`PROJECT_PLAN.md` (P0–P4 work order with rationale). Summary:
+**Updated 2026-10-01: the work order is "THE PLAN" at the top of `TODO.md`**
+(two weeks to 2026-10-14: expert-verified corpus, expert-written held-out
+questions, no-retrieval baseline, code freeze on day 7, then paper and
+report). `PROJECT_PLAN.md` is superseded. The phases below are the original
+roadmap, kept for context. Phase 5 and most of Phase 2 beyond the items in
+THE PLAN are cut to future work; the entity-match hook listed under Phase 4
+was built early (Section 21, Layer 3). Original summary:
 
 - **Phase 1 (demo-ready):** defects fixed 2026-09-20/21 (Sections 12, 21, 22,
   23, plus dependency/hygiene/eval-pipeline fixes) + Docker preflight script
