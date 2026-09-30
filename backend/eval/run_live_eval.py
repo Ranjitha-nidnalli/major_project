@@ -22,7 +22,9 @@ only. They are NOT quality or safety evidence (CLAUDE.md): chrF cannot
 detect numeric errors.
 
 Usage:
-    cd backend && python eval/run_live_eval.py
+    cd backend && python eval/run_live_eval.py [--questions PATH]
+PATH defaults to eval/questions.json; an expert CSV made from
+eval/expert/heldout_questions_TEMPLATE.csv also works (eval/question_sets.py).
 Requires Qdrant (QDRANT_URL), MongoDB (MONGO_URI), and an LLM API key.
 """
 import os
@@ -31,6 +33,7 @@ import json
 import time
 import hashlib
 import asyncio
+import argparse
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -41,6 +44,7 @@ import rag_service
 from rag_service import get_sugarcane_answer, SYSTEM_INSTRUCTION, HARD_REFUSAL_MESSAGE, NOT_IN_CONTEXT_PHRASE
 from vector_db import embed_model
 from chat_db import connect_db, close_db
+from eval.question_sets import load_questions
 
 EVAL_DIR = os.path.dirname(os.path.abspath(__file__))
 QUESTIONS_PATH = os.path.join(EVAL_DIR, "questions.json")
@@ -115,10 +119,8 @@ async def _recording_generate(*args, **kwargs):
 rag_service.generate_from_context = _recording_generate
 
 
-async def main():
-    with open(QUESTIONS_PATH, "rb") as f:
-        questions_bytes = f.read()
-    questions = json.loads(questions_bytes)
+async def main(questions_path):
+    questions, questions_bytes = load_questions(questions_path, NOT_IN_CONTEXT_PHRASE)
     with open(CORPUS_PATH, "rb") as f:
         corpus_hash = _short_hash(f.read())
 
@@ -128,6 +130,7 @@ async def main():
         "model": model,
         "llm_backend": os.getenv("LLM_BACKEND", "groq"),
         "prompt_version": _short_hash(SYSTEM_INSTRUCTION.encode("utf-8")),
+        "questions_file": os.path.basename(questions_path),
         "questions_hash": _short_hash(questions_bytes),
         "corpus_hash": corpus_hash,
         "lenient_pest_disease_threshold": rag_service.ENABLE_LENIENT_PEST_DISEASE_THRESHOLD,
@@ -156,7 +159,7 @@ async def main():
             latency = time.time() - t0
             answer = resp["answer"]
             gate = _gate_log[-1] if _gate_log else None
-            expected_refusal = NOT_IN_CONTEXT_PHRASE in q["expected_answer"]
+            expected_refusal = q["expected_refusal"]
             refused = is_refusal(answer)
 
             record = {
@@ -207,4 +210,6 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--questions", default=QUESTIONS_PATH)
+    asyncio.run(main(parser.parse_args().questions))

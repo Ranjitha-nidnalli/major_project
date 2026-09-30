@@ -46,6 +46,11 @@ expert-written held-out questions with expert ratings, plus a no-retrieval basel
   (entity_mismatch). Gate now passes 14/15 answerable (pest-2 remains, #46). price-1 and
   general-5 pass the gate as before and were refused by the model in every live run. Measured on
   the same 18 questions, so this shows the fixes work, not accuracy. Not yet run live.
+- [x] Day-7 prep: `eval/question_sets.py` loads questions.json or the expert CSV (fails loudly on
+  bad rows); `run_live_eval.py --questions PATH`; `run_no_retrieval_baseline.py` (#17, same
+  model, neutral prompt, no context/gates, stored per record). Formats received: report
+  (5 chapters, Overleaf) and 6-page IEEE paper, in `report/`. Both need a 20–25 paper
+  literature survey — real, verified references only (CLAUDE.md: never invent citations).
 - [x] Refresh ARCHITECTURE.md: Section 3 (router no longer emits an English gloss),
   Section 11 (BM25 is wired in for pest/disease), Section 21 (Layer 3 is implemented),
   Section 40 (points here).
