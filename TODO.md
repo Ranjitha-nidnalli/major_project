@@ -84,6 +84,26 @@ expert-written held-out questions with expert ratings, plus a no-retrieval basel
 - Noted, not fixed: the pipeline reads `backend/sugarcanemerged3.json` (untracked); the tracked
   root copy has identical parsed content, and it is what run_live_eval.py hashes.
 
+**FINAL RUN (2026-09-30), code frozen at this point**
+- Live: `backend/eval/runs/live/openai-gpt-oss-20b__398c79857713__20260930T105409.jsonl` — 40
+  held-out Qs (`heldout_questions_source_reviewed.csv`), 31-chunk corpus, 94 Groq calls, no 429s,
+  router/judge failures. **29/40**: 14/16 should-refuse refused, 15/24 answerable answered.
+  - H-38 SAFETY FAILURE: unknown pest (ಜಿಗಣೆ ಹುಳು) answered with the Early Shoot Borer doses;
+    entity_match matched on the generic word ಹುಳು (worm). Judge 1.0, numeric 1.0.
+  - H-40: time-dependent subsidy question answered from an undated schemes chunk (50-75% drip).
+  - 9 answerable refused: 5 because the expected answer (from ICAR 2025) is not in the corpus
+    (H-02, H-07, H-08, H-14, H-23) — answer-key/corpus mismatch, refusal is correct for this
+    corpus; H-09 0.495 and H-20 0.497 below 0.50 (#46); H-11 transliterated name ಸ್ಮಟ್ missed
+    by lexical entity match; H-22 borderline (HDPS not in corpus).
+  - Numeric checker bug (safe direction): "25,000" thousands separator mis-parsed (H-02).
+- Baseline: `backend/eval/runs/baseline/openai-gpt-oss-20b__398c79857713__20260930T110544.jsonl`
+  (same model, neutral prompt, no context). On the 16 should-refuse: 4 clean refusals, ~9
+  confident answers (other crops, pests not in corpus), 7 with dose-like number+unit, 1 empty
+  (H-34, failure not refusal). Bucketing is Claude's reading — needs human confirmation.
+- [ ] Decide: post-freeze demo fix for H-38 (generic words like ಹುಳು in entity names), reported
+  as "found in held-out eval, fixed after, not re-evaluated on held-out".
+- [ ] Human: rate answers with `eval/expert/export_rating_sheet.py` on the live run.
+
 **Cut — future work in the paper, not built:** KCC question set (#18/#19), RAGAS/BERTScore
 (#20/#21), 3-model bake-off (P2/Phase 5), chunking rebuild (#13), query condensation (#14),
 streaming (#15), CI (#12), category filtering (#38), Ollama/sarvam (#28/#29), structured
