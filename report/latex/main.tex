@@ -1,8 +1,7 @@
-% Krishi Mitra -- 7th semester project report.
-% Chapter structure follows the outline given by the project guide
-% (report/DocScanner Aug 18, 2026 1-02 PM.pdf).
-% Everything in red (\todo{...}) is missing information or a citation that a
-% person must supply. Do not submit with red text remaining.
+% Krishi Mitra -- project report.
+% Chapter structure follows the outline given by the project guide.
+% Compile with XeLaTeX (Overleaf: Menu -> Compiler -> XeLaTeX).
+% To fill in names, college and guide: edit details.tex only.
 \documentclass[12pt,a4paper,oneside]{report}
 
 \usepackage[margin=1in]{geometry}
@@ -10,8 +9,9 @@
 \usepackage{polyglossia}
 \setdefaultlanguage{english}
 \setotherlanguage{kannada}
-% Kannada text needs a Kannada font. Noto Sans Kannada is available on Overleaf.
-\newfontfamily\kannadafont[Script=Kannada]{Noto Sans Kannada}
+% Kannada font shipped with the project (fonts/, SIL Open Font License),
+% so the report compiles the same on Overleaf and locally.
+\newfontfamily\kannadafont[Script=Kannada, Path=fonts/, BoldFont=NotoSansKannada-Bold.ttf]{NotoSansKannada-Regular.ttf}
 \usepackage{setspace}
 \onehalfspacing
 \usepackage{amsmath,amssymb}
@@ -20,51 +20,19 @@
 \usepackage{xcolor}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit}
-\usepackage{listings}
+\usepackage{url}
 \usepackage[hidelinks]{hyperref}
-\usepackage[numbers]{natbib}
+\usepackage[numbers,sort&compress]{natbib}
 
 \newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
 \newcommand{\kn}[1]{\textkannada{#1}}
 
-\lstset{basicstyle=\ttfamily\small,breaklines=true,frame=single}
+\input{details}
 
 \begin{document}
 
-% ---------------- Front matter (college format) ----------------
-\begin{titlepage}
-\centering
-{\Large \todo{College name, e.g. University Visvesvaraya College of Engineering}\par}
-\vspace{0.5cm}
-{\large \todo{Department name}\par}
-\vspace{1.5cm}
-{\large A Project Report on\par}
-\vspace{0.5cm}
-{\LARGE\bfseries Krishi Mitra: A Safety-First Kannada Question-Answering\\ Assistant for Sugarcane Farmers in Karnataka\par}
-\vspace{0.5cm}
-\todo{replace with the project title exactly as registered}
-\vspace{1.5cm}
-
-Submitted in partial fulfilment of the requirements for the award of the degree of\\
-\textbf{Bachelor of Engineering} in \todo{branch}\par
-\vspace{1cm}
-Submitted by\\
-\todo{Student names and USNs}\par
-\vspace{1cm}
-Under the guidance of\\
-\todo{Guide name, designation}\par
-\vfill
-{\large \todo{Academic year, e.g. 2026--2027}\par}
-\end{titlepage}
-
-\chapter*{Certificate}
-\todo{College certificate text, as per the department format}
-
-\chapter*{Declaration}
-\todo{Declaration text, as per the department format}
-
-\chapter*{Acknowledgement}
-\todo{Acknowledgement, written by the students}
+\pagenumbering{roman}
+\input{frontmatter}
 
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
@@ -74,7 +42,8 @@ Under the guidance of\\
 \listoffigures
 \listoftables
 
-% ---------------- Chapters (guide's outline) ----------------
+\clearpage
+\pagenumbering{arabic}
 \input{chapters/ch1_introduction}
 \input{chapters/ch2_literature}
 \input{chapters/ch3_methodology}

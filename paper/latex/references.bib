@@ -1,19 +1,194 @@
 % References for the Krishi Mitra report and paper.
-% Add an entry ONLY after checking authors, title, venue and year on the paper's
-% official page (arXiv, ACL Anthology, publisher). Never add one from memory or
-% from an AI summary. Candidates: ../literature_candidates.md
-%
-% Still needed by the text (search chapters/ for \todo{cite):
-%   BGE-M3, BM25, rule of three, RAG (Lewis et al.), survey papers.
-%
-% The entries below were checked on 2026-10-13 against the official pages
-% listed in literature_candidates.md.
+% Every entry was checked on 2026-10-13 against the paper's official page
+% (arXiv abstract page, ACL Anthology, publisher, or PIB). Literature-survey
+% summaries in the report are based on each paper's abstract.
+
+% ---------------- Agricultural QA and advisory ----------------
+@misc{vijayvargia2025krishisathi,
+  author = {Vijayvargia, Abhay and Nagpal, Ajay and Pundalik, Kundeshwar and Savarkar, Atharva and Gautam, Smita and Singh, Pankaj and Saluja, Rohit and Ramakrishnan, Ganesh},
+  title  = {Intent Aware Context Retrieval for Multi-Turn Agricultural Question Answering},
+  year   = {2025},
+  howpublished = {arXiv:2508.03719}
+}
+
+@misc{singh2024farmerchat,
+  author = {Singh, Namita and Wang'ombe, Jacqueline and Okanga, Nereah and Zelenska, Tetyana and Repishti, Jona and G K, Jayasankar and Mishra, Sanjeev and Manokaran, Rajsekar and Singh, Vineet and Rafiq, Mohammed Irfan and Gandhi, Rikin and Nambi, Akshay},
+  title  = {{Farmer.Chat}: Scaling {AI}-Powered Agricultural Services for Smallholder Farmers},
+  year   = {2024},
+  howpublished = {arXiv:2409.08916}
+}
+
+@misc{samuel2025agrollm,
+  author = {Samuel, Dinesh Jackson and Skarga-Bandurova, Inna and Sikolia, David and Awais, Muhammad},
+  title  = {{AgroLLM}: Connecting Farmers and Agricultural Practices through Large Language Models for Enhanced Knowledge Transfer and Practical Application},
+  year   = {2025},
+  howpublished = {arXiv:2503.04788}
+}
+
+@article{sawant2026empowering,
+  author  = {Sawant, Shreeram and Nair, Rahul and Hariharan, Siddharth},
+  title   = {Empowering farmers with artificial intelligence: a retrieval-augmented generation based large language model advisory framework},
+  journal = {Journal of Agricultural Engineering},
+  volume  = {57},
+  number  = {2},
+  year    = {2026},
+  doi     = {10.4081/jae.2026.1908}
+}
+
+@inproceedings{didwania2024agrillm,
+  author    = {Didwania, Krish and Seth, Pratinav and Kasliwal, Aditya and Agarwal, Amit},
+  title     = {{AgriLLM}: Harnessing Transformers for Farmer Queries},
+  booktitle = {Proceedings of the Third Workshop on NLP for Positive Impact (at EMNLP)},
+  year      = {2024},
+  note      = {arXiv:2407.04721}
+}
+
+@misc{rehman2024kisanqrs,
+  author = {Rehman, Mohammad Zia Ur and Raghuvanshi, Devraj and Kumar, Nagendra},
+  title  = {{KisanQRS}: A Deep Learning-based Automated Query-Response System for Agricultural Decision-Making},
+  year   = {2024},
+  howpublished = {arXiv:2411.08883}
+}
+
+@misc{jain2025agribot,
+  author = {Jain, Naman and Jain, Pranjali and Kayal, Pratik and Sahit, Jayakrishna and Pachpande, Soham and Choudhari, Jayesh and Singh, Mayank},
+  title  = {Agribot: agriculture-specific question answer system},
+  year   = {2025},
+  howpublished = {arXiv:2509.21535}
+}
+
+@misc{koopman2022agask,
+  author = {Koopman, Bevan and Mourad, Ahmed and Li, Hang and van der Vegt, Anton and Zhuang, Shengyao and Gibson, Simon and Dang, Yash and Lawrence, David and Zuccon, Guido},
+  title  = {{AgAsk}: An Agent to Help Answer Farmer's Questions From Scientific Documents},
+  year   = {2022},
+  howpublished = {arXiv:2212.10762}
+}
+
+@misc{silva2023gpt4agronomist,
+  author = {Silva, Bruno and Nunes, Leonardo and Estev{\~a}o, Roberto and Aski, Vijay and Chandra, Ranveer},
+  title  = {{GPT-4} as an Agronomist Assistant? Answering Agriculture Exams Using Large Language Models},
+  year   = {2023},
+  howpublished = {arXiv:2310.06225}
+}
+
+@misc{yang2024gpt4evaluator,
+  author = {Yang, Shanglong and Yuan, Zhipeng and Li, Shunbao and Peng, Ruoling and Liu, Kang and Yang, Po},
+  title  = {{GPT-4} as Evaluator: Evaluating Large Language Models on Pest Management in Agriculture},
+  year   = {2024},
+  howpublished = {arXiv:2403.11858}
+}
+
+% ---------------- Indic-language QA and evaluation ----------------
+@misc{singh2024indicqa,
+  author = {Singh, Abhishek Kumar and Kumar, Vishwajeet and Murthy, Rudra and Sen, Jaydeep and Mittal, Ashish and Ramakrishnan, Ganesh},
+  title  = {{INDIC QA BENCHMARK}: A Multilingual Benchmark to Evaluate Question Answering capability of {LLMs} for Indic Languages},
+  year   = {2024},
+  howpublished = {arXiv:2407.13522}
+}
+
+@inproceedings{rohera2024indicquest,
+  author    = {Rohera, Pritika and Ginimav, Chaitrali and Salunke, Akanksha and Sawant, Gayatri and Joshi, Raviraj},
+  title     = {{L3Cube-IndicQuest}: A Benchmark Question Answering Dataset for Evaluating Knowledge of {LLMs} in Indic Context},
+  booktitle = {Proceedings of the 38th Pacific Asia Conference on Language, Information and Computation (PACLIC 38)},
+  year      = {2024}
+}
+
+@inproceedings{singh2024indicgenbench,
+  author    = {Singh, Harman and Gupta, Nitish and Bharadwaj, Shikhar and Tewari, Dinesh and Talukdar, Partha},
+  title     = {{IndicGenBench}: A Multilingual Benchmark to Evaluate Generation Capabilities of {LLMs} on Indic Languages},
+  booktitle = {Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (ACL)},
+  year      = {2024}
+}
+
+@inproceedings{sai2023indicmteval,
+  author    = {Sai, Ananya B. and Nagarajan, Vignesh and Dixit, Tanay and Dabre, Raj and Kunchukuttan, Anoop and Kumar, Pratyush and Khapra, Mitesh M.},
+  title     = {{IndicMT Eval}: A Dataset to Meta-Evaluate Machine Translation Metrics for {I}ndian Languages},
+  booktitle = {Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
+  year      = {2023}
+}
+
+% ---------------- Retrieval, RAG, embeddings ----------------
+@inproceedings{lewis2020rag,
+  author    = {Lewis, Patrick and Perez, Ethan and Piktus, Aleksandra and Petroni, Fabio and Karpukhin, Vladimir and Goyal, Naman and K{\"u}ttler, Heinrich and Lewis, Mike and Yih, Wen-tau and Rockt{\"a}schel, Tim and Riedel, Sebastian and Kiela, Douwe},
+  title     = {Retrieval-Augmented Generation for Knowledge-Intensive {NLP} Tasks},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year      = {2020}
+}
+
+@misc{chen2024bgem3,
+  author = {Chen, Jianlv and Xiao, Shitao and Zhang, Peitian and Luo, Kun and Lian, Defu and Liu, Zheng},
+  title  = {{M3-Embedding}: Multi-Linguality, Multi-Functionality, Multi-Granularity Text Embeddings Through Self-Knowledge Distillation},
+  year   = {2024},
+  howpublished = {arXiv:2402.03216}
+}
 
 @inproceedings{cormack2009rrf,
   author    = {Cormack, Gordon V. and Clarke, Charles L. A. and Buettcher, Stefan},
-  title     = {Reciprocal Rank Fusion Outperforms Condorcet and Individual Rank Learning Methods},
+  title     = {Reciprocal Rank Fusion Outperforms {Condorcet} and Individual Rank Learning Methods},
   booktitle = {Proceedings of the 32nd International ACM SIGIR Conference on Research and Development in Information Retrieval},
   year      = {2009}
+}
+
+@article{robertson2009bm25,
+  author  = {Robertson, Stephen and Zaragoza, Hugo},
+  title   = {The Probabilistic Relevance Framework: {BM25} and Beyond},
+  journal = {Foundations and Trends in Information Retrieval},
+  volume  = {3},
+  number  = {4},
+  pages   = {333--389},
+  year    = {2009},
+  doi     = {10.1561/1500000019}
+}
+
+@misc{es2023ragas,
+  author = {Es, Shahul and James, Jithin and Espinosa-Anke, Luis and Schockaert, Steven},
+  title  = {{RAGAS}: Automated Evaluation of Retrieval Augmented Generation},
+  year   = {2023},
+  howpublished = {arXiv:2309.15217}
+}
+
+% ---------------- Hallucination and abstention ----------------
+@article{huang2024hallucination,
+  author  = {Huang, Lei and Yu, Weijiang and Ma, Weitao and Zhong, Weihong and Feng, Zhangyin and Wang, Haotian and Chen, Qianglong and Peng, Weihua and Feng, Xiaocheng and Qin, Bing and Liu, Ting},
+  title   = {A Survey on Hallucination in Large Language Models: Principles, Taxonomy, Challenges, and Open Questions},
+  journal = {ACM Transactions on Information Systems},
+  year    = {2024},
+  note    = {arXiv:2311.05232}
+}
+
+@article{wen2025abstention,
+  author  = {Wen, Bingbing and Yao, Jihan and Feng, Shangbin and Xu, Chenjun and Tsvetkov, Yulia and Howe, Bill and Wang, Lucy Lu},
+  title   = {Know Your Limits: A Survey of Abstention in Large Language Models},
+  journal = {Transactions of the Association for Computational Linguistics},
+  volume  = {13},
+  pages   = {529--556},
+  year    = {2025}
+}
+
+@inproceedings{kamath2020selective,
+  author    = {Kamath, Amita and Jia, Robin and Liang, Percy},
+  title     = {Selective Question Answering under Domain Shift},
+  booktitle = {Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics},
+  pages     = {5684--5696},
+  year      = {2020}
+}
+
+% ---------------- Text metrics and statistics ----------------
+@inproceedings{papineni2002bleu,
+  author    = {Papineni, Kishore and Roukos, Salim and Ward, Todd and Zhu, Wei-Jing},
+  title     = {{BLEU}: a Method for Automatic Evaluation of Machine Translation},
+  booktitle = {Proceedings of the 40th Annual Meeting of the Association for Computational Linguistics},
+  pages     = {311--318},
+  year      = {2002}
+}
+
+@inproceedings{lin2004rouge,
+  author    = {Lin, Chin-Yew},
+  title     = {{ROUGE}: A Package for Automatic Evaluation of Summaries},
+  booktitle = {Text Summarization Branches Out},
+  address   = {Barcelona, Spain},
+  pages     = {74--81},
+  year      = {2004}
 }
 
 @inproceedings{popovic2015chrf,
@@ -25,9 +200,37 @@
   year      = {2015}
 }
 
-@inproceedings{kamath2020selective,
-  author    = {Kamath, Amita and Jia, Robin and Liang, Percy},
-  title     = {Selective Question Answering under Domain Shift},
-  booktitle = {Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics},
-  year      = {2020}
+@article{hanley1983zero,
+  author  = {Hanley, James A. and Lippman-Hand, Abby},
+  title   = {If nothing goes wrong, is everything all right? Interpreting zero numerators},
+  journal = {JAMA},
+  volume  = {249},
+  number  = {13},
+  pages   = {1743--1745},
+  year    = {1983}
+}
+
+% ---------------- Sources and statistics ----------------
+@misc{pib2025sugarcane,
+  author       = {{Press Information Bureau, Government of India}},
+  title        = {Sugarcane Cultivation},
+  year         = {2025},
+  month        = dec,
+  note         = {Released 12 December 2025; state-wise data from the Department of Agriculture and Farmers Welfare},
+  howpublished = {\url{https://www.pib.gov.in/PressReleasePage.aspx?PRID=2203206}}
+}
+
+@manual{uasb2025pop,
+  author       = {{University of Agricultural Sciences, Bengaluru}},
+  title        = {Package of Practices 2025 (in Kannada)},
+  year         = {2025},
+  note         = {Sugarcane chapter, printed pages 165--179},
+  howpublished = {\url{https://www.uasbangalore.edu.in/wp-content/uploads/2026/06/POP-Final-Book-2025.pdf}}
+}
+
+@manual{uasd2020pop,
+  author = {{University of Agricultural Sciences, Dharwad}},
+  title  = {Package of Practices 2020 (in Kannada)},
+  year   = {2020},
+  note   = {Sugarcane chapter, from printed page 225}
 }

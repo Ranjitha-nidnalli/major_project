@@ -48,7 +48,8 @@ showed a failure that none of version~1's checks could catch.
 \node[box,below=of rec] (rev) {Person-confirmed?\\hash + registration};
 \node[box,below=of rev] (render) {Answer text as stored\\+ source, page};
 % joins
-\node[box,below=2.2cm of mode, yshift=-6.6cm] (out) {Answer or refusal\\+ Kisan Call Centre number};
+\path (mode |- chk.south) coordinate (outtop);
+\node[box,below=0.9cm of outtop] (out) {Answer or refusal\\+ Kisan Call Centre number};
 \node[box,below=of out] (db) {MongoDB chat history};
 \draw[arr] (ui)--(api); \draw[arr] (api)--(mode);
 \draw[arr] (mode) -| node[above,font=\scriptsize,pos=0.25]{rag (v1)} (router);
@@ -81,7 +82,7 @@ query and to evaluation references, so that Unicode variants of the same Kannada
 compare equal.
 
 \subsection{Embeddings: BGE-M3}
-Each chunk and each query is embedded with BAAI BGE-M3 \todo{cite BGE-M3 paper}, which
+Each chunk and each query is embedded with BAAI BGE-M3~\cite{chen2024bgem3}, which
 produces in one pass (i) a dense vector $\mathbf{e}\in\mathbb{R}^{1024}$ and (ii) a learned
 sparse vector of token weights. Both are stored in Qdrant as two named vectors,
 \texttt{dense} and \texttt{sparse}. The sparse vector is learned, not classical BM25.
@@ -94,7 +95,7 @@ and the two ranked lists are fused with reciprocal rank fusion (RRF)~\cite{corma
 \end{equation}
 where $r_i(d)$ is the rank of chunk $d$ in list $i$ and $k$ is a constant. The top 5 fused
 chunks form the context. For pest and disease questions a second fusion of classical
-BM25 (Okapi) \todo{cite BM25} and dense ranks is used instead, with $k=60$, because the dense
+BM25 (Okapi)~\cite{robertson2009bm25} and dense ranks is used instead, with $k=60$, because the dense
 vectors confused pest cards that share the same remedy wording.
 
 The RRF score depends only on ranks: a chunk ranked first by both lists gets the maximum
@@ -248,7 +249,7 @@ number. No text is generated.
 \section{Chat history and interface}
 Each message and answer is stored in MongoDB (database \texttt{sugarcane\_chat}) by
 session. The Next.js interface shows the conversation in Kannada and the sources of each
-answer. \todo{Add a screenshot of the chat interface (Figure).}
+answer. Example conversations are shown in Figure~\ref{fig:examples}.
 
 \section{Defects found and fixed during development}
 \label{sec:defects}

@@ -1,11 +1,11 @@
 \chapter{Introduction}
 
 \section{Domain: sugarcane farming in Karnataka}
-Sugarcane is one of the main commercial crops of Karnataka. \todo{Add area, production
-and number of sugarcane farmers in Karnataka with a citation, e.g. from the Directorate of
-Sugarcane Development status paper or the Karnataka agriculture department. Do not use a
-number without a source.}
-It is a long-duration crop (about 10 to 18 months in the field), and the farmer
+Sugarcane is one of the main commercial crops of Karnataka. In 2024--25 Karnataka grew
+sugarcane on 540 thousand hectares and produced 48,060 thousand tonnes, the third-largest
+production among Indian states after Uttar Pradesh and Maharashtra and about 10.6\% of the
+national total of 454,611 thousand tonnes~\cite{pib2025sugarcane}.
+It is a long-duration crop that stays in the field for about a year or more, and the farmer
 makes many decisions over that time: which variety to plant for the season and region,
 how to treat setts before planting, how much fertiliser to apply and when, how to manage
 weeds, and how to identify and control pests and diseases such as early shoot borer,
@@ -19,7 +19,6 @@ always agree.
   \item \textbf{Access to expert advice.} The official recommendations exist, but in long
     printed books (in the UAS Bengaluru 2025 Package of Practices, sugarcane is chapter 34,
     starting after 170 pages of other crops), and extension officers are few compared with the number of farmers.
-    \todo{citation for extension worker to farmer ratio, if used}
   \item \textbf{Language.} Most farmers in Karnataka ask questions in Kannada. Much of the
     digital agricultural content and most AI tools work best in English.
   \item \textbf{Wrong information is costly.} Advice from shop owners, neighbours or the
@@ -42,16 +41,17 @@ in principle be grounded in trusted sources.
 \subsection{Methods}
 \begin{itemize}
   \item \textbf{Telephone helplines.} The Kisan Call Centre (1800-180-1551) gives
-    farmers access to experts in their language, but depends on call-centre capacity and
-    working hours.
+    farmers access to experts in their language, but depends on call-centre capacity.
   \item \textbf{Rule-based and FAQ chatbots.} Answer a fixed list of questions with
     fixed answers. Safe, but they fail on any wording they were not built for.
   \item \textbf{General-purpose LLM chatbots.} Fluent in many languages and answer almost
     anything, but they can state wrong facts with confidence and do not say where an
     answer came from.
   \item \textbf{RAG-based agricultural assistants.} Retrieve passages from an agricultural
-    document collection and ask an LLM to answer from them.
-    \todo{Cite 3--5 agricultural chatbot / RAG papers from the literature survey here.}
+    document collection and ask an LLM to answer from them
+    \cite{vijayvargia2025krishisathi,singh2024farmerchat,samuel2025agrollm,sawant2026empowering}.
+    Other systems match a new question to past Kisan Call Centre questions and reuse their
+    answers \cite{rehman2024kisanqrs,jain2025agribot}.
 \end{itemize}
 
 \subsection{Drawbacks}

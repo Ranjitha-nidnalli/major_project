@@ -1,4 +1,10 @@
-# Literature survey: candidate papers
+# Literature survey: how the papers were found
+
+**Status 2026-10-13:** 25 works are now in the report (Chapter 2) and paper (Section II).
+Citation details for each were checked on the official page, and summaries and numbers were
+taken from each paper's abstract. Dropped: *Farmer's Friend* and *AgriTalk* (no verifiable
+full paper and venue found). The original candidate list follows for the record.
+
 
 Found by web search on 2026-10-13. **Nothing here has been read yet.** The one-line notes
 come from search-result abstracts and may be incomplete or wrong. Before a paper goes into
