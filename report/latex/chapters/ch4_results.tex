@@ -197,8 +197,19 @@ development; a team member should confirm it on the run file
 \texttt{eval/runs/baseline/...20260930T110544.jsonl}.}
 
 \subsection{Version 2 results}
-\todo{Fill in after the human review: number of records reviewed and CONFIRMED / WRONG /
-UNSURE, and how many pesticide records are blocked pending registration.}
+\paragraph{Review status.} A team member compared 15 of the 90 draft records with the
+printed pages and marked all 15 CONFIRMED (8 from UAS Bengaluru: seed rate, farmyard
+manure, NPK, biofertilisers, fertiliser timing, sett selection, land preparation,
+irrigation; 7 from UAS Dharwad: seed rate, organic manure, NPK, fertiliser timing, furrow
+planting, irrigation, drought management). None names a pesticide. The other 75 records,
+including every pest, disease and pesticide record, are not yet reviewed and are refused.
+The automatic checker found no transcription errors in any of the 90 records, and all 15
+confirmations match the current record hashes.
+
+\paragraph{Pilot run.} The 20 questions were run through the production answer path with
+draft records switched off (run file
+\texttt{eval/runs/facts\_pilot/facts\_\_q9ba0d7e3c76d\_\_rev7a866d0489f3\_\_20261013T222448.jsonl},
+which records the hashes of the question file and review sheet).
 
 \begin{table}[h]
 \centering
@@ -208,17 +219,40 @@ UNSURE, and how many pesticide records are blocked pending registration.}
 \toprule
 Measure & Result\\
 \midrule
-Decision accuracy & \todo{}\\
-Should-refuse questions refused & \todo{}\\
-Answerable questions answered & \todo{}\\
-Safety failures (wrong dose) & \todo{}\\
+Decision accuracy & 18 / 20\\
+Should-refuse questions refused & 10 / 10\\
+Answerable questions answered & 8 / 10\\
+Safety failures (wrong dose) & 0\\
 \bottomrule
 \end{tabular}
 \end{table}
 
+The 10 should-refuse questions covered an unlisted pest (armyworm), a disease with no
+confirmed record (brown spot), two other crops (paddy, maize), two price questions, weather,
+a machinery subsidy, and two pesticide-dose questions about early shoot borer and termites.
+All were refused. The pesticide questions were refused because no pesticide record is
+confirmed yet, not because the pests are unknown.
+
+The two answerable questions that were refused both failed on wording. One asked for seed
+rate using \kn{ಬಿತ್ತನೆ ಕಬ್ಬು ಅಥವಾ ಗಿಣ್ಣುಗಳು} (``seed cane or buds''); the other asked how to
+choose setts (\kn{ತುಂಡುಗಳನ್ನು ಹೇಗೆ ಆಯ್ಕೆ}). Neither phrase is in the matcher's keyword lists,
+so both were refused as out of scope. This is the safe direction, but it shows that keyword
+coverage limits usefulness. The keyword lists were not changed before reporting these
+numbers.
+
+Each of the 8 answered questions was shown the confirmed records for its topic. In two
+cases the question writer's expected answer differed from the book text the system showed:
+for northern seed rate the expected answer said 10,000--12,000 setts per acre, while the
+UAS Dharwad page says 10,000--14,000 (10,000--12,000 is the UAS Bengaluru figure); and for
+irrigation the expected answer gave intervals by season, while UAS Bengaluru page 168 gives
+them by soil type (8 days on sandy soil, 15 on black soil). In both cases the system's
+answer matches the verbatim page excerpt.
+\todo{Team member: re-check these two on the printed pages and confirm.}
+
 \paragraph{How much a small test set shows.}
 The version~2 test is a pilot of 20 new questions (10 answerable, 10 should-refuse),
-written by the team without seeing the matcher's keyword lists. If a system makes no
+written by the team without seeing the matcher's keyword lists. \todo{State exactly who
+wrote the questions and expected answers, and whether any AI tool helped.} If a system makes no
 safety failure on $n$ independent questions, the ``rule of three'' gives an approximate
 95\% upper bound of $3/n$ on its true failure rate \todo{cite: Hanley and Lippman-Hand,
 ``If nothing goes wrong, is everything all right?'', JAMA, 1983}. For $n=20$ this bound is

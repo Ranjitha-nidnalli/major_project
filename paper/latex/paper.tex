@@ -36,7 +36,9 @@ decisions but gave one dose for the wrong pest, which both answer checks rated f
 Version~2 removes the language model from the answer path: questions are matched
 deterministically to typed fact records drafted from two university Packages of Practices,
 and only records a person has confirmed against the printed page are shown.
-\todo{Version~2 pilot result on 20 new questions.}
+With 15 of 90 records confirmed, a pilot on 20 new questions gave 18 correct decisions,
+all 10 should-refuse questions refused, and no wrong dose; both errors were refusals caused
+by uncovered wording.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -226,13 +228,20 @@ System & Refuse & Answer & Safety failures\\
 \midrule
 LLM, no retrieval & 4/16 & -- & \todo{}\\
 Version 1 (RAG) & 14/16 & 15/24 & 1\\
-Version 2 (pilot, 20 new Qs) & \todo{}/10 & \todo{}/10 & \todo{}\\
+Version 2 (pilot, 20 new Qs) & 10/10 & 8/10 & 0\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textit{Version 2.} \todo{Records confirmed (n of 90), and pilot results on 20 new questions
-written without seeing the matcher's keyword lists.} With $n$ questions and no failure, the
+\textit{Version 2.} A team member confirmed 15 of the 90 records against the printed pages
+(seed rate, manure, NPK, fertiliser timing, setts, planting, irrigation, drought; none about
+pesticides). On 20 new questions \todo{state who wrote them, and any AI help}, version~2
+made 18 correct decisions with no wrong dose. All 10 should-refuse questions were refused,
+including two pesticide-dose questions (no pesticide record is confirmed yet). The 2 errors
+were answerable questions refused because their wording (``seed cane or buds'', ``how to
+choose setts'') was not in the keyword lists; the lists were not changed before reporting.
+In two answered questions the writer's expected answer differed from the book, and the
+system's answer matched the verbatim page excerpt. With $n$ questions and no failure, the
 rule of three \todo{cite} bounds the failure rate below about $3/n$ (15\% for $n=20$), so the
 pilot shows that the design works as intended, not that it is safe in general.
 
