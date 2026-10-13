@@ -238,7 +238,10 @@ rate using \kn{ಬಿತ್ತನೆ ಕಬ್ಬು ಅಥವಾ ಗಿಣ್�
 choose setts (\kn{ತುಂಡುಗಳನ್ನು ಹೇಗೆ ಆಯ್ಕೆ}). Neither phrase is in the matcher's keyword lists,
 so both were refused as out of scope. This is the safe direction, but it shows that keyword
 coverage limits usefulness. The keyword lists were not changed before reporting these
-numbers.
+numbers. After the run, the missing phrases were added (with a test that the new seed-rate
+phrase does not hide the internode borer's name), and a re-run answered both questions
+from the right records. That re-run is 20/20 but is \emph{not} a held-out result, since the
+fix was made on these questions; new questions are needed to measure coverage again.
 
 Each of the 8 answered questions was shown the confirmed records for its topic. In two
 cases the question writer's expected answer differed from the book text the system showed:

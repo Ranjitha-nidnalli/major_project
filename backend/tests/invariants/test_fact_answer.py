@@ -194,3 +194,19 @@ def test_other_crop_is_allowed_when_sugarcane_is_named():
 
 def test_other_crop_word_inside_another_word_does_not_trigger():
     assert match(K, "ತಯಾರಾಗಿ ಕಬ್ಬಿಗೆ ಗೊಬ್ಬರ")["other_crop"] is False   # 'ರಾಗಿ' inside 'ತಯಾರಾಗಿ'
+
+
+# --- wording found missing in the 2026-10-13 pilot (added after the run) ----
+
+@pytest.mark.parametrize("query, intent", [
+    ("ಎಕರೆಗೆ ಎಷ್ಟು ಬಿತ್ತನೆ ಕಬ್ಬು ಅಥವಾ ಗಿಣ್ಣುಗಳು ಬೇಕಾಗುತ್ತವೆ?", "seed_rate"),
+    ("ಕಬ್ಬಿನ ಬಿತ್ತನೆಗೆ ತುಂಡುಗಳನ್ನು ಹೇಗೆ ಆಯ್ಕೆ ಮಾಡಿಕೊಳ್ಳಬೇಕು?", "sett_treatment"),
+])
+def test_pilot_wordings_match_their_topic(query, intent):
+    assert intent in match(K, query)["intents"]
+
+
+def test_bud_keyword_does_not_swallow_internode_borer():
+    m = match(K, "ಕಬ್ಬಿಗೆ ಗಿಣ್ಣು ಕೊರಕ ಬಂದಿದೆ, ಏನು ಮಾಡಬೇಕು?")
+    assert "seed_rate" not in m["intents"]
+    assert m["subjects"], "the internode borer alias must still match"

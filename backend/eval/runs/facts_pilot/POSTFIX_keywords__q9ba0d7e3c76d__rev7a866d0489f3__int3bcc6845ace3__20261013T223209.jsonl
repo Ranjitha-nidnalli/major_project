@@ -1,0 +1,21 @@
+{"meta": {"note": "re-run AFTER adding keywords found missing in the pilot; not a held-out result", "intents_sha256_12": "3bcc6845ace3", "questions_sha256_12": "9ba0d7e3c76d", "review_sheet_sha256_12": "7a866d0489f3", "run": "20261013T223209"}}
+{"id": "V-01", "status": "answered", "record_ids": ["uasb-seed-rate"], "decision_correct": true}
+{"id": "V-02", "status": "answered", "record_ids": ["uasb-manure", "uasd-organic-manure"], "decision_correct": true}
+{"id": "V-03", "status": "answered", "record_ids": ["uasb-npk", "uasb-fertilizer-schedule"], "decision_correct": true}
+{"id": "V-04", "status": "answered", "record_ids": ["uasb-biofertilizer", "uasd-organic-manure"], "decision_correct": true}
+{"id": "V-05", "status": "answered", "record_ids": ["uasb-npk", "uasb-fertilizer-schedule", "uasd-npk", "uasd-fertilizer-schedule"], "decision_correct": true}
+{"id": "V-06", "status": "answered", "record_ids": ["uasb-sett-selection"], "decision_correct": true}
+{"id": "V-07", "status": "answered", "record_ids": ["uasb-land-preparation", "uasd-planting-furrows"], "decision_correct": true}
+{"id": "V-08", "status": "answered", "record_ids": ["uasb-irrigation", "uasd-irrigation"], "decision_correct": true}
+{"id": "V-09", "status": "answered", "record_ids": ["uasd-seed-rate"], "decision_correct": true}
+{"id": "V-10", "status": "answered", "record_ids": ["uasd-drought"], "decision_correct": true}
+{"id": "V-11", "status": "refused_unknown_pest", "record_ids": [], "decision_correct": true}
+{"id": "V-12", "status": "refused_not_verified", "record_ids": [], "decision_correct": true}
+{"id": "V-13", "status": "refused_out_of_scope", "record_ids": [], "decision_correct": true}
+{"id": "V-14", "status": "refused_out_of_scope", "record_ids": [], "decision_correct": true}
+{"id": "V-15", "status": "refused_not_verified", "record_ids": [], "decision_correct": true}
+{"id": "V-16", "status": "refused_not_verified", "record_ids": [], "decision_correct": true}
+{"id": "V-17", "status": "refused_not_verified", "record_ids": [], "decision_correct": true}
+{"id": "V-18", "status": "refused_not_verified", "record_ids": [], "decision_correct": true}
+{"id": "V-19", "status": "refused_not_verified", "record_ids": [], "decision_correct": true}
+{"id": "V-20", "status": "refused_not_verified", "record_ids": [], "decision_correct": true}
