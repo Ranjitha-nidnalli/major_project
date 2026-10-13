@@ -40,3 +40,6 @@ sugarcane_vector_db/
 
 # v2 corpus: text converted from downloaded PDFs (derived raw data, not committed)
 backend/corpus/converted/
+
+# Overleaf upload zips (made from report/latex and paper/latex)
+*.zip
