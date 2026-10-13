@@ -1,13 +1,56 @@
 # Krishi Mitra
 
-A Kannada-language RAG chatbot that answers sugarcane farming questions for
-Karnataka farmers. FastAPI backend, Next.js frontend, Qdrant hybrid
-(dense + sparse) vector store, BGE-M3 embeddings, and MongoDB for chat
-history.
+A Kannada question-answering assistant for sugarcane farmers in Karnataka.
+Safety-first: refusing is always better than guessing a pesticide or dose.
+
+It has two answer paths, chosen by `ANSWER_MODE` in `backend/.env`:
+
+- **`facts` (default, v2):** answers only from fact records drafted from UAS
+  Bengaluru POP 2025 and UAS Dharwad POP 2020 that a person has confirmed
+  against the printed page (`backend/knowledge/`). No LLM in the answer path.
+  Everything else is refused with the Kisan Call Centre number
+  (ARCHITECTURE.md Section 24).
+- **`rag` (v1, kept for comparison):** hybrid BGE-M3 retrieval over Qdrant,
+  an abstention gate, LLM generation and answer checks (described below).
+
+FastAPI backend, Next.js frontend, MongoDB chat history.
 
 This README describes what the code in this repository actually does today.
-For the target architecture and the phased roadmap toward it, see
-`ARCHITECTURE.md`. For current facts and working rules, see `CLAUDE.md`.
+For design decisions, see `ARCHITECTURE.md`. For current facts and working
+rules, see `CLAUDE.md`.
+
+## Report and paper
+
+| What | Where | Compile on Overleaf with |
+|---|---|---|
+| Project report (guide's 5-chapter outline) | `report/latex/main.tex`, chapters in `report/latex/chapters/` | XeLaTeX (needed for Kannada) |
+| 6-page IEEE paper | `paper/latex/paper.tex` | pdfLaTeX |
+| References (checked entries only) | `report/latex/references.bib` (copy in `paper/latex/`) | |
+| Candidate papers for the literature survey | `report/literature_candidates.md` | |
+| How to upload / what is still TODO | `report/README.md` | |
+
+Red `[TODO: ...]` text in the PDFs marks what a person still has to supply.
+
+## Quick start: v2 demo (no Docker, no API key)
+
+```bash
+cd backend
+pip install -r requirements.txt
+ANSWER_MODE=facts python main.py        # http://localhost:8000
+cd ../frontend && npm install && npm run dev   # http://localhost:3000
+```
+
+On Windows, set `PYTHONUTF8=1` first if output is redirected to a file
+(a log line with an emoji otherwise crashes the request). The backend still
+loads BGE-M3 at startup (the v1 modules are imported), so the first start is
+slow. Without MongoDB running, chat history is simply not saved.
+
+Only records marked CONFIRMED in `backend/knowledge/review_sheet_REVIEWED.csv`
+are shown: 15 of 90 as of 2026-10-13 (seed rate, manure, NPK, fertiliser
+timing, setts, planting, irrigation, drought; no pesticides yet). To check
+the records, see `backend/knowledge/build_review_pack.py`.
+
+The rest of this README covers the full v1 (RAG) stack.
 
 ## Architecture
 
@@ -170,10 +213,10 @@ cd backend
 pytest
 ```
 
-Runs `backend/tests/` only (scoped by `backend/pytest.ini`) — currently 32
-tests across 6 files (category filter, gating, chunking helpers, Kannada
-normalization, numeric faithfulness, requirements-import resolution), none
-of which require Qdrant, MongoDB, or an LLM API key. The category-filter
+Runs `backend/tests/` only (scoped by `backend/pytest.ini`) — 131 tests
+as of 2026-10-13 (v2 fact answering and its safety rules, gating, entity
+match, judge/router parsing, numeric faithfulness, chunking, normalization,
+and more), none of which require Qdrant, MongoDB, or an LLM API key. The category-filter
 test uses an in-memory Qdrant client; the chunking-helper tests AST-extract
 `vector_db.py`'s pure functions rather than importing that module directly,
 since it loads ~7GB of models as an import-time side effect. Scripts like
@@ -182,6 +225,23 @@ scripts, not part of the automated suite — see their docstrings for what
 they need running.
 
 ## Evaluation
+
+**Latest results (details in `report/latex/chapters/ch4_results.tex`):**
+
+- **v1 held-out run** (2026-09-30, 40 questions, `eval/runs/live/…20260930T105409.jsonl`):
+  29/40 correct answer-or-refuse decisions; 14/16 should-refuse refused,
+  15/24 answerable answered; **one wrong-pest dose** that both answer checks
+  rated faithful. No-retrieval baseline refused only 4/16.
+- **v2 pilot** (2026-10-13, 20 new questions written with AI assistance,
+  15 confirmed records, `eval/runs/facts_pilot/facts__…20261013T222448.jsonl`):
+  18/20 correct decisions; 10/10 should-refuse refused, 8/10 answered,
+  **0 wrong doses**. The 2 misses were wording gaps, fixed afterwards; the
+  post-fix re-run (20/20, `POSTFIX_…`) is not a held-out result.
+- Metrics: ROUGE-L scores 6/16 Kannada references 0.000 against themselves;
+  chrF/BLEU score a 10× overdose above a correct paraphrase
+  (`eval/metric_overdose_demo.py`). Not used as quality evidence.
+
+**Older v1 development results (2026-09-21/22) follow.**
 
 Eval code lives in `backend/eval/`. The pre-2026-09-21 data files
 (`gold.jsonl`, `chunks.jsonl`, `contexts.json`, `results.jsonl`, and
