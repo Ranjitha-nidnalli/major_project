@@ -1,0 +1,237 @@
+\chapter{System Requirements, Evaluation and Results}
+\label{ch:results}
+
+\section{Software and hardware requirements}
+
+\subsection{Hardware}
+\begin{table}[h]
+\centering
+\caption{Hardware used for development and evaluation}
+\begin{tabular}{ll}
+\toprule
+Component & Specification\\
+\midrule
+Processor & Intel Core i5-1334U (13th generation, 10 cores)\\
+Memory & 16 GB RAM\\
+GPU & Not required (all local models run on CPU)\\
+Storage & About 5 GB for models, index and dependencies \todo{check}\\
+Network & Internet access for the hosted LLM API (version~1 only)\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Version~2 needs no GPU and no language-model API: it reads JSON records and a review sheet.
+Version~1 loads BGE-M3 (and optionally the reranker) on the CPU and calls a hosted LLM.
+
+\subsection{Software}
+\begin{table}[h]
+\centering
+\small
+\caption{Software stack}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+Layer & Software\\
+\midrule
+Language & Python 3.13 (backend), TypeScript / Node.js 22 (frontend)\\
+Backend & FastAPI, Uvicorn, Pydantic\\
+Frontend & Next.js (React)\\
+Embeddings & BAAI BGE-M3 via FlagEmbedding, PyTorch (CPU)\\
+Vector database & Qdrant (Docker server mode; local file mode as fallback)\\
+Lexical retrieval & rank\_bm25 (BM25 Okapi)\\
+Chat history & MongoDB (Motor async driver)\\
+LLM access & Groq API (\texttt{openai/gpt-oss-20b}); OpenRouter and Ollama supported\\
+Kannada processing & indic-nlp-library, project normalisation function\\
+Evaluation & sacrebleu (chrF, BLEU), rouge-score (diagnosis only), pytest\\
+PDF processing & PyMuPDF (source page rendering for review)\\
+Deployment & Docker Compose (Qdrant + MongoDB)\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Performance parameters}
+
+\subsection{Why a refusal can be a correct output}
+Each test question is labelled \emph{answerable} (the sources contain the answer) or
+\emph{should-refuse} (unknown pest, other crop, price, time-dependent schemes, or
+information not in the sources). The main measure is whether the system made the right
+\emph{decision}:
+\begin{equation}
+  \text{Decision accuracy} = \frac{\#\{\text{answerable answered}\} + \#\{\text{should-refuse refused}\}}{N}
+\end{equation}
+reported together with its two parts:
+\begin{equation}
+  \text{Refusal recall} = \frac{\#\{\text{should-refuse refused}\}}{\#\{\text{should-refuse}\}},
+  \qquad
+  \text{Answer rate} = \frac{\#\{\text{answerable answered}\}}{\#\{\text{answerable}\}}
+\end{equation}
+Separately we count \textbf{safety failures}: answers that state a chemical, dose or unit
+that is wrong for the question. One safety failure matters more than many refusals, so it
+is reported by itself and never averaged away.
+
+\subsection{Retrieval metrics (version 1)}
+For a question with relevant chunk set $G$ and ranked results $d_1,\dots,d_k$:
+\begin{align}
+  \text{Recall@}k &= \frac{|G\cap\{d_1,\dots,d_k\}|}{|G|}\\
+  \text{MRR} &= \frac{1}{|Q|}\sum_{q\in Q}\frac{1}{\mathrm{rank}_q}\\
+  \text{nDCG@}k &= \frac{\sum_{i=1}^{k} \mathrm{rel}_i/\log_2(i+1)}{\mathrm{IDCG@}k}
+\end{align}
+where $\mathrm{rank}_q$ is the rank of the first relevant chunk and IDCG is the DCG of the
+ideal ordering.
+
+\subsection{Answer-text metrics, and why they are not used as quality evidence}
+\label{sec:metric-failures}
+chrF~\cite{popovic2015chrf} compares character n-gram F-scores between an answer and a reference answer. We
+first checked each metric by scoring every reference answer \emph{against itself}, which
+must give the maximum score:
+\begin{itemize}
+  \item \textbf{ROUGE-L} failed: the mean self-score was 0.625, and 6 of 16 references scored
+    \textbf{0.000} against themselves. The ROUGE tokenizer does not handle Kannada script.
+  \item \textbf{chrF} gave a self-score of 1.0 on all references, with 0.172 for unrelated
+    answer pairs.
+  \item \textbf{BLEU} gave 1.0 on all references, with 0.028 for unrelated pairs.
+\end{itemize}
+Passing the self-test does not make chrF or BLEU safety measures. In a constructed example
+(Table~\ref{tab:overdose}), changing a dose from 1 to 10 grams per litre scores far
+higher than a correct paraphrase of the same recommendation, because the overdose copies
+almost every character of the reference.
+
+\begin{table}[h]
+\centering
+\caption{chrF and BLEU against the reference ``carbendazim 50 WP at 1 g/litre, dip setts 15
+minutes'' (constructed example, \texttt{eval/metric\_overdose\_demo.py})}
+\label{tab:overdose}
+\begin{tabular}{lrr}
+\toprule
+Answer & chrF & BLEU\\
+\midrule
+Same sentence with \textbf{10 g/litre} (10$\times$ overdose) & 96.7 & 83.9\\
+Correct paraphrase (1 g/litre) & 62.5 & 30.9\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For this reason, safety is measured by the decision accuracy and the safety-failure count
+above, and by the rule-based numeric check, not by text-overlap scores.
+
+\section{Results}
+
+\subsection{Retrieval (version 1, development set)}
+Table~\ref{tab:retrieval} compares retrieval settings on the 15 answerable development
+questions over the original 43-chunk collection.
+
+\begin{table}[h]
+\centering
+\caption{Retrieval on 15 answerable development questions (mean $\pm$ s.d.)}
+\label{tab:retrieval}
+\begin{tabular}{lccc}
+\toprule
+Setting & Recall@5 & MRR & nDCG@5\\
+\midrule
+Dense only & 0.933 $\pm$ 0.131 & 0.848 $\pm$ 0.160 & 0.862 $\pm$ 0.154\\
+Hybrid (dense + sparse, RRF) & 1.000 $\pm$ 0.000 & 0.749 $\pm$ 0.167 & 0.817 $\pm$ 0.125\\
+BM25 + dense & 0.933 $\pm$ 0.131 & 0.819 $\pm$ 0.162 & 0.842 $\pm$ 0.152\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Hybrid retrieval found the relevant chunk in the top 5 for every question, so on a
+collection this small a reranker has little left to fix; it was left switched off (it
+also added about 30 seconds per question on the CPU). For questions naming a specific pest
+or disease, BM25 + dense ranked the right card first more often, which is why it is used
+for those categories. These numbers come from only 15 questions, and the relevant-chunk
+labels were assigned during development by the project team with an AI assistant, not by
+an agricultural expert, so they are indicative only.
+
+\subsection{Abstention gate (version 1, development set)}
+On the 18 development questions (15 answerable, 3 should-refuse), the dense relevance of
+answerable questions ranged from 0.456 to 0.668 and of should-refuse questions from 0.499
+to 0.597. The ranges overlap, so no single threshold separates them. A question about
+``black beetle'', a pest not in the collection, retrieved the termite card at relevance
+0.597 and the model gave the termite dose; the faithfulness judge rated that answer 1.0.
+This is why the entity-match rule was added, and why relevance alone is not enough.
+
+\subsection{Held-out evaluation (version 1)}
+The final version~1 run used 40 held-out questions (24 answerable, 16 should-refuse) on
+the 31-chunk collection, with \texttt{openai/gpt-oss-20b} on Groq. The code was frozen
+before the run. The held-out questions were written by the project team with partial
+expert input and some AI assistance, so the results are indicative, not a validated accuracy.
+
+\begin{table}[h]
+\centering
+\caption{Version~1 held-out results (40 questions)}
+\label{tab:heldout}
+\begin{tabular}{lr}
+\toprule
+Measure & Result\\
+\midrule
+Decision accuracy & 29 / 40\\
+Should-refuse questions refused & 14 / 16\\
+Answerable questions answered & 15 / 24\\
+Safety failures (wrong dose) & 1\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Failures.}
+\begin{itemize}
+  \item \textbf{Wrong-pest dose (safety failure).} A question about an unknown pest
+    (\kn{ಜಿಗಣೆ ಹುಳು}) was answered with the early shoot borer doses. The entity-match rule
+    matched on the generic word \kn{ಹುಳು} (``worm''), which is part of the early shoot
+    borer's Kannada name. The faithfulness judge scored it 1.0 and the numeric check passed
+    it, because the answer correctly quoted the retrieved card.
+  \item \textbf{Time-dependent question answered.} A subsidy question was answered from an
+    undated schemes chunk.
+  \item \textbf{Answerable questions refused (9).} In 5, the expected answer came from a
+    document not in the collection, so refusing was correct for this collection. Two had
+    relevance just under the threshold (0.495, 0.497). One used a transliterated disease
+    name that the lexical entity match did not recognise. One was borderline.
+\end{itemize}
+
+\subsection{No-retrieval baseline}
+The same model was asked the same 40 questions with no documents and a neutral prompt.
+On the 16 should-refuse questions it refused cleanly only 4 times; about 9 answers were
+confident answers (about other crops, or pests not covered), 7 contained a dose-like
+number and unit, and 1 was empty. A plain LLM therefore answers questions it should not
+answer, often with doses. \todo{This bucketing was done by reading the answers during
+development; a team member should confirm it on the run file
+\texttt{eval/runs/baseline/...20260930T110544.jsonl}.}
+
+\subsection{Version 2 results}
+\todo{Fill in after the human review: number of records reviewed and CONFIRMED / WRONG /
+UNSURE, and how many pesticide records are blocked pending registration.}
+
+\begin{table}[h]
+\centering
+\caption{Version~2 on new test questions not seen during development}
+\label{tab:v2}
+\begin{tabular}{lr}
+\toprule
+Measure & Result\\
+\midrule
+Decision accuracy & \todo{}\\
+Should-refuse questions refused & \todo{}\\
+Answerable questions answered & \todo{}\\
+Safety failures (wrong dose) & \todo{}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{How much a small test set shows.}
+The version~2 test is a pilot of 20 new questions (10 answerable, 10 should-refuse),
+written by the team without seeing the matcher's keyword lists. If a system makes no
+safety failure on $n$ independent questions, the ``rule of three'' gives an approximate
+95\% upper bound of $3/n$ on its true failure rate \todo{cite: Hanley and Lippman-Hand,
+``If nothing goes wrong, is everything all right?'', JAMA, 1983}. For $n=20$ this bound is
+15\%, and for the 10 should-refuse questions alone it is 30\%. A pilot of this size can
+show that the design works as intended; it cannot show that the system is safe in
+general. A larger, expert-written question set is future work (Chapter~\ref{ch:conclusion}).
+
+\todo{Add 3--4 example conversations as figures (screenshots): one answer with source and
+page, one unknown-pest refusal, one other-crop refusal, one price refusal.}
+
+\subsection{Automated tests}
+The backend has 128 automated tests (pytest) that need no external services. They check,
+among other things, that the gate never uses the RRF score, that unit binding in the
+numeric checker is correct, that banned pesticides never appear in the fact records, that
+an edited record loses its confirmation, and that unknown pests, other crops and prices
+are refused.

@@ -1,0 +1,28 @@
+Sugarcane farmers in Karnataka need timely answers on varieties, planting, fertiliser,
+pests and diseases, in Kannada. Large language models (LLMs) can answer such questions
+fluently, but in agriculture a fluent wrong answer is dangerous: a wrong pesticide or a
+wrong dose can destroy a crop or harm the person spraying it. This project builds
+\emph{Krishi Mitra}, a Kannada question-answering assistant for sugarcane, and treats
+\emph{refusing} as always better than \emph{guessing}.
+
+We built and evaluated two versions. Version~1 is a retrieval-augmented generation (RAG)
+pipeline: BGE-M3 dense and learned-sparse embeddings, hybrid retrieval with reciprocal
+rank fusion in Qdrant, an abstention gate, LLM generation in Kannada, and two answer
+checks (an LLM faithfulness judge and a rule-based numeric checker). While building it we
+found and fixed several failures that silently made the system less safe, including a
+confidence gate that read a rank-based score (an unanswerable question scored 1.0) and
+router and judge calls that failed silently because a reasoning model used up its token
+budget. We also show that ROUGE-L does not work on Kannada text (6 of 16 reference answers
+score 0.000 against themselves). On 40 held-out questions, version~1 made the correct
+answer-or-refuse decision on 29: 14 of 16 questions that should be refused were refused and
+15 of 24 answerable questions were answered. One answer gave the dose for the wrong pest,
+and both automatic checks rated it as fully faithful.
+
+Version~2 removes the LLM from the answer path. Questions are matched deterministically to
+typed fact records drafted from the University of Agricultural Sciences (UAS) Bengaluru
+Package of Practices 2025 and UAS Dharwad Package of Practices 2020, each with a verbatim
+source excerpt and printed page number. The assistant answers only from records that a
+person has confirmed against the printed page, and refuses everything else with the Kisan
+Call Centre number. \todo{Add the version~2 result once the human review and the new test
+questions are done: number of records confirmed, and answer/refuse accuracy on new
+questions.}

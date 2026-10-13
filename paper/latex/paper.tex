@@ -1,0 +1,257 @@
+% Krishi Mitra -- 6-page IEEE conference paper.
+% Section structure follows the guide's outline (report/DocScanner ... .pdf, page 3).
+% Compile with pdfLaTeX on Overleaf. Red \todo{} = missing info a person must supply.
+\documentclass[conference]{IEEEtran}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{cite}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
+
+\begin{document}
+
+\title{Refuse Rather Than Guess: A Safety-First Kannada Question-Answering Assistant for Sugarcane Farmers}
+
+\author{\IEEEauthorblockN{\todo{Author names}}
+\IEEEauthorblockA{\todo{Department, college, city, India}\\
+\todo{emails}}}
+
+\maketitle
+
+\begin{abstract}
+A wrong pesticide or dose can destroy a crop or harm the person spraying it, so an
+agricultural assistant must be judged first on whether it ever gives a wrong
+recommendation. We report building a Kannada question-answering assistant for sugarcane
+farmers in Karnataka in two versions. Version~1 is a retrieval-augmented generation (RAG)
+pipeline with BGE-M3 hybrid retrieval, an abstention gate, and two answer checks (an LLM
+faithfulness judge and a rule-based numeric check). We describe safety failures found while
+building it, including a gate that read a rank-based fusion score and judge and router calls
+that failed silently, and show that ROUGE-L scores 6 of 16 Kannada references 0.000 against
+themselves, while chrF and BLEU score a 10$\times$ overdose (96.7 chrF) above a correct
+paraphrase (62.5). On 40 held-out questions, version~1 made 29 correct answer-or-refuse
+decisions but gave one dose for the wrong pest, which both answer checks rated faithful.
+Version~2 removes the language model from the answer path: questions are matched
+deterministically to typed fact records drafted from two university Packages of Practices,
+and only records a person has confirmed against the printed page are shown.
+\todo{Version~2 pilot result on 20 new questions.}
+\end{abstract}
+
+\begin{IEEEkeywords}
+agricultural advisory, retrieval-augmented generation, Kannada, abstention, evaluation, safety
+\end{IEEEkeywords}
+
+% =========================================================
+\section{Introduction}
+Sugarcane is a major commercial crop of Karnataka \todo{statistic with citation}. Over a
+10--18 month season the farmer chooses a variety, treats setts, applies fertiliser in
+splits and controls pests and diseases, and the official recommendations differ between
+southern Karnataka (UAS Bengaluru) and northern Karnataka (UAS Dharwad). These
+recommendations are in long printed books; extension staff are few; and most farmers ask
+in Kannada.
+
+\textbf{Traditional approach.} Farmers rely on extension officers, input dealers and the
+Kisan Call Centre (KCC, 1800-180-1551), which gives expert answers in local languages but
+depends on call-centre capacity.
+
+\textbf{Existing AI approaches.} Recent agricultural assistants use large language models
+(LLMs) with retrieval-augmented generation (RAG) \todo{cite 3--4 agri RAG papers}. They are
+usually evaluated on answer similarity or LLM-judged quality. In this domain, however, the
+costly error is a fluent answer with a wrong chemical, dose or unit, and similarity metrics
+do not detect it (Section~\ref{sec:results}).
+
+\textbf{Contributions.} (1) A Kannada RAG pipeline for sugarcane and the safety failures
+found and fixed in it; (2) evidence that ROUGE-L, chrF and BLEU are unsuitable as quality or
+safety evidence for Kannada advisory answers; (3) a held-out evaluation that counts correct
+refusals, with a no-retrieval baseline; (4) a design in which a wrong-pest answer cannot
+occur by construction, because the answer path has no language model and shows only
+person-confirmed records.
+
+% =========================================================
+\section{Literature Survey}
+\todo{20--25 papers, from report/literature_candidates.md, after reading them. Suggested
+structure, one paragraph each: (a) agricultural chatbots and RAG advisory systems, including
+KCC-based systems; (b) LLM evaluation on agricultural questions; (c) Indic-language QA
+benchmarks and metric meta-evaluation; (d) RAG, hybrid retrieval and RRF~\cite{cormack2009rrf};
+(e) hallucination and abstention, including selective QA~\cite{kamath2020selective}.
+End with the gap: few systems are evaluated on questions that should be refused, and
+similarity metrics cannot detect dose errors.}
+
+% =========================================================
+\section{Proposed Methodology}
+
+\subsection{Problem statement}
+Given a Kannada question $q$, return either an answer whose every chemical, dose and unit
+comes from an official recommendation for the farmer's region, with its page, or a refusal
+that points to the KCC. A wrong answer is worse than a refusal.
+
+\subsection{Architecture}
+A Next.js chat interface calls a FastAPI backend; chat history is stored in MongoDB. The
+backend has two answer paths, selected by configuration (Fig.~\ref{fig:arch}).
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[node distance=0.22cm,
+  b/.style={draw,rounded corners,align=center,font=\scriptsize,minimum width=3.6cm,minimum height=0.48cm},
+  a/.style={-{Stealth}}]
+\node[b] (q) {Kannada question (web chat)};
+\node[b,below=of q] (m) {FastAPI: ANSWER\_MODE};
+\node[b,below left=0.3cm and -1.0cm of m,minimum width=3.6cm] (r) {v1: router $\rightarrow$ BGE-M3\\hybrid RRF top-5 $\rightarrow$ gate\\LLM $\rightarrow$ judge + numeric};
+\node[b,below right=0.3cm and -1.0cm of m,minimum width=3.6cm] (f) {v2: deterministic matcher\\fact records (UAS-B, UAS-D)\\person-confirmed only};
+\node[b,below=1.4cm of m] (o) {Answer + page, or refusal + KCC};
+\draw[a] (q)--(m); \draw[a] (m)--(r); \draw[a] (m)--(f);
+\draw[a] (r)--(o); \draw[a] (f)--(o);
+\end{tikzpicture}
+\caption{Two answer paths share the interface, refusal line and history.}
+\label{fig:arch}
+\end{figure}
+
+\subsection{Version 1: RAG pipeline}
+\textit{Embedding and retrieval.} Chunks of a sugarcane collection are embedded with BGE-M3
+\todo{cite}, which gives a dense vector and a learned sparse vector in one pass. The 15 best
+chunks by each are fused by reciprocal rank fusion~\cite{cormack2009rrf},
+$\mathrm{RRF}(d)=\sum_i 1/(k+r_i(d))$, and the top 5 form the context. For pest and disease
+questions, BM25 and dense ranks are fused instead ($k=60$), because dense vectors confused
+pest cards that share remedy wording.
+
+\textit{Router.} An LLM labels the category. The label only tightens the gate; it never
+filters retrieval. An early version used it as a hard filter, which made documents of other
+categories unreachable when the router erred.
+
+\textit{Abstention gate.} The gate answers only if the dense cosine relevance
+$\mathrm{rel}(q)=\cos(\mathbf{q},\mathbf{e}_d)$ of the best chunk is at least $\tau_c$
+($0.50$ for pest, disease and fertiliser; $0.35$ otherwise) and, for pest and disease, a
+pest or disease name in the question also appears in a retrieved card. RRF scores are never
+used here: they depend only on ranks, and the original gate, which used them, let an
+unanswerable price question through with score 1.0. The thresholds are uncalibrated: on 18
+development questions, relevance of answerable (0.456--0.668) and unanswerable
+(0.499--0.597) questions overlapped.
+
+\textit{Generation and checks.} \texttt{gpt-oss-20b} (Groq, temperature 0) answers in Kannada
+from the context only. An LLM judge scores faithfulness, and a rule-based checker requires
+every (number, unit) pair in the answer to appear in the context. Failing either check
+turns the answer into a refusal; every response ends with the KCC number.
+
+\textit{Failures found and fixed.} The router and judge, run on a reasoning model with small
+output budgets, returned empty text on 14 of 18 router calls (silently mapped to the
+``general'' category) and on several judge calls (scored 0.0). We added larger budgets, one
+retry, and an explicit failure state that fails closed. The numeric checker bound numbers to
+units inside ordinary words (``10 min is crucial'' read as 10 litres); units now bind only to
+the nearest standalone unit word.
+
+\subsection{Version 2: confirmed fact records}
+\textit{Motivation.} On held-out questions, version~1 answered a question about an unknown
+pest with the early shoot borer doses; the judge scored it 1.0 and the numeric check passed
+it, because the answer quoted its retrieved chunk correctly. A check that compares an answer
+with its context cannot detect that the context is about the wrong thing.
+
+\textit{Records.} 90 typed records (47 from UAS Bengaluru POP 2025, 43 from UAS Dharwad POP
+2020) hold the Kannada text shown to the farmer, the source, the printed page, and verbatim
+supporting excerpts. A script checks that each excerpt is on its page and each number in the
+text is in the excerpts. Records with pesticides not registered in India were removed.
+
+\textit{Human confirmation.} A person marks each record CONFIRMED, WRONG or UNSURE against the
+printed page. The confirmation stores $h(r)$, the first 16 hex digits of SHA-256 over the
+record's farmer-visible fields; a record is usable only if its status is CONFIRMED, $h(r)$
+matches the current record, and, if it names a pesticide, its CIB\&RC registration has been
+confirmed.
+
+\textit{Matching.} The normalised question is matched against pest/disease names, topic
+keywords, districts and other-crop words, longest phrase first. Another crop, a refused topic
+(e.g.\ price) or an unrecognised pest word leads to refusal; a known pest or a topic selects
+its records. Southern and northern records are shown under separate headings and never
+merged. The answer is the stored text, its page, and the KCC number; nothing is generated.
+
+% =========================================================
+\section{Results}
+\label{sec:results}
+
+\subsection{System and hardware}
+Development and evaluation ran on a laptop with an Intel Core i5-1334U and 16\,GB RAM, no
+GPU. Software: Python 3.13, FastAPI, Qdrant, MongoDB, FlagEmbedding (BGE-M3), Next.js.
+Version~2 needs no GPU and no LLM API.
+
+\subsection{Performance metrics}
+Each question is labelled answerable or should-refuse. We report decision accuracy (answerable
+answered plus should-refuse refused, over all questions), its two parts, and the number of
+\emph{safety failures} (a wrong chemical, dose or unit), which is never averaged away. For
+retrieval we report Recall@5, MRR and nDCG@5.
+
+Text-overlap metrics were first checked by scoring each reference against itself.
+ROUGE-L gave a mean self-score of 0.625, with 6 of 16 Kannada references at 0.000. chrF
+\cite{popovic2015chrf} and BLEU gave 1.0. But in a constructed example
+(Table~\ref{tab:overdose}) both score a 10$\times$ overdose far above a correct paraphrase.
+We therefore do not use them as quality or safety evidence.
+
+\begin{table}[t]
+\centering
+\caption{Scores against ``carbendazim 50 WP at 1 g/L, dip setts 15 min'' (constructed)}
+\label{tab:overdose}
+\begin{tabular}{lrr}
+\toprule
+Answer & chrF & BLEU\\
+\midrule
+Same text, 10 g/L (10$\times$ overdose) & 96.7 & 83.9\\
+Correct paraphrase, 1 g/L & 62.5 & 30.9\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Results}
+\textit{Retrieval (version 1).} On 15 answerable development questions, hybrid retrieval
+reached Recall@5 of 1.000 (dense 0.933, BM25+dense 0.933), with MRR 0.749 (dense 0.848). With
+recall at ceiling, a cross-encoder reranker had little to fix and added about 30\,s per
+query on CPU, so it is off.
+
+\textit{Held-out (version 1).} On 40 held-out questions (24 answerable, 16 should-refuse)
+with the code frozen, version~1 made 29 correct decisions: 14/16 should-refuse questions
+refused and 15/24 answerable answered (Table~\ref{tab:heldout}). Of the 9 refused answerable
+questions, 5 had expected answers from a document outside the collection. The one safety
+failure was the wrong-pest answer described above: the entity match was satisfied by the
+generic word for ``worm'', which is part of the early shoot borer's Kannada name.
+
+\textit{No-retrieval baseline.} The same model with no documents refused only 4 of the 16
+should-refuse questions; 7 of its answers contained a dose-like number and unit.
+\todo{confirm this bucketing by a team member.}
+
+\begin{table}[t]
+\centering
+\caption{Held-out evaluation (decisions correct / total)}
+\label{tab:heldout}
+\begin{tabular}{lccc}
+\toprule
+System & Refuse & Answer & Safety failures\\
+\midrule
+LLM, no retrieval & 4/16 & -- & \todo{}\\
+Version 1 (RAG) & 14/16 & 15/24 & 1\\
+Version 2 (pilot, 20 new Qs) & \todo{}/10 & \todo{}/10 & \todo{}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textit{Version 2.} \todo{Records confirmed (n of 90), and pilot results on 20 new questions
+written without seeing the matcher's keyword lists.} With $n$ questions and no failure, the
+rule of three \todo{cite} bounds the failure rate below about $3/n$ (15\% for $n=20$), so the
+pilot shows that the design works as intended, not that it is safe in general.
+
+% =========================================================
+\section{Conclusion}
+\textbf{Problem:} a Kannada assistant for sugarcane farmers must never give a wrong
+chemical or dose. \textbf{Solution:} we built a RAG pipeline, found and fixed the failures
+that silently reduced its safety, measured it with metrics that count correct refusals, and
+replaced its answer path with person-confirmed fact records and deterministic matching.
+\textbf{Achieved:} evidence that common text metrics fail on Kannada advisory answers, a
+held-out evaluation of 29/40 with one wrong-pest failure that both answer checks missed, and
+a design that removes that failure by construction. \textbf{Drawbacks:} version~2 covers only
+confirmed records from two sugarcane chapters; questions in unexpected wording are refused;
+review so far is by the team, not an expert; the pilot is small; and the held-out questions
+were written with partial AI assistance, so results are indicative. Future work: expert
+review of all records, a larger expert- and farmer-written test set, voice input, and using a
+language model only to rephrase questions, never to answer them.
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

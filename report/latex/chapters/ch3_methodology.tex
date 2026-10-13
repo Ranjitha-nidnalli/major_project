@@ -1,0 +1,272 @@
+\chapter{Proposed Methodology}
+\label{ch:method}
+
+\section{Problem statement}
+Given a farmer's question $q$ in Kannada about sugarcane cultivation, the system must
+return either (a) an answer whose every chemical name, dose and unit appears in an
+official recommendation for the farmer's region, with its source and page, or (b) a
+refusal that directs the farmer to the Kisan Call Centre. A wrong answer is treated as
+much worse than a refusal. The system must also refuse questions that are outside its
+scope (other crops, prices, weather, symptom-based diagnosis) and questions about pests
+or diseases for which it has no verified record.
+
+\section{System overview}
+The system has three parts: a Next.js web chat interface, a FastAPI backend, and a
+knowledge layer. Two answer paths were built and are selectable with the
+\texttt{ANSWER\_MODE} setting:
+\begin{itemize}
+  \item \textbf{Version~1, \texttt{ANSWER\_MODE=rag}:} retrieval-augmented generation over a
+    sugarcane document collection, with an abstention gate and answer checks. Kept for
+    comparison.
+  \item \textbf{Version~2, \texttt{ANSWER\_MODE=facts} (default):} deterministic matching of the
+    question to fact records that a person has confirmed; no language model in the
+    answer path.
+\end{itemize}
+Version~2 was built because the held-out evaluation of version~1 (Chapter~\ref{ch:results})
+showed a failure that none of version~1's checks could catch.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+  node distance=0.45cm and 0.6cm,
+  box/.style={draw,rounded corners,align=center,minimum width=3.2cm,minimum height=0.8cm,font=\small},
+  gate/.style={draw,diamond,aspect=2.2,align=center,font=\small,inner sep=1pt},
+  arr/.style={-{Stealth},thick}]
+\node[box] (ui) {Farmer (Kannada)\\Next.js chat UI};
+\node[box,below=of ui] (api) {FastAPI \texttt{/chat}};
+\node[gate,below=of api] (mode) {ANSWER\\MODE};
+% v1
+\node[box,below left=0.7cm and 0.4cm of mode] (router) {LLM router\\(category label)};
+\node[box,below=of router] (emb) {BGE-M3 embedding\\dense + sparse};
+\node[box,below=of emb] (ret) {Hybrid retrieval\\RRF fusion, top-5};
+\node[box,below=of ret] (gate1) {Abstention gate\\relevance + entity match};
+\node[box,below=of gate1] (gen) {LLM generation\\(Kannada, context only)};
+\node[box,below=of gen] (chk) {Faithfulness judge\\+ numeric check};
+% v2
+\node[box,below right=0.7cm and 0.4cm of mode] (match) {Deterministic matcher\\(\texttt{intents.json})};
+\node[box,below=of match] (rec) {Fact records\\UAS-B 2025, UAS-D 2020};
+\node[box,below=of rec] (rev) {Person-confirmed?\\hash + registration};
+\node[box,below=of rev] (render) {Answer text as stored\\+ source, page};
+% joins
+\node[box,below=2.2cm of mode, yshift=-6.6cm] (out) {Answer or refusal\\+ Kisan Call Centre number};
+\node[box,below=of out] (db) {MongoDB chat history};
+\draw[arr] (ui)--(api); \draw[arr] (api)--(mode);
+\draw[arr] (mode) -| node[above,font=\scriptsize,pos=0.25]{rag (v1)} (router);
+\draw[arr] (mode) -| node[above,font=\scriptsize,pos=0.25]{facts (v2)} (match);
+\draw[arr] (router)--(emb); \draw[arr] (emb)--(ret); \draw[arr] (ret)--(gate1);
+\draw[arr] (gate1)--(gen); \draw[arr] (gen)--(chk);
+\draw[arr] (match)--(rec); \draw[arr] (rec)--(rev); \draw[arr] (rev)--(render);
+\draw[arr] (chk) |- (out); \draw[arr] (render) |- (out);
+\draw[arr] (out)--(db);
+\end{tikzpicture}
+\caption{System architecture. The two answer paths share the interface, API, refusal line
+and chat history.}
+\label{fig:arch}
+\end{figure}
+
+\section{Version 1: retrieval-augmented generation}
+
+\subsection{Document collection and chunking}
+Version~1 used a sugarcane document collection (\texttt{sugarcanemerged3.json}) that was
+already in the project when this work began. Its origin is not documented. On inspection
+it contained Tamil Nadu district recommendations although its own metadata says
+``Karnataka''. The file is split into chunks by section structure, and each chunk gets a
+deterministic identifier computed from a hash of its content, so evaluation labels stay
+valid when the index is rebuilt. After a source review, 12 of the 43 chunks were withheld,
+leaving 31 (only one pest card, early shoot borer, remained).
+
+\subsection{Text normalisation}
+A single function, \texttt{normalize\_kannada}, is applied to the documents, to every
+query and to evaluation references, so that Unicode variants of the same Kannada text
+compare equal.
+
+\subsection{Embeddings: BGE-M3}
+Each chunk and each query is embedded with BAAI BGE-M3 \todo{cite BGE-M3 paper}, which
+produces in one pass (i) a dense vector $\mathbf{e}\in\mathbb{R}^{1024}$ and (ii) a learned
+sparse vector of token weights. Both are stored in Qdrant as two named vectors,
+\texttt{dense} and \texttt{sparse}. The sparse vector is learned, not classical BM25.
+
+\subsection{Hybrid retrieval with reciprocal rank fusion}
+For a query, the 15 best chunks are fetched by the dense vector and by the sparse vector,
+and the two ranked lists are fused with reciprocal rank fusion (RRF)~\cite{cormack2009rrf}:
+\begin{equation}
+  \mathrm{RRF}(d) = \sum_{i\in\{\text{dense},\,\text{sparse}\}} \frac{1}{k + r_i(d)}
+\end{equation}
+where $r_i(d)$ is the rank of chunk $d$ in list $i$ and $k$ is a constant. The top 5 fused
+chunks form the context. For pest and disease questions a second fusion of classical
+BM25 (Okapi) \todo{cite BM25} and dense ranks is used instead, with $k=60$, because the dense
+vectors confused pest cards that share the same remedy wording.
+
+The RRF score depends only on ranks: a chunk ranked first by both lists gets the maximum
+score however unrelated it is to the question. This is why it must never be used as a
+confidence score (Section~\ref{sec:defects}).
+
+\subsection{Query router}
+An LLM labels the question with one category (\texttt{pest}, \texttt{disease},
+\texttt{fertilizer}, \texttt{price}, \texttt{general}). The label is used only to choose
+how strict the gate is. It never filters retrieval: an early version used it as a Qdrant
+filter, which made chunks of other categories unreachable when the router was wrong. The
+router can make the system more cautious but never less: the pest/disease protections also
+apply if the top retrieved chunk is a pest or disease card, whatever the router said.
+
+\subsection{Abstention gate}
+The gate decides whether to answer before any text is generated. Relevance is the cosine
+similarity between the query's dense vector $\mathbf{q}$ and the best chunk's dense vector
+$\mathbf{e}_d$:
+\begin{equation}
+  \mathrm{rel}(q) = \frac{\mathbf{q}\cdot\mathbf{e}_d}{\lVert\mathbf{q}\rVert\,\lVert\mathbf{e}_d\rVert}
+\end{equation}
+The system answers only if
+\begin{equation}
+  \mathrm{rel}(q) \ge \tau_c
+  \quad\text{and}\quad
+  \bigl(c\notin\{\text{pest},\text{disease}\} \;\lor\; E(q)\cap E(D)\neq\emptyset\bigr)
+\end{equation}
+where $\tau_c=0.50$ for the safety-critical categories (pest, disease, fertilizer) and
+$0.35$ otherwise, and $E(q)$, $E(D)$ are the pest/disease names in the question and in the
+retrieved cards. The second condition (entity match) refuses a question about a pest that
+is not named in any retrieved card. The thresholds are \textbf{uncalibrated}: on our 18
+development questions the relevance of answerable (0.456--0.668) and unanswerable
+(0.499--0.597) questions overlapped, so no single threshold separates them.
+
+\subsection{Generation}
+The LLM (\texttt{openai/gpt-oss-20b} through the Groq API, temperature 0) is told to answer
+in Kannada only from the retrieved context and to say a fixed phrase when the context does
+not contain the answer. The backend and model are set in configuration, not in code.
+
+\subsection{Answer checks}
+\begin{enumerate}
+  \item \textbf{Faithfulness judge.} A second LLM call scores from 0 to 1 whether the
+    answer is supported by the context. An unparseable or empty reply counts as a failure,
+    not as a score.
+  \item \textbf{Numeric check.} A rule-based checker extracts every (number, unit) pair
+    from the answer and requires the same pair in the context. Each number binds only to
+    the nearest unit before the next number or sentence boundary, and Latin and Kannada
+    unit words must stand alone (so the ``l'' inside ``crucial'' is not read as litres).
+\end{enumerate}
+An answer that fails either check is replaced by a refusal. Every answer and refusal
+ends with the Kisan Call Centre number (1800-180-1551).
+
+\section{Version 2: answers only from confirmed fact records}
+
+\subsection{Why}
+On held-out questions, version~1 answered a question about an unknown pest with the early
+shoot borer doses; the faithfulness judge scored it 1.0 and the numeric check passed it,
+because the answer quoted its retrieved chunk correctly. A check that compares the answer
+with the retrieved text cannot detect that the retrieved text was about the wrong thing.
+The original collection also contained a termite dose that, in the printed UAS table,
+belongs to early shoot borer. Version~2 therefore removes both the unsourced collection
+and the language model from the answer path.
+
+\subsection{Sources}
+Records are drafted from two official books, chosen by the project team:
+UAS Bengaluru \emph{Package of Practices 2025} (southern Karnataka, sugarcane chapter,
+printed pages 165--176) and UAS Dharwad \emph{Package of Practices 2020} (northern
+Karnataka). The SHA-256 hash of each PDF is recorded so the exact source can be re-checked.
+Other documents (ICAR Kharif advisory 2025, NIPHM IPM package, TNAU guide) are used only to
+cross-check, never as a source of a dose. Records naming pesticides that are not registered
+in India (phorate, metasystox, benomyl) were removed.
+
+\subsection{Typed fact records}
+Each record holds: an identifier, source and printed page, topic, subject in English and
+Kannada, the Kannada text the farmer will see, and the verbatim excerpts from the page that
+support it. There are 90 records: 47 from UAS Bengaluru and 43 from UAS Dharwad
+(Table~\ref{tab:records}).
+
+\begin{table}[h]
+\centering
+\caption{Draft fact records by topic}
+\label{tab:records}
+\begin{tabular}{lrr}
+\toprule
+Topic & UAS-B 2025 & UAS-D 2020\\
+\midrule
+Pests & 12 & 9\\
+Varieties & 8 & 3\\
+Fertiliser & 5 & 6\\
+Diseases & 5 & 5\\
+Ratoon & 4 & 7\\
+Weed control & 4 & 3\\
+Planting & 2 & 3\\
+Sett treatment & 2 & 2\\
+Seed rate & 2 & 1\\
+Irrigation & 1 & 2\\
+Harvest & 1 & 1\\
+Soil & 1 & 0\\
+Pesticide safety & 0 & 1\\
+\midrule
+Total & 47 & 43\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+An automatic checker (\texttt{verify\_facts.py}) confirms that every excerpt is present on
+its stated page and that every number in the farmer-facing text appears in the excerpts.
+This catches copying mistakes but not agronomic ones; that is the human review's job.
+
+\subsection{Human confirmation bound to a hash}
+A person compares each record with the printed page and marks it CONFIRMED, WRONG or
+UNSURE in a review sheet. For a record $r$ with farmer-visible fields
+$f_1,\dots,f_n$ (text, product, doses, water volume, page, subject), the sheet stores
+\begin{equation}
+  h(r) = \mathrm{SHA256}\bigl(\mathrm{JSON}(\text{source}, \text{id}, f_1,\dots,f_n)\bigr)_{[0:16]}
+\end{equation}
+A record is \emph{usable} only if its status is CONFIRMED, the stored hash equals the
+hash of the current record (so any later edit cancels the confirmation), and, if it names a
+pesticide, the reviewer has marked it as currently registered with the Central Insecticides
+Board and Registration Committee (CIB\&RC). A helper script lists the CIB\&RC sugarcane
+entries for each chemical, with page numbers, but the yes/no decision is the reviewer's.
+
+An AI-generated review pass was also made; it compared text to text and never saw the
+printed pages, so it is stored separately and the system does not read it.
+
+\subsection{Deterministic question matching}
+The question is normalised (zero-width characters removed, lower-cased, spaces collapsed)
+and matched against lists of pest and disease names, topic keywords, district names and
+other-crop words in \texttt{intents.json}. Longer phrases are matched first and consume
+their characters, so a short word inside a longer matched phrase cannot match again. The
+decision rules, in order:
+\begin{enumerate}
+  \item Names another crop $\Rightarrow$ refuse (out of scope).
+  \item Matches a topic marked as refused (e.g. price) $\Rightarrow$ refuse.
+  \item Names a known pest or disease $\Rightarrow$ that subject's records.
+  \item Mentions a pest or disease word but no known name $\Rightarrow$ refuse
+    (unknown pest). This removes, by construction, the version~1 wrong-pest failure.
+  \item Matches a topic $\Rightarrow$ that topic's records.
+  \item Otherwise $\Rightarrow$ refuse (out of scope).
+\end{enumerate}
+Only usable records are shown. If the question names a district, only that region's
+records are shown; otherwise southern and northern recommendations are shown under
+separate headings and never merged. If no usable record remains, the system refuses.
+Symptom words are deliberately not treated as pest names, because that would be diagnosis.
+
+\subsection{Answer}
+The answer is the stored Kannada text of each record, exactly as confirmed, with the book
+and page, a pesticide-safety line when a product is named, and the Kisan Call Centre
+number. No text is generated.
+
+\section{Chat history and interface}
+Each message and answer is stored in MongoDB (database \texttt{sugarcane\_chat}) by
+session. The Next.js interface shows the conversation in Kannada and the sources of each
+answer. \todo{Add a screenshot of the chat interface (Figure).}
+
+\section{Defects found and fixed during development}
+\label{sec:defects}
+\begin{table}[h]
+\centering
+\small
+\caption{Safety-relevant defects found in version~1 and their fixes}
+\label{tab:defects}
+\begin{tabularx}{\textwidth}{p{3.6cm}XX}
+\toprule
+Defect & Effect & Fix\\
+\midrule
+Gate read the RRF fusion score & An unanswerable price question scored 1.0; the gate never refused & Gate uses dense cosine relevance\\
+Router label used as a Qdrant filter & Chunks of other categories unreachable when the router was wrong & Filter removed; label only tightens the gate\\
+Router and judge replies empty & Reasoning model used its whole token budget; 14 of 18 router calls silently became ``general'', judge empty replies scored 0.0 & Larger budget, one retry, explicit failure state; fail closed\\
+Faithfulness judge cannot see wrong entity & Wrong-pest dose scored 1.0 & Entity-match gate (v1); deterministic matching (v2)\\
+Numeric checker mis-bound units & ``10 min is crucial'' read as 10 litres; a safe paraphrase scored 0.0 & Nearest-unit binding, word boundaries for units\\
+Non-deterministic tie-breaking in fusion & Same question could retrieve a different top chunk between runs & Deterministic tie-break\\
+\bottomrule
+\end{tabularx}
+\end{table}

@@ -1,0 +1,72 @@
+\chapter{Conclusion}
+\label{ch:conclusion}
+
+\section{Problem}
+Sugarcane farmers in Karnataka need region-specific recommendations in Kannada, and a
+wrong pesticide or dose can destroy a crop or harm a person. A chatbot for them must
+therefore be judged first on whether it ever gives a wrong recommendation, and only then
+on how many questions it answers.
+
+\section{Solution}
+We built Krishi Mitra in two versions. Version~1 is a Kannada RAG pipeline with hybrid
+BGE-M3 retrieval, an abstention gate, LLM generation and two answer checks. Version~2
+answers only from typed fact records drafted from the UAS Bengaluru 2025 and UAS Dharwad
+2020 Packages of Practices, each bound to its printed page, shown only after a person has
+confirmed it against that page, and matched to the question without a language model.
+Everything else is refused, with the Kisan Call Centre number.
+
+\section{What was achieved}
+\begin{itemize}
+  \item A working Kannada chat assistant (Next.js interface, FastAPI backend) with two
+    selectable answer paths.
+  \item A set of safety failures found in a RAG pipeline and fixed, each with its effect:
+    a confidence gate that read a rank-based score, a router label used as a hard filter,
+    router and judge calls that failed silently when a reasoning model used up its token
+    budget, and a numeric checker that bound numbers to the wrong units.
+  \item Evidence that standard text metrics are unsuitable here: ROUGE-L scores 6 of 16
+    Kannada references 0.000 against themselves, and chrF and BLEU score a 10$\times$
+    overdose well above a correct paraphrase.
+  \item A held-out evaluation of version~1 (29 of 40 correct decisions) and a no-retrieval
+    baseline, which showed that retrieval reduces confident wrong answers but that a
+    faithfulness judge cannot detect an answer about the wrong pest.
+  \item A version~2 design in which that failure cannot occur by construction: an unknown
+    pest name is refused, and no text is generated.
+  \item 128 automated tests that protect these properties.
+  \item \todo{Version~2 pilot result on 20 new questions.}
+\end{itemize}
+
+\section{Limitations}
+\begin{itemize}
+  \item \textbf{Coverage.} Version~2 can answer only what the two sugarcane chapters
+    contain and only records a person has confirmed. \todo{n of 90} records were confirmed
+    at the time of writing; all others are refused.
+  \item \textbf{Review.} The fact records were checked by the project team, not yet by an
+    agricultural expert. Pesticide records remain blocked until their CIB\&RC registration
+    is confirmed.
+  \item \textbf{Wording.} The matcher uses keyword lists. Questions phrased in ways the lists
+    do not cover are refused (the safe direction), and symptom-based questions are refused
+    by design. The Kannada keyword lists and messages need review by more Kannada speakers
+    and by farmers.
+  \item \textbf{Evaluation size.} The version~2 pilot has 20 questions; with no failures this
+    bounds the failure rate only below about 15\%. The version~1 held-out questions were
+    written with partial expert input and some AI assistance, and the development labels
+    were assigned by the team, so all results are indicative.
+  \item \textbf{Version~1 thresholds} were never calibrated; the development data showed that
+    relevance alone cannot separate answerable from unanswerable questions.
+  \item \textbf{Source age.} The UAS Dharwad book is from 2020; recommendations and pesticide
+    registrations change over time.
+\end{itemize}
+
+\section{Future work}
+\begin{itemize}
+  \item Expert review of all 90 records and of pesticide registration; then extend to the
+    remaining sugarcane topics and to other crops.
+  \item A larger test set written by experts and farmers, including real Kisan Call Centre
+    questions, and field trials with farmers.
+  \item Voice input and output in Kannada, and a WhatsApp channel, since many farmers use
+    voice and messaging more than typed web chat.
+  \item Using a language model only to \emph{rephrase} the farmer's question into a form the
+    matcher covers, never to produce the answer, with the same refusal guarantees.
+  \item Re-evaluating the reranker and the RAG path on a larger, multi-crop collection, where
+    first-stage retrieval is no longer near its ceiling.
+\end{itemize}

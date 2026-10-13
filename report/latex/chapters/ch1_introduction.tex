@@ -1,0 +1,109 @@
+\chapter{Introduction}
+
+\section{Domain: sugarcane farming in Karnataka}
+Sugarcane is one of the main commercial crops of Karnataka. \todo{Add area, production
+and number of sugarcane farmers in Karnataka with a citation, e.g. from the Directorate of
+Sugarcane Development status paper or the Karnataka agriculture department. Do not use a
+number without a source.}
+It is a long-duration crop (about 10 to 18 months in the field), and the farmer
+makes many decisions over that time: which variety to plant for the season and region,
+how to treat setts before planting, how much fertiliser to apply and when, how to manage
+weeds, and how to identify and control pests and diseases such as early shoot borer,
+termites, smut and red rot. Recommendations differ by region: the University of
+Agricultural Sciences (UAS) Bengaluru publishes a Package of Practices for southern
+Karnataka and UAS Dharwad publishes one for northern Karnataka, and the two do not
+always agree.
+
+\section{Problems faced by farmers}
+\begin{itemize}
+  \item \textbf{Access to expert advice.} The official recommendations exist, but in long
+    printed books (in the UAS Bengaluru 2025 Package of Practices, sugarcane is chapter 34,
+    starting after 170 pages of other crops), and extension officers are few compared with the number of farmers.
+    \todo{citation for extension worker to farmer ratio, if used}
+  \item \textbf{Language.} Most farmers in Karnataka ask questions in Kannada. Much of the
+    digital agricultural content and most AI tools work best in English.
+  \item \textbf{Wrong information is costly.} Advice from shop owners, neighbours or the
+    internet may name a product that is not registered for sugarcane, a banned
+    pesticide, or a dose for a different pest. A wrong pesticide or dose can destroy the
+    crop, harm the person spraying it, or leave residues.
+  \item \textbf{Regional differences.} A dose that is right for one region or season can be
+    wrong for another.
+\end{itemize}
+
+\section{How AI can help farmers}
+Natural language processing lets a farmer ask a question in their own words, in their own
+language, and get an answer at any time on a mobile phone, instead of searching a printed
+book or waiting for a call centre. Retrieval-augmented generation (RAG) lets a language
+model answer from a chosen set of documents instead of only from what it learned during
+training. If the documents are the official university recommendations, the answers can
+in principle be grounded in trusted sources.
+
+\section{Existing approaches and their drawbacks}
+\subsection{Methods}
+\begin{itemize}
+  \item \textbf{Telephone helplines.} The Kisan Call Centre (1800-180-1551) gives
+    farmers access to experts in their language, but depends on call-centre capacity and
+    working hours.
+  \item \textbf{Rule-based and FAQ chatbots.} Answer a fixed list of questions with
+    fixed answers. Safe, but they fail on any wording they were not built for.
+  \item \textbf{General-purpose LLM chatbots.} Fluent in many languages and answer almost
+    anything, but they can state wrong facts with confidence and do not say where an
+    answer came from.
+  \item \textbf{RAG-based agricultural assistants.} Retrieve passages from an agricultural
+    document collection and ask an LLM to answer from them.
+    \todo{Cite 3--5 agricultural chatbot / RAG papers from the literature survey here.}
+\end{itemize}
+
+\subsection{Drawbacks}
+\begin{itemize}
+  \item An LLM can still change a number, combine two passages, or answer a question about
+    a pest the documents do not cover by using the closest passage it finds. We observed
+    exactly this in our own version~1 (Chapter~\ref{ch:results}).
+  \item Retrieval returns the \emph{most similar} passage, not a \emph{correct} one: a
+    question about an unknown pest still retrieves the nearest pest's dose.
+  \item Common text-overlap metrics (ROUGE, BLEU, chrF) used to evaluate such systems do not
+    detect a wrong number, and ROUGE-L does not work on Kannada text
+    (Section~\ref{sec:metric-failures}).
+  \item The source documents themselves are often of unknown origin or mix regions. The
+    corpus this project started from contained Tamil Nadu recommendations and a termite
+    dose that actually belonged to early shoot borer.
+\end{itemize}
+
+\section{Problem statement}
+To build a Kannada question-answering assistant for sugarcane farmers in Karnataka that
+gives answers only from official, region-specific recommendations, shows where each
+answer comes from, and refuses (pointing the farmer to the Kisan Call Centre) whenever it
+cannot give a verified answer, so that it never gives a wrong pesticide, dose or unit.
+
+\section{Objectives}
+\begin{enumerate}
+  \item Build a Kannada chat interface and backend that answers sugarcane cultivation
+    questions.
+  \item Build and evaluate a RAG pipeline (version~1) for Kannada, and measure where and
+    why it fails.
+  \item Find evaluation metrics that actually work for Kannada answers and for safety, and
+    show which commonly used metrics do not.
+  \item Build an answer path (version~2) that gives doses and chemicals only from records
+    confirmed by a person against the printed source page, and refuses everything else.
+  \item Evaluate both versions on held-out questions, including questions that must be
+    refused.
+\end{enumerate}
+
+\section{Scope of the study}
+\begin{itemize}
+  \item \textbf{Crop:} sugarcane only.
+  \item \textbf{Region:} Karnataka; southern recommendations from UAS Bengaluru (2025),
+    northern from UAS Dharwad (2020). The two are kept separate and never merged.
+  \item \textbf{Topics:} varieties, planting season, seed rate, sett treatment,
+    fertiliser, irrigation, weed control, major pests and diseases, harvest and ratoon.
+  \item \textbf{Out of scope:} market prices, weather, government schemes, other crops,
+    diagnosis from symptoms or photos, and voice input. The assistant refuses these
+    questions.
+\end{itemize}
+
+\section{Usefulness}
+A farmer can ask in Kannada and get the university recommendation for their region,
+with the book and page it came from, or a clear statement that the assistant does not
+know, together with the Kisan Call Centre number. The project also gives a reusable
+lesson for low-resource-language agricultural assistants: how to measure safety honestly,
+and why a refusal is a correct output.

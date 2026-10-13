@@ -1,0 +1,87 @@
+% Krishi Mitra -- 7th semester project report.
+% Chapter structure follows the outline given by the project guide
+% (report/DocScanner Aug 18, 2026 1-02 PM.pdf).
+% Everything in red (\todo{...}) is missing information or a citation that a
+% person must supply. Do not submit with red text remaining.
+\documentclass[12pt,a4paper,oneside]{report}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setdefaultlanguage{english}
+\setotherlanguage{kannada}
+% Kannada text needs a Kannada font. Noto Sans Kannada is available on Overleaf.
+\newfontfamily\kannadafont[Script=Kannada]{Noto Sans Kannada}
+\usepackage{setspace}
+\onehalfspacing
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs,tabularx,longtable}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\usepackage[numbers]{natbib}
+
+\newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
+\newcommand{\kn}[1]{\textkannada{#1}}
+
+\lstset{basicstyle=\ttfamily\small,breaklines=true,frame=single}
+
+\begin{document}
+
+% ---------------- Front matter (college format) ----------------
+\begin{titlepage}
+\centering
+{\Large \todo{College name, e.g. University Visvesvaraya College of Engineering}\par}
+\vspace{0.5cm}
+{\large \todo{Department name}\par}
+\vspace{1.5cm}
+{\large A Project Report on\par}
+\vspace{0.5cm}
+{\LARGE\bfseries Krishi Mitra: A Safety-First Kannada Question-Answering\\ Assistant for Sugarcane Farmers in Karnataka\par}
+\vspace{0.5cm}
+\todo{replace with the project title exactly as registered}
+\vspace{1.5cm}
+
+Submitted in partial fulfilment of the requirements for the award of the degree of\\
+\textbf{Bachelor of Engineering} in \todo{branch}\par
+\vspace{1cm}
+Submitted by\\
+\todo{Student names and USNs}\par
+\vspace{1cm}
+Under the guidance of\\
+\todo{Guide name, designation}\par
+\vfill
+{\large \todo{Academic year, e.g. 2026--2027}\par}
+\end{titlepage}
+
+\chapter*{Certificate}
+\todo{College certificate text, as per the department format}
+
+\chapter*{Declaration}
+\todo{Declaration text, as per the department format}
+
+\chapter*{Acknowledgement}
+\todo{Acknowledgement, written by the students}
+
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+\input{chapters/abstract}
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+% ---------------- Chapters (guide's outline) ----------------
+\input{chapters/ch1_introduction}
+\input{chapters/ch2_literature}
+\input{chapters/ch3_methodology}
+\input{chapters/ch4_results}
+\input{chapters/ch5_conclusion}
+
+\bibliographystyle{IEEEtranN}
+\bibliography{references}
+
+\end{document}
