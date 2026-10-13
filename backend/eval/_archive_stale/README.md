@@ -13,6 +13,7 @@ report numbers computed from them.**
 | `contexts.json` | Frozen per-question contexts built from the stale retrieval, used by `run_eval.py`. |
 | `results.jsonl` | Generation-model comparison scored against the stale contexts/gold. |
 | `refusal_results.jsonl` | Refusal-accuracy run against the stale gold. This is also the file that recorded the unanswerable price query at `search_score: 1.0` -- the specific evidence that the old confidence gate never fired (ARCHITECTURE.md Section 21). Kept for that reason, not as valid eval output. |
+| `chunks_output.txt` | Human-readable dump of the old 43-chunk corpus (moved from `backend/` 2026-10-13). Nothing reads it; predates the corpus exclusions (31 chunks). |
 | `questions_UPDATED.json` | Duplicate question IDs with different text from `questions.json` -- a silent trap if used interchangeably with it. |
 
 Regenerating a real, current eval set is Phase 2 work (ARCHITECTURE.md

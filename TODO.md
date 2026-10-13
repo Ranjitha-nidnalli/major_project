@@ -29,6 +29,15 @@ Design: ARCHITECTURE.md Section 24. Branch `feat/v2-verified-facts`.
   analysis and are no longer blind); then run `eval/run_live_eval.py --questions ...`.
 - [ ] Optional: 2-3 farmers try it; log what breaks.
 
+**Cleanup (2026-10-13), nothing the chatbot needs to run was removed:**
+- Deleted 5 unused Next.js template images (`frontend/public/placeholder*`; grep: no references).
+- Moved `backend/chunks_output.txt` (old 43-chunk dump, unread) to `backend/eval/_archive_stale/`.
+- Moved out of the repo (never committed) to the owner's `Documents/krishi_mitra_removed_2026-10-13/`:
+  `backend/corpus/recom.txt`, `backend/corpus/Screenshot (404).png` (both cross-check only, noted in
+  `corpus/SOURCES.md`) and the July 2026 architecture PDF from the repo root.
+- Kept on purpose: `backend/eval/` and `_archive_stale/` (report evidence), `quick_test.py` (manual smoke
+  test, README), `sugarcanemerged3.json` and `qdrant_sugarcane_db/` (needed by `ANSWER_MODE=rag`).
+
 ## ▶ THE PLAN (2026-10-01 → 2026-10-14) — this is the only plan being followed
 
 Final deadline ~2026-10-14: complete project, college report, and IEEE paper. Everything
