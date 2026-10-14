@@ -95,10 +95,11 @@ Everything else is refused, with the Kisan Call Centre number.
     registration check and refusal rules stay unchanged, so the model can cause a refusal or
     select the wrong topic but can never write a dose. Its key safety test is that an
     unknown pest must map to ``none'' and be refused, never to the nearest known pest (the
-    version~1 failure). A first version of (a) and (b) is implemented and tested with a
-    simulated model (Section~\ref{sec:canonicalizer}); the next step is to evaluate it with a
-    live model on questions the keyword lists miss, measuring how often it picks the right
-    topic and confirming that it never maps an unknown pest to a known one.
+    version~1 failure). A first version of (a) and (b) is implemented, tested with a
+    simulated model (Section~\ref{sec:canonicalizer}), and probed once with a live model on 19
+    developer-written questions: 9 of 10 topics right and 9 of 9 must-refuse questions refused
+    (Section~\ref{sec:canonprobe}). The next step is to evaluate it on real farmer questions
+    the keyword lists miss, over repeated runs.
   \item Voice input and output in Kannada, and a WhatsApp channel, since many farmers use
     voice and messaging more than typed web chat.
   \item Re-evaluating the reranker and the RAG path on a larger, multi-crop collection, where

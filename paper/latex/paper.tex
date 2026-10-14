@@ -476,8 +476,10 @@ middle grounds: we have implemented an optional canonicaliser in which an LLM is
 for intent extraction, constrained by a JSON-schema enumeration to the 40 topic labels that
 lead to no pest or disease record, consulted only when the keyword matcher finds nothing,
 and validated strictly, so it can never reach a dose; 34 tests with a simulated model pin
-these properties. It remains to evaluate it with a live model, measuring how often it picks
-the right topic and confirming that an unknown pest is never mapped to a known one.
+these properties. In one live probe (gpt-oss-20b, structured output) on 19
+developer-written questions that the keyword lists miss, it chose the right topic for 9 of
+10 and answered ``none'' for all 9 that must be refused (rats, wild boar, symptoms, loans);
+all replies were valid. It remains to evaluate it on real farmer questions.
 
 \bibliographystyle{IEEEtran}
 \bibliography{references}

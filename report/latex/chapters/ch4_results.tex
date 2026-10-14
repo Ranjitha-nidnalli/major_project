@@ -335,6 +335,39 @@ should-refuse questions alone it is about 23\%. Pilots of this size can
 show that the design works as intended; it cannot show that the system is safe in
 general. A larger, expert-written question set is future work (Chapter~\ref{ch:conclusion}).
 
+\subsection{Live probe of the query canonicaliser}
+\label{sec:canonprobe}
+The optional canonicaliser (Section~\ref{sec:canonicalizer}) was probed once with the live
+model (\texttt{openai/gpt-oss-20b} on Groq, structured output, temperature 0) on 19 questions
+that all get past the keyword matcher, so the model is consulted for every one. The
+questions were written by the developers to exercise the mechanism, not by farmers: 10
+answerable questions in unusual wording (including the two pilot-1 misses, run against the
+keyword lists from before they were fixed) and 9 that must be refused (rats, wild boar,
+yellowing leaves, white powder on the nodes, a crop that is not growing well, jaggery making,
+bank loans, the agriculture officer, crop insurance).
+
+\begin{table}[h]
+\centering
+\caption{Live probe of the canonicaliser (one run, developer-written questions)}
+\label{tab:canon}
+\begin{tabular}{lr}
+\toprule
+Measure & Result\\
+\midrule
+Right topic chosen (answerable) & 9 / 10\\
+Refused (must refuse) & 9 / 9\\
+Replies that were not valid schema output & 0 / 19\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Every reply was a valid JSON object with known labels. For all nine must-refuse questions,
+including the pests and symptoms that the keyword lists do not recognise, the model answered
+``none'', so the system refused. The one miss, ``how to choose setts'', was also a ``none'',
+so it too ended in a refusal rather than a wrong answer. The probe shows that the mechanism
+behaves as designed with a real model; it is one run on developer-written questions and is
+not a measure of accuracy on real farmer questions.
+
 \subsection{Example conversations}
 Figure~\ref{fig:examples} shows four real responses of version~2 with the 15 round-1
 records, copied from the system's output (a book icon before the source line is omitted).
