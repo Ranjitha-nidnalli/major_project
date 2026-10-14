@@ -20,7 +20,8 @@ from services.entity_match import (
 )
 from services.judge_parse import parse_judge_score
 from services.router_parse import parse_router_category
-from services.fact_answer import Knowledge, answer as answer_from_facts
+from services.fact_answer import Knowledge, answer as answer_from_facts, match as match_facts, topic_labels
+from services.canonicalizer import canonicalize
 from indic_preprocess import normalize_kannada
 from bm25_retriever import BM25Retriever, load_chunks_from_qdrant_upsert
 
@@ -141,6 +142,9 @@ ENABLE_RERANKER = os.getenv("ENABLE_RERANKER", "false").lower() == "true"
 # never enable it where farmers can see the bot.
 ANSWER_MODE = os.getenv("ANSWER_MODE", "facts").lower()
 FACTS_INCLUDE_DRAFTS = os.getenv("FACTS_INCLUDE_DRAFTS", "false").lower() == "true"
+# Optional LLM query canonicaliser for the facts path (services/canonicalizer.py).
+# Off by default; it can only pick topic ids, never a pest/disease or a dose.
+ENABLE_LLM_CANONICALIZER = os.getenv("ENABLE_LLM_CANONICALIZER", "false").lower() == "true"
 RERANK_THRESHOLD = 0.5
 
 # --- System Prompts & Messages ---
@@ -314,10 +318,34 @@ async def generate_from_context(
         raise
 
 
+async def _canonical_topics(knowledge, user_query):
+    """
+    ENABLE_LLM_CANONICALIZER (off by default): ask the LLM for topic ids, but
+    only when the keyword matcher found nothing at all. See services/canonicalizer.py.
+    """
+    m = match_facts(knowledge, user_query)
+    if m["subjects"] or m["intents"] or m["organism_word"] or m["other_crop"]:
+        return None
+    labels = topic_labels(knowledge)
+
+    async def _call(messages, json_schema):
+        # 1024: the reasoning model spends hidden tokens before replying (TODO #48/#50)
+        return await call_llm(messages, max_tokens=1024, temperature=0.0, json_schema=json_schema)
+
+    return await canonicalize(knowledge, labels, user_query, _call)
+
+
 async def _answer_from_facts(user_query, session_id, return_context, interactive):
     # Reloaded per request (92 records, a few ms) so a newly saved review
     # sheet takes effect without restarting the server.
-    result = answer_from_facts(Knowledge.load(), user_query, include_drafts=FACTS_INCLUDE_DRAFTS)
+    knowledge = Knowledge.load()
+    fallback = None
+    if ENABLE_LLM_CANONICALIZER:
+        topics = await _canonical_topics(knowledge, user_query)
+        if topics is not None:
+            fallback = lambda _q, _t=topics: _t
+    result = answer_from_facts(knowledge, user_query, include_drafts=FACTS_INCLUDE_DRAFTS,
+                               topic_fallback=fallback)
     print(f"📗 facts: {result['status']} records={result['record_ids']} match={result['match']}")
     if interactive:
         await save_chat_message(session_id, "user", user_query)

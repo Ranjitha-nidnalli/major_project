@@ -51,7 +51,15 @@ def _get_groq_client():
     return _groq_client
 
 
-def _groq_chat_sync(messages, model, max_tokens, temperature):
+def _response_format(json_schema):
+    """OpenAI-compatible structured-output request; None leaves the call unchanged."""
+    if json_schema is None:
+        return {}
+    return {"response_format": {"type": "json_schema",
+                                "json_schema": {"name": "output", "schema": json_schema, "strict": True}}}
+
+
+def _groq_chat_sync(messages, model, max_tokens, temperature, json_schema=None):
     # No hardcoded fallback — use the module-level default
     m = model or _DEFAULT_MODEL
     client = _get_groq_client()
@@ -62,6 +70,7 @@ def _groq_chat_sync(messages, model, max_tokens, temperature):
             messages=messages,
             temperature=temperature,
             max_tokens=max_tokens,
+            **_response_format(json_schema),
         )
         elapsed = time.time() - start
         print(f"⏱️  Groq ({m}) took {elapsed:.2f}s")
@@ -98,7 +107,7 @@ def _get_openrouter_client():
     return _openrouter_client
 
 
-def _openrouter_chat_sync(messages, model, max_tokens, temperature):
+def _openrouter_chat_sync(messages, model, max_tokens, temperature, json_schema=None):
     m = model or _DEFAULT_MODEL
     client = _get_openrouter_client()
     start = time.time()
@@ -108,6 +117,7 @@ def _openrouter_chat_sync(messages, model, max_tokens, temperature):
             messages=messages,
             temperature=temperature,
             max_tokens=max_tokens,
+            **_response_format(json_schema),
             extra_headers={
                 "HTTP-Referer": "https://github.com/Ranjitha-nidnalli/major_project",
                 "X-Title": "Krishi Mitra",
@@ -138,16 +148,18 @@ def _get_ollama_client():
     return _ollama_client
 
 
-async def _ollama_chat_async(messages, model, max_tokens, temperature):
+async def _ollama_chat_async(messages, model, max_tokens, temperature, json_schema=None):
     # No hardcoded fallback — use the module-level default
     m = model or _DEFAULT_MODEL
     client = _get_ollama_client()
     start = time.time()
     try:
+        extra = {"format": json_schema} if json_schema is not None else {}   # grammar-constrained output
         res = await client.chat(
             model=m,
             messages=messages,
-            options={"temperature": temperature, "num_predict": max_tokens}
+            options={"temperature": temperature, "num_predict": max_tokens},
+            **extra,
         )
         elapsed = time.time() - start
         print(f"⏱️  Ollama ({m}) took {elapsed:.2f}s")
@@ -170,7 +182,7 @@ async def _ollama_chat_async(messages, model, max_tokens, temperature):
 
 
 # --- Public API ---
-async def call_llm(messages, model=None, max_tokens=500, temperature=0.0, backend=None):
+async def call_llm(messages, model=None, max_tokens=500, temperature=0.0, backend=None, json_schema=None):
     """
     Unified LLM call. Backend selected by LLM_BACKEND env var by default.
     Model ID read from env var (GENERATION_MODEL) — no hardcoded defaults.
@@ -187,6 +199,11 @@ async def call_llm(messages, model=None, max_tokens=500, temperature=0.0, backen
             evaluation -- without a global env change or a second process.
             If None (default), uses LLM_BACKEND from .env, unchanged from
             prior behavior.
+        json_schema: Optional JSON schema for structured (constrained) output,
+            used by services/canonicalizer.py. Sent as response_format for
+            Groq/OpenRouter and as format for Ollama. Whether a given
+            provider/model enforces it is not verified here; callers must
+            still validate the reply.
 
     Returns:
         Generated text string, or None on failure.
@@ -196,15 +213,15 @@ async def call_llm(messages, model=None, max_tokens=500, temperature=0.0, backen
     if effective_backend == "groq":
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
-            None, _groq_chat_sync, messages, model, max_tokens, temperature
+            None, _groq_chat_sync, messages, model, max_tokens, temperature, json_schema
         )
     elif effective_backend == "openrouter":
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
-            None, _openrouter_chat_sync, messages, model, max_tokens, temperature
+            None, _openrouter_chat_sync, messages, model, max_tokens, temperature, json_schema
         )
     elif effective_backend == "ollama":
-        return await _ollama_chat_async(messages, model, max_tokens, temperature)
+        return await _ollama_chat_async(messages, model, max_tokens, temperature, json_schema)
     else:
         raise ValueError(
             f"Unknown backend: {effective_backend!r}. "

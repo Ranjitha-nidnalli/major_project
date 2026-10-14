@@ -309,6 +309,31 @@ lists is refused (safe direction, measurable on new questions); symptom-based qu
 refused; the Kannada UI strings in `fact_answer.py` and the keyword lists need a Kannada
 speaker's review.
 
+## 25. Optional LLM query canonicaliser (2026-10-14, experimental, off by default)
+
+**Why.** The mentor's "hybrid middle ground": wording the keyword lists miss (the two pilot
+misses) is refused even when a confirmed record exists. A model can help *understand* the
+question without being allowed to *answer* it.
+
+**Design.** `services/canonicalizer.py`, enabled by `ENABLE_LLM_CANONICALIZER=true`.
+- Consulted only when `match()` found nothing at all: no pest/disease name, no organism word,
+  no other crop, no topic. So an unknown pest is refused before the model is ever asked, and
+  the model can never override a refusal.
+- Closed label set: `fact_answer.topic_labels()`, topic intents only, excluding any intent that
+  reaches a pest or disease record. The model therefore cannot reach pest/disease advice or a
+  pesticide dose by construction.
+- Constrained output: a JSON schema whose items are an enum of those labels plus `none`, sent
+  as structured output (`response_format` for Groq/OpenRouter, `format` for Ollama). Provider
+  enforcement is not verified, so `parse_topics()` validates strictly anyway: any unknown id,
+  `none`, extra key or extra text means no topics, i.e. refusal. Exceptions fail closed.
+- Everything after the label choice is the unchanged v2 path: review status, record hash,
+  registration, regions, refusal messages. The answer text is still the stored record.
+
+**Status.** 34 invariant tests with a fake model (`tests/invariants/test_canonicalizer.py`).
+Not yet run against a live model; no accuracy claim. Worst case if the model picks a wrong
+topic: a confirmed record for the wrong topic is shown (visible, labelled with its topic and
+page), never a pest dose.
+
 ---
 
 ## 30. Repo hygiene

@@ -150,6 +150,18 @@ def _column(row, prefix):
     return ""
 
 
+def resolve_intents(knowledge, intents):
+    """Apply composites (ratoon + fertilizer -> ratoon_fertilizer), drop helper words."""
+    for comp in knowledge.intents["composites"]:
+        if all(w in intents for w in comp["when"]):
+            intents = [i for i in intents if i not in comp["when"]] + [comp["use"]]
+    helpers = {k for k, v in knowledge.intents["intents"].items() if v.get("helper")}
+    intents = [i for i in intents if i not in helpers]
+    if any(i.startswith("variety_") for i in intents):
+        intents = [i for i in intents if i != "variety"]   # a named variety beats the generic word
+    return intents
+
+
 def match(knowledge, query):
     """
     Which pest/disease subjects, topic intents and region the query names.
@@ -175,13 +187,7 @@ def match(knowledge, query):
                 other_crop = True
             elif kind == "own_crop":
                 own_crop = True
-    for comp in knowledge.intents["composites"]:
-        if all(w in intents for w in comp["when"]):
-            intents = [i for i in intents if i not in comp["when"]] + [comp["use"]]
-    helpers = {k for k, v in knowledge.intents["intents"].items() if v.get("helper")}
-    intents = [i for i in intents if i not in helpers]
-    if any(i.startswith("variety_") for i in intents):
-        intents = [i for i in intents if i != "variety"]   # a named variety beats the generic word
+    intents = resolve_intents(knowledge, intents)
     region = None
     for reg, names in knowledge.intents["regions"].items():
         if any(normalize(n) in q for n in names):
@@ -191,12 +197,31 @@ def match(knowledge, query):
             "region": None if region == "both" else region}
 
 
-def answer(knowledge, query, region=None, include_drafts=False):
+def answer(knowledge, query, region=None, include_drafts=False, topic_fallback=None):
     """
     Returns {"answer", "status", "record_ids", "citations", "match"}.
     status: answered | refused_unknown_pest | refused_not_verified | refused_out_of_scope
+
+    topic_fallback (optional, off unless the caller passes one): a function
+    query -> list of TOPIC intent ids, e.g. services.canonicalizer. It is
+    consulted only when the keyword matcher found nothing at all: no pest or
+    disease name, no organism word, no other crop, no topic. Its output is
+    filtered to topic_labels(), so it can never select a pest/disease subject
+    and therefore never a pest dose. Everything after that (review status,
+    registration, regions, refusals) is unchanged.
     """
     m = match(knowledge, query)
+    if topic_fallback is not None and not (
+        m["subjects"] or m["intents"] or m["organism_word"] or m["other_crop"]
+    ):
+        allowed = set(topic_labels(knowledge))
+        try:
+            picked = [i for i in (topic_fallback(query) or []) if i in allowed]
+        except Exception:
+            picked = []     # fail closed: a broken model call is a refusal, not a guess
+        if picked:
+            m["intents"] = resolve_intents(knowledge, picked)
+            m["via_fallback"] = True
     region = region or m["region"]
     table = knowledge.intents["intents"]
 
@@ -228,6 +253,26 @@ def answer(knowledge, query, region=None, include_drafts=False):
             msg = MSG_MISSING_SUBJECT.format(names=", ".join(uncovered)) + " " + MSG_UNKNOWN_PEST
         return _refusal(msg, "refused_not_verified", m)
     return _render(knowledge, usable, m, uncovered, include_drafts)
+
+
+def topic_labels(knowledge):
+    """
+    The closed label set a topic fallback may return: every topic intent
+    except helper words, the composite-only ratoon_* ids, and any intent
+    that reaches a pest or disease record (e.g. variety_snk044 also lists
+    the woolly aphid control record). Pest and disease subjects are
+    deliberately not in it, so a model can never reach pest/disease advice.
+    """
+    composite_only = {c["use"] for c in knowledge.intents["composites"]} - {
+        k for k, v in knowledge.intents["intents"].items() if v["keywords"]
+    }
+
+    def reaches_pest_or_disease(intent):
+        return any(knowledge.records[r]["topic"] in ("pest", "disease")
+                   for r in intent["records"] if r in knowledge.records)
+
+    return [k for k, v in knowledge.intents["intents"].items()
+            if not v.get("helper") and k not in composite_only and not reaches_pest_or_disease(v)]
 
 
 def _records_for(table, keys):
