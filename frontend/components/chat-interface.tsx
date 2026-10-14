@@ -27,6 +27,8 @@ interface Message {
   searchScore?: number | null;
   accuracyScore?: number | null;
   sources?: string[];  // NEW: sources from backend
+  factsStatus?: string | null;
+  recordIds?: string[] | null;
 }
 
 interface ChatSession {
@@ -267,6 +269,8 @@ export function ChatInterface() {
         searchScore: data.search_score,
         accuracyScore: data.accuracy_score,
         sources: data.sources,  // NEW: pass sources from backend
+        factsStatus: data.facts_status,
+        recordIds: data.record_ids,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -518,6 +522,8 @@ export function ChatInterface() {
                   searchScore={message.searchScore}
                   accuracyScore={message.accuracyScore}
                   sources={message.sources}
+                  factsStatus={message.factsStatus}
+                  recordIds={message.recordIds}
                 />
               ))}
 

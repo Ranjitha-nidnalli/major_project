@@ -9,6 +9,35 @@ interface ChatMessageProps {
   searchScore?: number | null;
   accuracyScore?: number | null;
   sources?: string[];
+  factsStatus?: string | null;
+  recordIds?: string[] | null;
+}
+
+// v2 only. Measured on the 2026-10-13 pilot (backend/eval/runs/facts_pilot/);
+// update this line if the evaluation is re-run on new questions.
+const PILOT_RESULT = "Pilot test (20 new questions): 18/20 correct decisions · 0 wrong doses";
+
+const REFUSAL_REASONS: Record<string, string> = {
+  refused_unknown_pest: "Refused: pest or disease not in the verified records",
+  refused_out_of_scope: "Refused: outside the sugarcane topics covered",
+  refused_not_verified: "Refused: no person-confirmed record for this yet",
+};
+
+function getVerificationBadge(status: string | null | undefined, recordIds: string[] | null | undefined) {
+  if (!status) return null;
+  if (status === "answered") {
+    const n = recordIds?.length ?? 0;
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+        ✅ Verified answer · {n} record{n === 1 ? "" : "s"} checked by a person against the printed page
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+      🛑 {REFUSAL_REASONS[status] ?? "Refused"}
+    </span>
+  );
 }
 
 function getConfidenceBadge(score: number | null | undefined) {
@@ -41,6 +70,8 @@ export default function ChatMessage({
   searchScore,
   accuracyScore,
   sources,
+  factsStatus,
+  recordIds,
 }: ChatMessageProps) {
   const [showSources, setShowSources] = useState(false);
   const isUser = role === "user";
@@ -62,6 +93,7 @@ export default function ChatMessage({
           <div className="mt-3 space-y-2 border-t border-gray-100 pt-2">
             {/* Confidence & faithfulness badges */}
             <div className="flex flex-wrap gap-2">
+              {getVerificationBadge(factsStatus, recordIds)}
               {getConfidenceBadge(searchScore)}
               {accuracyScore != null && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
@@ -94,6 +126,8 @@ export default function ChatMessage({
                 )}
               </div>
             )}
+
+            {factsStatus && <p className="text-[11px] text-gray-500">{PILOT_RESULT}</p>}
           </div>
         )}
       </div>

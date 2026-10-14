@@ -34,6 +34,9 @@ class ChatResponse(BaseModel):
     search_score: Optional[float] = None
     accuracy_score: Optional[float] = None
     sources: Optional[List[str]] = None
+    # v2 (ANSWER_MODE=facts) only: answered | refused_* and the confirmed records shown
+    facts_status: Optional[str] = None
+    record_ids: Optional[List[str]] = None
 
 
 @app.on_event("startup")
@@ -66,6 +69,8 @@ async def chat(req: ChatRequest):
         search_score=result.get("search_score"),
         accuracy_score=result.get("accuracy_score"),
         sources=sources,
+        facts_status=result.get("facts_status"),
+        record_ids=result.get("record_ids"),
     )
 
 
