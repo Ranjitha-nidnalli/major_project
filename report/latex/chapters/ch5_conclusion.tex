@@ -62,14 +62,34 @@ Everything else is refused, with the Kisan Call Centre number.
 
 \section{Future work}
 \begin{itemize}
-  \item Expert review of all 90 records and of pesticide registration; then extend to the
-    remaining sugarcane topics and to other crops.
-  \item A larger test set written by experts and farmers, including real Kisan Call Centre
-    questions, and field trials with farmers.
+  \item \textbf{Complete confirmation of all 90 records.} 75 records are still unconfirmed,
+    including all 21 pest and 10 disease records; 32 of the 75 name a chemical product
+    (14 chemicals in all). Each needs a person to check it against the printed page and to
+    confirm its current CIB\&RC registration for sugarcane and that pest. The registration
+    helper already lists, for each chemical, its sugarcane entries in the CIB\&RC lists and
+    any banned or restricted-use entries; the entries found so far restrict use on other
+    crops (for example chlorpyrifos on ber, citrus and tobacco), and the decision for
+    sugarcane is the reviewer's.
+  \item \textbf{A real-world evaluation set.} Replace the AI-assisted pilot questions with real
+    farmer questions: Kisan Call Centre query logs (published on government open-data
+    portals) filtered to Karnataka sugarcane, and transcriptions of real Kannada calls or of
+    conversations recorded by village extension workers. Expected labels (answer or refuse,
+    and the correct record) must be assigned by agricultural experts, not by the system or
+    an AI tool, and the set must be large enough for a meaningful bound (for example 100
+    questions with no failure bounds the failure rate below 3\%).
+  \item \textbf{Hybrid middle grounds for understanding the question.} Keep the deterministic
+    table lookup as the only source of doses, but use a model only to understand the
+    question: (a) an LLM used solely for query canonicalisation or intent extraction, mapping
+    a free-form Kannada question to one of the existing subject and topic identifiers in
+    \texttt{intents.json}; and (b) constrained (grammar-based) decoding, so the model can only
+    output a valid identifier or ``none'', never free text. The lookup, review status,
+    registration check and refusal rules stay unchanged, so the model can cause a refusal or
+    select the wrong topic but can never write a dose. Its key safety test is that an
+    unknown pest must map to ``none'' and be refused, never to the nearest known pest (the
+    version~1 failure). This would recover wordings such as the two pilot misses without
+    hand-written keywords.
   \item Voice input and output in Kannada, and a WhatsApp channel, since many farmers use
     voice and messaging more than typed web chat.
-  \item Using a language model only to \emph{rephrase} the farmer's question into a form the
-    matcher covers, never to produce the answer, with the same refusal guarantees.
   \item Re-evaluating the reranker and the RAG path on a larger, multi-crop collection, where
     first-stage retrieval is no longer near its ceiling.
 \end{itemize}

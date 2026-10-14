@@ -448,9 +448,17 @@ held-out evaluation of 29/40 with one wrong-pest failure that both answer checks
 a design that removes that failure by construction. \textbf{Drawbacks:} version~2 covers only
 confirmed records from two sugarcane chapters; questions in unexpected wording are refused;
 review so far is by the team, not an expert; the pilot is small; and the held-out questions
-were written with partial AI assistance, so results are indicative. Future work: expert
-review of all records, a larger expert- and farmer-written test set, voice input, and using a
-language model only to rephrase questions, never to answer them.
+were written with partial AI assistance, so results are indicative.
+
+\textbf{Future work.} (1) Complete confirmation of all 90 records, especially the 32
+unconfirmed records that name a chemical, each with its current CIB\&RC registration for
+sugarcane checked by a person. (2) Expand the evaluation set with real farmer questions:
+Kisan Call Centre query logs for Karnataka sugarcane and transcriptions of real Kannada calls
+or village extension workers' conversations, labelled by experts. (3) Hybrid middle grounds:
+an LLM used solely for query canonicalisation or intent extraction, with constrained
+grammar decoding so it can output only a known subject or topic identifier or ``none'',
+while the deterministic table lookup remains the only source of doses; its key test is that
+an unknown pest maps to ``none'' rather than to the nearest known pest.
 
 \bibliographystyle{IEEEtran}
 \bibliography{references}
