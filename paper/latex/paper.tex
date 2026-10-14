@@ -37,9 +37,9 @@ decisions but gave one dose for the wrong pest, which both answer checks rated f
 Version~2 removes the language model from the answer path: questions are matched
 deterministically to typed fact records drafted from two university Packages of Practices,
 and only records a person has confirmed against the printed page are shown.
-With 15 of 90 records confirmed, a pilot on 20 new questions gave 18 correct decisions,
-all 10 should-refuse questions refused, and no wrong dose; both errors were refusals caused
-by uncovered wording.
+With 50 of 90 records confirmed and their pesticides cross-checked against the national
+registration list, two pilots with 30 new questions gave 27 correct decisions, all 13
+should-refuse questions refused, and no wrong dose; all three errors were refusals.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -133,7 +133,7 @@ AgriLLM~\cite{didwania2024agrillm} & Transformer LLMs on 4M KCC queries & Not in
 KisanQRS~\cite{rehman2024kisanqrs} & Clustering past KCC queries and answers & F1 96.58\%, NDCG 96.20\% & English & No & No (reuse)\\
 Agribot~\cite{jain2025agribot} & Sentence embeddings, entity extraction & 56\% $\rightarrow$ 86\% & English & No & No\\
 AgAsk~\cite{koopman2022agask} & Neural passage ranking & Rankers effective & English & No & No (passages)\\
-\textbf{This work (v2)} & Deterministic match to person-confirmed records & 18/20 decisions, 0 wrong doses & Kannada & Yes & No\\
+\textbf{This work (v2)} & Deterministic match to person-confirmed records & 27/30 decisions, 0 wrong doses & Kannada & Yes & No\\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -369,25 +369,42 @@ System & Refuse & Answer & Safety failures\\
 \midrule
 LLM, no retrieval & 4/16 & -- & 7 dose-like$^{*}$\\
 Version 1 (RAG) & 14/16 & 15/24 & 1\\
-Version 2 (pilot, 20 new Qs) & 10/10 & 8/10 & 0\\
+Version 2, pilot 1 (15 records) & 10/10 & 8/10 & 0\\
+Version 2, pilot 2 (50 records) & 3/3 & 6/7 & 0\\
 \bottomrule
 \end{tabular}\\[2pt]
 {\footnotesize $^{*}$Answers to should-refuse questions containing a number and unit;
 correctness not assessed.}
 \end{table}
 
-\textit{Version 2.} A team member confirmed 15 of the 90 records against the printed pages
-(seed rate, manure, NPK, fertiliser timing, setts, planting, irrigation, drought; none about
-pesticides). On 20 new questions written by a team member with AI assistance (so expected answers
-were checked against the page excerpts rather than trusted), version~2
-made 18 correct decisions with no wrong dose. All 10 should-refuse questions were refused,
-including two pesticide-dose questions (no pesticide record is confirmed yet). The 2 errors
-were answerable questions refused because their wording (``seed cane or buds'', ``how to
-choose setts'') was not in the keyword lists; the lists were not changed before reporting.
-In two answered questions the writer's expected answer differed from the book, and the
-system's answer matched the verbatim page excerpt. With $n$ questions and no failure, the
-rule of three~\cite{hanley1983zero} bounds the failure rate below about $3/n$ (15\% for $n=20$), so the
-pilot shows that the design works as intended, not that it is safe in general.
+\textit{Version 2: review.} A team member reviewed 52 of the 90 records against the printed
+pages in three rounds; 50 are confirmed and usable. Each ``registered'' answer was
+cross-checked in the CIB\&RC lists: chlorpyrifos (early shoot borer; termite soil
+treatment), chlorantraniliprole 0.4\% GR, fipronil 0.3\% GR and atrazine 50\% WP have
+sugarcane entries, but carbendazim, recommended in both books for sett treatment, has none
+(only sugar beet). Both sett-treatment records were held as UNSURE and are refused: a dose
+printed in an official book but not supported by the current registration list.
+
+\textit{Version 2: pilot 1} (15 records). On 20 new questions written by a team member with
+AI assistance (so expected answers were checked against the page excerpts rather than
+trusted), version~2 made 18 correct decisions with no wrong dose. All 10 should-refuse
+questions were refused, including two pesticide-dose questions (no pesticide record was
+confirmed yet). The 2 errors were answerable questions refused because their wording
+(``seed cane or buds'', ``how to choose setts'') was not in the keyword lists; the lists
+were not changed before reporting. In two answered questions the writer's expected answer
+differed from the book, and the system's answer matched the verbatim page excerpt.
+
+\textit{Version 2: pilot 2} (50 records). Ten questions on the newly confirmed pest, weed
+and striga topics gave 9 correct decisions: the 3 unknown pests (fall armyworm, whitefly,
+nematode) were refused, and 6 of 7 answerable questions were answered from the right records.
+The miss asked about \emph{stem} borer while expecting the \emph{early shoot} borer answer;
+stem borer has no record, so the system refused it, which is the intended behaviour. This
+writer had seen the records, so the pilot is less independent.
+
+Across both pilots, 27 of 30 decisions were correct and no answer gave a wrong dose. By the
+rule of three~\cite{hanley1983zero}, zero failures in $n$ questions bounds the failure rate
+below about $3/n$, here 10\%: the pilots show that the design works as intended, not that it
+is safe in general.
 
 The 10 should-refuse questions covered an unlisted pest (armyworm), a disease without a
 confirmed record (brown spot), two other crops (paddy, maize), two price questions,
@@ -450,15 +467,17 @@ confirmed records from two sugarcane chapters; questions in unexpected wording a
 review so far is by the team, not an expert; the pilot is small; and the held-out questions
 were written with partial AI assistance, so results are indicative.
 
-\textbf{Future work.} (1) Complete confirmation of all 90 records, especially the 32
-unconfirmed records that name a chemical, each with its current CIB\&RC registration for
-sugarcane checked by a person. (2) Expand the evaluation set with real farmer questions:
-Kisan Call Centre query logs for Karnataka sugarcane and transcriptions of real Kannada calls
-or village extension workers' conversations, labelled by experts. (3) Hybrid middle grounds:
-an LLM used solely for query canonicalisation or intent extraction, with constrained
-grammar decoding so it can output only a known subject or topic identifier or ``none'',
-while the deterministic table lookup remains the only source of doses; its key test is that
-an unknown pest maps to ``none'' rather than to the nearest known pest.
+\textbf{Future work.} (1) Complete confirmation of the remaining 40 records, including 23
+that name a chemical, each with its current CIB\&RC registration checked by a person, and a
+registration source for carbendazim. (2) Expand the evaluation set with real farmer
+questions: Kisan Call Centre query logs for Karnataka sugarcane and transcriptions of real
+Kannada calls or village extension workers' conversations, labelled by experts. (3) Hybrid
+middle grounds: we have implemented an optional canonicaliser in which an LLM is used solely
+for intent extraction, constrained by a JSON-schema enumeration to the 40 topic labels that
+lead to no pest or disease record, consulted only when the keyword matcher finds nothing,
+and validated strictly, so it can never reach a dose; 34 tests with a simulated model pin
+these properties. It remains to evaluate it with a live model, measuring how often it picks
+the right topic and confirming that an unknown pest is never mapped to a known one.
 
 \bibliographystyle{IEEEtran}
 \bibliography{references}
