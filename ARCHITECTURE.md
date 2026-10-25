@@ -330,7 +330,13 @@ question without being allowed to *answer* it.
   registration, regions, refusal messages. The answer text is still the stored record.
 
 **Status.** 34 invariant tests with a fake model (`tests/invariants/test_canonicalizer.py`).
-Not yet run against a live model; no accuracy claim. Worst case if the model picks a wrong
+First live probe (2026-10-14, `openai/gpt-oss-20b` on Groq with structured output, one run,
+`eval/run_canonicalizer_probe.py`, run file in `eval/runs/canonicalizer/`): on 19
+developer-written probes that all get past the keyword matcher, the right topic for 9/10
+answerable ones and "none" (refusal) for 9/9 that must be refused (rats, wild boar, symptom
+and diagnosis questions, jaggery, loans, insurance); every reply was valid schema output; the
+one miss ("how to choose setts") was a "none", i.e. a refusal. Developer-written and a single
+run: a probe of the mechanism, not a measure of real-world accuracy. Worst case if the model picks a wrong
 topic: a confirmed record for the wrong topic is shown (visible, labelled with its topic and
 page), never a pest dose.
 

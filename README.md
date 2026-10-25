@@ -46,8 +46,10 @@ loads BGE-M3 at startup (the v1 modules are imported), so the first start is
 slow. Without MongoDB running, chat history is simply not saved.
 
 Only records marked CONFIRMED in `backend/knowledge/review_sheet_REVIEWED.csv`
-are shown: 15 of 90 as of 2026-10-13 (seed rate, manure, NPK, fertiliser
-timing, setts, planting, irrigation, drought; no pesticides yet). To check
+are shown: 50 of 90 as of 2026-10-14 (plant and ratoon crop practices,
+varieties, harvest, early shoot borer, termites, weeds and striga, woolly
+aphid biocontrol, smut, grassy shoot, the pesticide-safety line). Carbendazim sett treatment is held as UNSURE: no sugarcane
+entry in the CIB&RC fungicide list. To check
 the records, see `backend/knowledge/build_review_pack.py`.
 
 The rest of this README covers the full v1 (RAG) stack.

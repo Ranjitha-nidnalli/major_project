@@ -251,6 +251,38 @@ Each message and answer is stored in MongoDB (database \texttt{sugarcane\_chat})
 session. The Next.js interface shows the conversation in Kannada and the sources of each
 answer. Example conversations are shown in Figure~\ref{fig:examples}.
 
+Under every version~2 response the interface shows a verification label instead of a
+confidence percentage: ``Verified answer: $n$ records checked by a person against the printed
+page'', or the reason for a refusal (pest or disease not in the verified records, outside
+the topics covered, or no person-confirmed record yet), together with the measured pilot
+result. Version~2 computes no probability, so any per-answer percentage would be invented;
+the label instead states what the answer rests on.
+
+\section{Optional query canonicaliser (hybrid prototype)}
+\label{sec:canonicalizer}
+Keyword matching refuses questions phrased in ways its lists do not cover. As a middle
+ground between keywords and free generation, we built an optional canonicaliser
+(\texttt{services/canonicalizer.py}, off by default) in which a language model is used only
+to understand the question, never to answer it:
+\begin{itemize}
+  \item It is consulted only when the keyword matcher found nothing at all: no pest or
+    disease name, no pest-like word, no other crop and no topic. An unknown pest is therefore
+    refused before the model is ever asked, and the model cannot override any refusal.
+  \item It may return only identifiers from a closed set of 40 topic labels, or ``none''.
+    The set excludes every pest and disease subject and every topic that leads to a pest or
+    disease record, so the model cannot reach pest advice or a pesticide dose.
+  \item Output is constrained with a JSON schema whose items are an enumeration of those
+    labels (structured-output or grammar-constrained decoding where the model provider
+    supports it), and is validated strictly in any case: an unknown label, ``none'', an extra
+    field or extra text means no label, and any failure is a refusal.
+  \item After the label is chosen, the unchanged lookup applies: review status, record hash,
+    registration, regions, and the stored text with its page.
+\end{itemize}
+In the worst case, a wrong label shows a confirmed record for the wrong topic, labelled with
+its topic and page; it can never produce a dose for the wrong pest. The prototype is covered
+by 34 tests with a simulated model. A first live probe is reported in
+Section~\ref{sec:canonprobe}.
+
 \section{Defects found and fixed during development}
 \label{sec:defects}
 \begin{table}[h]

@@ -198,18 +198,50 @@ development, with AI assistance, and are indicative; the answers themselves are 
 file in \texttt{backend/eval/runs/baseline/} dated 2026-09-30.
 
 \subsection{Version 2 results}
-\paragraph{Review status.} A team member compared 15 of the 90 draft records with the
-printed pages and marked all 15 CONFIRMED (8 from UAS Bengaluru: seed rate, farmyard
-manure, NPK, biofertilisers, fertiliser timing, sett selection, land preparation,
-irrigation; 7 from UAS Dharwad: seed rate, organic manure, NPK, fertiliser timing, furrow
-planting, irrigation, drought management). None names a pesticide. The other 75 records,
-including every pest, disease and pesticide record, are not yet reviewed and are refused.
-The automatic checker found no transcription errors in any of the 90 records, and all 15
-confirmations match the current record hashes.
+\paragraph{Review status.} The review was done in three rounds by a team member, comparing
+each record with the printed page (Table~\ref{tab:review}). Round 1 (13 October) confirmed
+15 crop-practice records with no pesticide (seed rate, manure, NPK, biofertilisers,
+fertiliser timing, sett selection, land preparation, irrigation, drought). Round 2
+(14 October) covered the most-asked pest and pesticide records: early shoot borer, termites,
+sett treatment and pre-emergence weed control. Round 3 (14 October) covered varieties, the
+ratoon crop, harvest, striga, grassy shoot, ratoon stunting, woolly aphid biological control,
+smut and white grub, and the pesticide-safety record, which is appended to every answer that
+names a pesticide. The automatic checker found no transcription errors in any of the 90
+records, every number written in the reviewer's notes appears in the record text, and every
+confirmation matches the current record hash.
 
-\paragraph{Pilot run.} The 20 questions were run through the production answer path with
-draft records switched off. The run file, in \texttt{backend/eval/runs/facts\_pilot/},
-records the hashes of the question file and of the review sheet used.
+\begin{table}[h]
+\centering
+\caption{Human review of the 90 draft records (14 October 2026)}
+\label{tab:review}
+\begin{tabular}{lr}
+\toprule
+Status & Records\\
+\midrule
+Confirmed and usable & 50\\
+Held as UNSURE (registration not supported) & 2\\
+Not yet reviewed & 38\\
+\midrule
+Total & 90\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Registration check.} For every confirmed record that names a pesticide, the
+reviewer's ``currently registered'' answer was cross-checked in the CIB\&RC Major Uses lists
+(as on 31.03.2026). Chlorpyrifos 20\% EC is listed for sugarcane early shoot and stalk borer and,
+under termite control, for sugarcane soil treatment (6.25\,l/ha); chlorantraniliprole 0.4\% GR
+and fipronil 0.3\% GR are listed for early shoot borer; atrazine 50\% WP is listed for
+sugarcane weeds. Carbendazim, used in both books' sett treatment, has no sugarcane entry in
+the fungicide list (only sugar beet), although the reviewer first marked it registered. Both
+sett-treatment records were therefore held as UNSURE and the system refuses them. This is
+the kind of error the registration step exists to catch: a dose that is printed in an
+official university book but is not supported by the current national registration list.
+
+\paragraph{Pilot run 1.} The first 20 questions were run on 13 October, with the 15 round-1
+records, through the production answer path with draft records switched off. The run file, in
+\texttt{backend/eval/runs/facts\_pilot/}, records the hashes of the question file and of the
+review sheet used.
 
 \begin{table}[h]
 \centering
@@ -253,21 +285,91 @@ answer matches the verbatim page excerpt, which the automatic checker confirms i
 on the cited page of the source PDF. The mismatches are therefore errors in the
 AI-assisted expected answers, not in the system.
 
+\paragraph{Pilot run 2.} After rounds 2 and 3, a team member wrote 10 further questions on the
+newly confirmed topics (7 answerable, 3 should-refuse), and they were run on 14 October with
+the 50 confirmed records (Table~\ref{tab:v2b}). The expected answers copy the record text
+word for word, so the writer had seen the records; this pilot is therefore less independent
+than the first.
+
+\begin{table}[h]
+\centering
+\caption{Version~2 pilot runs}
+\label{tab:v2b}
+\begin{tabular}{lccc}
+\toprule
+Measure & Pilot 1 & Pilot 2 & Total\\
+\midrule
+Confirmed records available & 15 & 50 & --\\
+Decision accuracy & 18/20 & 9/10 & 27/30\\
+Should-refuse questions refused & 10/10 & 3/3 & 13/13\\
+Answerable questions answered & 8/10 & 6/7 & 14/17\\
+Safety failures (wrong dose) & 0 & 0 & \textbf{0}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All three should-refuse questions (fall armyworm, whitefly or aphids, root-knot nematode) were
+refused as unknown pests. Six of the seven answerable questions were answered from the right
+records: early shoot borer sprays and granules, Trichogramma release in Belagavi, termite
+treatment in northern Karnataka, pre-emergence weed control, and striga biological control.
+For the striga question the answer also listed the general weed-control records, which are
+correct but more than was asked. The one miss asked how to release Trichogramma against
+\kn{ಕಾಂಡ ಕೊರೆಯುವ ಹುಳು} (stem borer), with the early-shoot-borer answer as the expected answer.
+Stem borer is a different pest from early shoot borer (\kn{ಸುಳಿ ಕೊರೆಯುವ ಹುಳು}) and has no record,
+so the system refused it as an unknown pest. We count this as an error because that was the
+label, but the refusal is the behaviour the design intends: answering would have given one
+pest's advice for another, the version~1 failure. Whether the label should change is left to
+an expert.
+
 \paragraph{How much a small test set shows.}
-The version~2 test is a pilot of 20 new questions (10 answerable, 10 should-refuse),
-written by a team member with AI assistance, without seeing the matcher's keyword lists.
+Pilot 1 used 20 new questions (10 answerable, 10 should-refuse), written by a team member
+with AI assistance, without seeing the matcher's keyword lists.
 Because of the AI assistance, the expected answers were not used as ground truth: each
 answered question was checked against the confirmed records and their page excerpts, which
 is how the two expected-answer mismatches above were found. The answer/refuse labels are
 simple (topic covered and confirmed, or not) and were checked against the scope. If a system makes no
 safety failure on $n$ independent questions, the ``rule of three'' gives an approximate
 95\% upper bound of $3/n$ on its true failure rate~\cite{hanley1983zero}. For $n=20$ this bound is
-15\%, and for the 10 should-refuse questions alone it is 30\%. A pilot of this size can
+15\%; across both pilots, with no wrong dose in 30 questions, it is 10\%, and for the 13
+should-refuse questions alone it is about 23\%. Pilots of this size can
 show that the design works as intended; it cannot show that the system is safe in
 general. A larger, expert-written question set is future work (Chapter~\ref{ch:conclusion}).
 
+\subsection{Live probe of the query canonicaliser}
+\label{sec:canonprobe}
+The optional canonicaliser (Section~\ref{sec:canonicalizer}) was probed once with the live
+model (\texttt{openai/gpt-oss-20b} on Groq, structured output, temperature 0) on 19 questions
+that all get past the keyword matcher, so the model is consulted for every one. The
+questions were written by the developers to exercise the mechanism, not by farmers: 10
+answerable questions in unusual wording (including the two pilot-1 misses, run against the
+keyword lists from before they were fixed) and 9 that must be refused (rats, wild boar,
+yellowing leaves, white powder on the nodes, a crop that is not growing well, jaggery making,
+bank loans, the agriculture officer, crop insurance).
+
+\begin{table}[h]
+\centering
+\caption{Live probe of the canonicaliser (one run, developer-written questions)}
+\label{tab:canon}
+\begin{tabular}{lr}
+\toprule
+Measure & Result\\
+\midrule
+Right topic chosen (answerable) & 9 / 10\\
+Refused (must refuse) & 9 / 9\\
+Replies that were not valid schema output & 0 / 19\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Every reply was a valid JSON object with known labels. For all nine must-refuse questions,
+including the pests and symptoms that the keyword lists do not recognise, the model answered
+``none'', so the system refused. The one miss, ``how to choose setts'', was also a ``none'',
+so it too ended in a refusal rather than a wrong answer. The probe shows that the mechanism
+behaves as designed with a real model; it is one run on developer-written questions and is
+not a measure of accuracy on real farmer questions.
+
 \subsection{Example conversations}
-Figure~\ref{fig:examples} shows four real responses of version~2 with the 15 confirmed
+Figure~\ref{fig:examples} shows four real responses of version~2 with the 15 round-1
 records, copied from the system's output (a book icon before the source line is omitted).
 The first question names Mandya, so only the southern (UAS Bengaluru) records are shown.
 
@@ -314,8 +416,11 @@ the crop and to you, so we will not guess.)
 \end{figure}
 
 \subsection{Automated tests}
-The backend has 131 automated tests (pytest) that need no external services. They check,
+The backend has 165 automated tests (pytest) that need no external services. They check,
 among other things, that the gate never uses the RRF score, that unit binding in the
 numeric checker is correct, that banned pesticides never appear in the fact records, that
 an edited record loses its confirmation, and that unknown pests, other crops and prices
-are refused.
+are refused. 34 of them cover the optional query canonicaliser
+(Section~\ref{sec:canonicalizer}) with a simulated model: whatever the model outputs, it
+cannot select a pest or disease record, override a refusal, or bypass the review status,
+and any malformed output or failure is a refusal.

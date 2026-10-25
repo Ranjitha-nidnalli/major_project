@@ -1,0 +1,24 @@
+{
+  "note": "Developer-written probe set (written by Claude, 2026-10-14), NOT farmer questions and NOT an evaluation of real-world accuracy. Every question was checked to get past the keyword matcher, so the model is actually consulted. 'expect' is a topic id (the answer should come from it) or 'refuse'. P-18/P-19 are the two pilot-1 misses, run against the keyword lists from before they were fixed (git 551c205^).",
+  "probes": [
+    {"id": "P-01", "q": "ಕಬ್ಬಿನ ಗದ್ದೆಗೆ ನೀರು ಎಷ್ಟು ದಿನಕ್ಕೊಮ್ಮೆ ಬಿಡಬೇಕು?", "expect": "irrigation"},
+    {"id": "P-02", "q": "ಕಬ್ಬು ಕಡಿಯುವುದು ಯಾವಾಗ ಸೂಕ್ತ?", "expect": "harvest"},
+    {"id": "P-03", "q": "ಕಬ್ಬು ಕಡಿದ ಮೇಲೆ ಮತ್ತೆ ಅದೇ ಬುಡದಿಂದ ಬೆಳೆ ತೆಗೆಯಬಹುದೇ?", "expect": "ratoon"},
+    {"id": "P-04", "q": "ಯಾವ ಜಾತಿಯ ಕಬ್ಬು ನೆಡುವುದು ಒಳ್ಳೆಯದು?", "expect": "variety"},
+    {"id": "P-05", "q": "ಕಬ್ಬಿನ ಹೊಲದಲ್ಲಿ ಹುಲ್ಲು ಬೆಳೆಯದಂತೆ ಏನು ಸಿಂಪಡಿಸಬೇಕು?", "expect": "weed"},
+    {"id": "P-06", "q": "ಸಾಲು ಮತ್ತು ಸಾಲಿನ ನಡುವೆ ಎಷ್ಟು ಜಾಗ ಬಿಡಬೇಕು?", "expect": "planting"},
+    {"id": "P-07", "q": "ಕಬ್ಬು ನೆಡಲು ಭೂಮಿಯನ್ನು ಹೇಗೆ ತಯಾರು ಮಾಡಬೇಕು?", "expect": "planting"},
+    {"id": "P-08", "q": "best time to plant sugarcane?", "expect": "planting_season"},
+    {"id": "P-09", "q": "ಬ್ಯಾಂಕ್ ಸಾಲ ಹೇಗೆ ಪಡೆಯುವುದು?", "expect": "refuse"},
+    {"id": "P-10", "q": "ನಮ್ಮ ಊರಿನ ಕೃಷಿ ಅಧಿಕಾರಿ ಯಾರು?", "expect": "refuse"},
+    {"id": "P-11", "q": "ಕಬ್ಬಿನಿಂದ ಬೆಲ್ಲ ಮಾಡುವ ವಿಧಾನ ಹೇಳಿ", "expect": "refuse"},
+    {"id": "P-12", "q": "ಕಬ್ಬಿನ ಎಲೆಗಳು ಹಳದಿಯಾಗಿ ಒಣಗುತ್ತಿವೆ, ಏಕೆ?", "expect": "refuse"},
+    {"id": "P-13", "q": "ನನ್ನ ಕಬ್ಬು ಸರಿಯಾಗಿ ಬೆಳೆಯುತ್ತಿಲ್ಲ, ಏನು ಮಾಡಲಿ?", "expect": "refuse"},
+    {"id": "P-14", "q": "ಕಬ್ಬಿನ ಗಿಡಗಳನ್ನು ಇಲಿಗಳು ಕಡಿಯುತ್ತಿವೆ, ಏನು ಮಾಡಲಿ?", "expect": "refuse"},
+    {"id": "P-15", "q": "ಕಾಡು ಹಂದಿಗಳು ಕಬ್ಬು ತಿನ್ನುತ್ತಿವೆ, ಏನು ಮಾಡಬೇಕು?", "expect": "refuse"},
+    {"id": "P-16", "q": "ಕಬ್ಬಿನ ಗಿಣ್ಣುಗಳ ಮೇಲೆ ಬಿಳಿ ಪುಡಿ ಕಾಣುತ್ತಿದೆ, ಏನು ಹಾಕಬೇಕು?", "expect": "refuse"},
+    {"id": "P-17", "q": "ಕಬ್ಬು ಬೆಳೆಗೆ ವಿಮೆ ಮಾಡಿಸಬಹುದೇ?", "expect": "refuse"},
+    {"id": "P-18", "q": "ಮಂಡ್ಯ ಭಾಗದಲ್ಲಿ ಕಬ್ಬು ನಾಟಿ ಮಾಡಲು ಎಕರೆಗೆ ಎಷ್ಟು ಬಿತ್ತನೆ ಕಬ್ಬು ಅಥವಾ ಗಿಣ್ಣುಗಳು ಬೇಕಾಗುತ್ತವೆ?", "expect": "seed_rate", "old_intents": true},
+    {"id": "P-19", "q": "ಕಬ್ಬಿನ ಬಿತ್ತನೆಗೆ ತುಂಡುಗಳನ್ನು ಹೇಗೆ ಆಯ್ಕೆ ಮಾಡಿಕೊಳ್ಳಬೇಕು?", "expect": "sett_treatment", "old_intents": true}
+  ]
+}

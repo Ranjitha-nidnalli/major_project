@@ -9,7 +9,7 @@
 \usepackage{xcolor}
 \usepackage{cite}
 \usepackage{tikz}
-\usetikzlibrary{arrows.meta,positioning}
+\usetikzlibrary{arrows.meta,positioning,fit,shapes.geometric}
 \newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
 
 \begin{document}
@@ -37,13 +37,15 @@ decisions but gave one dose for the wrong pest, which both answer checks rated f
 Version~2 removes the language model from the answer path: questions are matched
 deterministically to typed fact records drafted from two university Packages of Practices,
 and only records a person has confirmed against the printed page are shown.
-With 15 of 90 records confirmed, a pilot on 20 new questions gave 18 correct decisions,
-all 10 should-refuse questions refused, and no wrong dose; both errors were refusals caused
-by uncovered wording.
+With 50 of 90 records confirmed and their pesticides cross-checked against the national
+registration list, version~2 made 36 correct decisions on the same 40 questions, refused
+the wrong-pest question, and gave no wrong dose (paired exact McNemar $p=0.09$, so the
+difference is not significant at this size). Two pilots with 30 new questions gave 27
+correct decisions, all 13 should-refuse questions refused, and no wrong dose.
 \end{abstract}
 
 \begin{IEEEkeywords}
-agricultural advisory, retrieval-augmented generation, Kannada, abstention, evaluation, safety
+abstention, agricultural advisory, evaluation, Kannada, retrieval-augmented generation, safety
 \end{IEEEkeywords}
 
 % =========================================================
@@ -57,7 +59,7 @@ recommendations are in long printed books; extension staff are few; and most far
 in Kannada.
 
 \textbf{Traditional approach.} Farmers rely on extension officers, input dealers and the
-Kisan Call Centre (KCC, 1800-180-1551), which gives expert answers in local languages but
+Kisan Call Centre (KCC, 1800-180-1551)~\todo{cite an official KCC source}, which gives expert answers in local languages but
 depends on call-centre capacity.
 
 \textbf{Existing AI approaches.} Recent agricultural assistants use large language models
@@ -74,8 +76,20 @@ refusals, with a no-retrieval baseline; (4) a design in which a wrong-pest answe
 occur by construction, because the answer path has no language model and shows only
 person-confirmed records.
 
+\textbf{Paper organisation.} The rest of the paper is organised as follows.
+Section~\ref{sec:lit} (Literature Survey) reviews agricultural question-answering systems,
+work on Indian-language models and metrics, and retrieval and abstention methods, and
+identifies the gap this work addresses. Section~\ref{sec:method} (Proposed Methodology)
+states the problem, presents the overall architecture and the models used (BGE-M3,
+gpt-oss-20b and the deterministic matcher), and describes version~1 (RAG) and version~2
+(confirmed fact records). Section~\ref{sec:results} (Results) gives the system and
+hardware, the performance metrics, the retrieval, abstention, held-out and pilot results,
+and a discussion. Section~\ref{sec:conclusion} (Conclusion) summarises the problem, the
+solution, what was achieved, the drawbacks and future work.
+
 % =========================================================
 \section{Literature Survey}
+\label{sec:lit}
 Numbers below are as reported in each paper's abstract, on the authors' own data.
 
 \textit{Agricultural assistants.} Krishi Sathi~\cite{vijayvargia2025krishisathi} combines an
@@ -111,7 +125,10 @@ confidence is a poor signal for abstaining~\cite{kamath2020selective}.
 
 \textit{Gap.} The agricultural systems above report accuracy or reach on questions they are
 expected to answer; none of their abstracts reports correct refusals or wrong-dose counts,
-and Kannada is not covered (Table~\ref{tab:lit}). Most generate the answer text with an LLM,
+and Kannada is not covered. Table~\ref{tab:lit} summarises the agricultural systems
+reviewed: for each it gives the method, the headline result as reported in its abstract,
+the language of the questions, whether correct refusals were measured, and whether an LLM
+writes the answer text; the last row places this work in the same terms. Most generate the answer text with an LLM,
 and the LLM-based evaluations measure fluency, relevance or faithfulness to retrieved text.
 We show below that faithfulness to retrieved text does not detect an answer about the wrong
 pest, and that n-gram metrics reward a dose error.
@@ -133,13 +150,14 @@ AgriLLM~\cite{didwania2024agrillm} & Transformer LLMs on 4M KCC queries & Not in
 KisanQRS~\cite{rehman2024kisanqrs} & Clustering past KCC queries and answers & F1 96.58\%, NDCG 96.20\% & English & No & No (reuse)\\
 Agribot~\cite{jain2025agribot} & Sentence embeddings, entity extraction & 56\% $\rightarrow$ 86\% & English & No & No\\
 AgAsk~\cite{koopman2022agask} & Neural passage ranking & Rankers effective & English & No & No (passages)\\
-\textbf{This work (v2)} & Deterministic match to person-confirmed records & 18/20 decisions, 0 wrong doses & Kannada & Yes & No\\
+\textbf{This work (v2)} & Deterministic match to person-confirmed records & 27/30 decisions, 0 wrong doses & Kannada & Yes & No\\
 \bottomrule
 \end{tabular}
 \end{table*}
 
 % =========================================================
 \section{Proposed Methodology}
+\label{sec:method}
 
 \subsection{Problem statement}
 Given a Kannada question $q$, return either an answer whose every chemical, dose and unit
@@ -165,6 +183,83 @@ backend has two answer paths, selected by configuration (Fig.~\ref{fig:arch}).
 \end{tikzpicture}
 \caption{Two answer paths share the interface, refusal line and history.}
 \label{fig:arch}
+\end{figure}
+
+In Fig.~\ref{fig:arch}, a Kannada question from the web chat reaches the FastAPI backend,
+where the \texttt{ANSWER\_MODE} setting sends it either to the version~1 RAG path or to the
+version~2 fact-record path. Both paths end in the same output: an answer with its source
+page, or a refusal with the KCC number.
+
+\subsection{Models used}
+Version~1 uses two learned models: BGE-M3~\cite{chen2024bgem3} for embedding and
+gpt-oss-20b~\cite{openai2025gptoss} for the router, the answer and the faithfulness judge.
+A cross-encoder reranker (bge-reranker-v2-m3) is loaded but switched off
+(Section~\ref{sec:results}). Version~2 uses no learned model; its deterministic matcher is
+shown in Fig.~\ref{fig:matcher}.
+
+\textit{BGE-M3 (embedding).} Fig.~\ref{fig:bgem3} shows the embedding model. Text is split
+into sub-word tokens and encoded by an XLM-RoBERTa-large encoder~\cite{conneau2020xlmr}
+(24 layers, hidden size 1024, inputs up to 8192 tokens), which gives one hidden vector per
+token. Two heads read these vectors: the dense head takes the normalised hidden vector of the
+\texttt{[CLS]} token as a 1024-dimensional embedding, and the sparse head gives each token a
+weight $w_t=\mathrm{ReLU}(\mathbf{W}_{\mathrm{lex}}^{\top}\mathbf{h}_t)$, a learned lexical
+vector. Both are stored in Qdrant as the named vectors \texttt{dense} and \texttt{sparse};
+the model's third, multi-vector output is not used.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[node distance=0.2cm,
+  b/.style={draw,rounded corners,align=center,font=\scriptsize,minimum width=3.2cm,minimum height=0.45cm},
+  s/.style={draw,rounded corners,align=center,font=\scriptsize,minimum width=2.6cm,minimum height=0.45cm},
+  a/.style={-{Stealth}}]
+\node[b] (in) {Kannada chunk or question};
+\node[b,below=of in] (tok) {Sub-word tokeniser (XLM-R vocabulary)};
+\node[b,below=of tok,minimum height=0.8cm] (enc) {XLM-RoBERTa-large encoder\\24 layers, hidden 1024, $\le$8192 tokens};
+\node[b,below=of enc] (h) {Hidden states $\mathbf{h}_{\mathrm{CLS}},\mathbf{h}_1,\dots,\mathbf{h}_n$};
+\node[s,below left=0.35cm and -1.1cm of h] (d) {Dense head\\normalised $\mathbf{h}_{\mathrm{CLS}}$ (1024-d)};
+\node[s,below right=0.35cm and -1.1cm of h] (sp) {Sparse head\\$w_t=\mathrm{ReLU}(\mathbf{W}_{\mathrm{lex}}^{\top}\mathbf{h}_t)$};
+\node[b,below=1.3cm of h] (db) {Qdrant: named vectors \texttt{dense} + \texttt{sparse}};
+\draw[a] (in)--(tok); \draw[a] (tok)--(enc); \draw[a] (enc)--(h);
+\draw[a] (h)--(d); \draw[a] (h)--(sp); \draw[a] (d)--(db); \draw[a] (sp)--(db);
+\end{tikzpicture}
+\caption{BGE-M3 embedding model as used in version~1 (dense and sparse outputs only).}
+\label{fig:bgem3}
+\end{figure}
+
+\textit{gpt-oss-20b (router, answer, judge).} Fig.~\ref{fig:gptoss} shows the language
+model, served through the Groq API at temperature~0. It is a decoder-only Transformer with
+a mixture-of-experts (MoE) feed-forward layer~\cite{openai2025gptoss}: about 21B parameters
+in total, of which about 3.6B are active per token. Each of its 24 blocks applies RMSNorm,
+grouped-query attention with rotary position embeddings (alternating full and 128-token
+sliding-window attention), and an MoE layer in which a learned router sends each token to
+4 of 32 SwiGLU experts, each sub-layer with a residual connection. The same model is called
+with three different prompts: the router (category label), the generator (Kannada answer
+from the top-5 chunks) and the judge (faithfulness score). The optional canonicaliser
+(Section~\ref{sec:conclusion}) uses it a fourth way, constrained to a fixed list of topics.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[node distance=0.18cm,
+  b/.style={draw,rounded corners,align=center,font=\scriptsize,minimum width=3.4cm,minimum height=0.42cm},
+  r/.style={draw,dashed,rounded corners,align=center,font=\scriptsize,minimum width=2.2cm,minimum height=0.42cm},
+  a/.style={-{Stealth}}]
+\node[b] (p) {Prompt tokens (instruction + context)};
+\node[b,below=of p] (e) {Token embedding};
+\node[b,below=0.35cm of e] (n1) {RMSNorm};
+\node[b,below=of n1,minimum height=0.7cm] (att) {Grouped-query attention, RoPE\\(full / 128-token window, alternating)};
+\node[b,below=of att] (n2) {RMSNorm};
+\node[b,below=of n2,minimum height=0.7cm] (moe) {MoE: router picks 4 of 32\\SwiGLU experts per token};
+\node[b,below=0.35cm of moe] (out) {RMSNorm $\rightarrow$ output layer $\rightarrow$ next token};
+\node[draw,dotted,fit=(n1)(att)(n2)(moe),inner sep=3pt,label={[font=\scriptsize]left:$\times 24$}] (blk) {};
+\draw[a] (p)--(e); \draw[a] (e)--(n1); \draw[a] (n1)--(att); \draw[a] (att)--(n2);
+\draw[a] (n2)--(moe); \draw[a] (moe)--(out);
+\node[r,right=0.35cm of att] (r1) {Router: category};
+\node[r,below=of r1] (r2) {Generator: answer};
+\node[r,below=of r2] (r3) {Judge: faithfulness};
+\node[font=\scriptsize,above=0.05cm of r1] {Three prompts, one model};
+\end{tikzpicture}
+\caption{gpt-oss-20b decoder (24 blocks with residual connections around attention and MoE) and its three roles in version~1.}
+\label{fig:gptoss}
 \end{figure}
 
 \subsection{Version 1: RAG pipeline}
@@ -198,7 +293,8 @@ output budgets, returned empty text on 14 of 18 router calls (silently mapped to
 retry, and an explicit failure state that fails closed. The numeric checker bound numbers to
 units inside ordinary words (``10 min is crucial'' read as 10 litres); units now bind only to
 the nearest standalone unit word. Table~\ref{tab:defects} lists the safety-relevant defects
-found in version~1.
+found in version~1: each row names the defect, its observed effect on the system's answers,
+and the fix applied. Most of them made the system less safe without any visible error.
 
 \begin{table}[t]
 \centering
@@ -225,12 +321,14 @@ pest with the early shoot borer doses; the judge scored it 1.0 and the numeric c
 it, because the answer quoted its retrieved chunk correctly. A check that compares an answer
 with its context cannot detect that the context is about the wrong thing.
 
-\textit{Records.} 90 typed records (47 from UAS Bengaluru POP 2025, 43 from UAS Dharwad POP
-2020) hold the Kannada text shown to the farmer, the source, the printed page, and verbatim
+\textit{Records.} 90 typed records (47 from the UAS Bengaluru POP 2025~\cite{uasb2025pop},
+43 from the UAS Dharwad POP 2020~\cite{uasd2020pop}) hold the Kannada text shown to the farmer, the source, the printed page, and verbatim
 supporting excerpts. A script checks that each excerpt is on its page and each number in the
 text is in the excerpts; this catches copying mistakes, not agronomic ones. Records with
 pesticides not registered in India (phorate, metasystox, benomyl) were removed.
-Table~\ref{tab:records} shows the records by topic. Other documents (an ICAR advisory, an
+Table~\ref{tab:records} shows how the 90 draft records are spread over topics, with the
+count from UAS Bengaluru (column B) and UAS Dharwad (column D); pests, varieties,
+fertiliser, diseases and ratoon management account for most of them. Other documents (an ICAR advisory, an
 IPM package, a Tamil Nadu guide) are used only to cross-check, never as a dose source; where
 UAS and a cross-check source differ, the UAS recommendation is given.
 
@@ -258,8 +356,9 @@ Weed control & 4 & 3 & Pesticide safety & 0 & 1\\
 \textit{Human confirmation.} A person marks each record CONFIRMED, WRONG or UNSURE against the
 printed page. The confirmation stores $h(r)$, the first 16 hex digits of SHA-256 over the
 record's farmer-visible fields; a record is usable only if its status is CONFIRMED, $h(r)$
-matches the current record, and, if it names a pesticide, its CIB\&RC registration has been
-confirmed.
+matches the current record, and, if it names a pesticide, its registration for sugarcane in
+the Central Insecticides Board and Registration Committee (CIB\&RC) lists~\cite{cibrc2026mup}
+has been confirmed by a person.
 
 \textit{Matching.} The question is normalised (zero-width characters removed, lower-cased,
 spaces collapsed) and matched against pest/disease names, topic keywords, district names and
@@ -282,6 +381,44 @@ northern records appear under separate headings and are never merged. The answer
 stored text, its book and page, a pesticide-safety line when a product is named, and the KCC
 number; nothing is generated, so the same question always gets the same answer.
 
+Fig.~\ref{fig:matcher} shows the version~2 matcher as a flow: the question is normalised,
+phrases are matched longest first, rules 1--6 decide which records (if any) are selected,
+and only usable records for the farmer's region reach the answer. Every ``no'' branch to
+the right ends in a refusal with the KCC number.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[node distance=0.16cm,
+  b/.style={draw,rounded corners,align=center,font=\scriptsize,minimum width=4.0cm,minimum height=0.42cm},
+  x/.style={draw,align=center,font=\scriptsize,minimum width=1.5cm,minimum height=0.42cm,fill=gray!15},
+  a/.style={-{Stealth}}]
+\node[b] (q) {Kannada question};
+\node[b,below=of q] (n) {Normalise (zero-width, case, spaces)};
+\node[b,below=of n] (m) {Match phrases, longest first};
+\node[b,below=of m] (r12) {R1--2: other crop or refused topic?};
+\node[b,below=of r12] (r3) {R3: known pest/disease name?};
+\node[b,below=of r3] (r4) {R4: pest/disease word only?};
+\node[b,below=of r4] (r5) {R5: topic keyword?};
+\node[b,below=of r5] (u) {Keep usable records: CONFIRMED,\\hash matches, CIB\&RC checked};
+\node[b,below=of u] (g) {Region filter (district) or B / D headings};
+\node[b,below=of g] (o) {Stored text + book, page + KCC};
+\node[x,right=0.3cm of r4] (ref) {Refuse\\+ KCC};
+\draw[a] (q)--(n); \draw[a] (n)--(m); \draw[a] (m)--(r12);
+\draw[a] (r12)--node[font=\tiny,right]{no}(r3);
+\draw[a] (r3)--node[font=\tiny,right]{no}(r4);
+\draw[a] (r4)--node[font=\tiny,right]{no}(r5);
+\draw[a] (r5)--node[font=\tiny,right]{yes}(u);
+\draw[a] (u)--(g); \draw[a] (g)--(o);
+\draw[a] (r12.east)-|node[font=\tiny,above,pos=0.25]{yes}(ref.north);
+\draw[a] (r4.east)--node[font=\tiny,above]{yes}(ref.west);
+\draw[a] (r5.east)-|node[font=\tiny,below,pos=0.25]{no (R6)}(ref.south);
+\draw[a] (r3.west)--++(-0.25,0)|-node[font=\tiny,left,pos=0.25]{yes}(u.west);
+\end{tikzpicture}
+\caption{Version~2 deterministic matcher. If no usable record remains after filtering, the
+system also refuses. No learned model is on the answer path.}
+\label{fig:matcher}
+\end{figure}
+
 % =========================================================
 \section{Results}
 \label{sec:results}
@@ -301,6 +438,10 @@ Text-overlap metrics were first checked by scoring each reference against itself
 ROUGE-L gave a mean self-score of 0.625, with 6 of 16 Kannada references at 0.000. chrF
 \cite{popovic2015chrf} and BLEU gave 1.0. But in a constructed example
 (Table~\ref{tab:overdose}) both score a 10$\times$ overdose far above a correct paraphrase.
+The table scores two answers against the same reference: the first copies the reference
+word for word but changes 1\,g/L to 10\,g/L, and the second gives the correct dose in
+different words. Because both metrics count shared characters or words, the dangerous
+answer scores 96.7 chrF against 62.5 for the safe one.
 We therefore do not use them as quality or safety evidence.
 
 \begin{table}[t]
@@ -317,9 +458,11 @@ Correct paraphrase, 1 g/L & 62.5 & 30.9\\
 \end{tabular}
 \end{table}
 
-\subsection{Results}
+\subsection{Experimental results}
 \textit{Retrieval (version 1).} Table~\ref{tab:retrieval} compares retrieval settings on 15
-answerable development questions over the original 43-chunk collection. Hybrid retrieval
+answerable development questions over the original 43-chunk collection. Recall@5 is the
+share of questions whose relevant chunk is in the top 5, MRR rewards placing it first, and
+nDCG@5 rewards placing it high in the top 5. Hybrid retrieval
 found the relevant chunk in the top 5 for every question, while dense-only ranked it first
 more often (higher MRR). With recall at ceiling, a cross-encoder reranker had little to fix
 and added about 30\,s per query on CPU, so it is off. BM25+dense was used for pest and
@@ -350,10 +493,28 @@ which is why the entity-match rule was added and why we did not tune thresholds 
 
 \textit{Held-out (version 1).} On 40 held-out questions (24 answerable, 16 should-refuse)
 with the code frozen, version~1 made 29 correct decisions: 14/16 should-refuse questions
-refused and 15/24 answerable answered (Table~\ref{tab:heldout}). Of the 9 refused answerable
+refused and 15/24 answerable answered. Table~\ref{tab:heldout} compares all systems
+evaluated: the ``Refuse'' column counts should-refuse questions correctly refused, the
+``Answer'' column counts answerable questions answered, and the last column counts safety
+failures, kept separate so that they are never averaged away. The ``Correct'' column gives
+all correct decisions with a 95\% Wilson score interval. The rows are the LLM without
+retrieval, version~1, version~2 on the same 40 questions, and the two version~2 pilots
+described below. Of the 9 refused answerable
 questions, 5 had expected answers from a document outside the collection. The one safety
 failure was the wrong-pest answer described above: the entity match was satisfied by the
 generic word for ``worm'', which is part of the early shoot borer's Kannada name.
+
+\textit{Same questions on version 2.} The same 40 questions, unchanged, were then run on
+version~2 with 50 confirmed records. It made 36 correct decisions: 15/16 should-refuse
+questions refused and 21/24 answerable answered, with no wrong dose. The wrong-pest question
+that version~1 answered was refused by rule~4. The one should-refuse question answered was
+about white grub: it showed the two white-grub records, which describe the damage and state
+that the chapter gives no pesticide dose, so no dose was shown. Paired by question, 10
+decisions were correct only on version~2 and 3 only on version~1; an exact McNemar test gives
+$p=0.09$, so with 40 questions the improvement in decisions is not statistically significant.
+The safety result does not rest on this test: the wrong-pest failure is removed by
+construction. This run is not blind, because the questions were read while version~1 was
+developed, and the answerable labels were made against the version~1 collection.
 
 \textit{No-retrieval baseline.} The same model with no documents refused only 4 of the 16
 should-refuse questions; 7 of its answers contained a dose-like number and unit (categories
@@ -363,31 +524,53 @@ assigned by reading the answers, with AI assistance; indicative).
 \centering
 \caption{Held-out evaluation (decisions correct / total)}
 \label{tab:heldout}
-\begin{tabular}{lccc}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lcccc}
 \toprule
-System & Refuse & Answer & Safety failures\\
+System & Refuse & Answer & Correct (95\% CI) & Safety fail.\\
 \midrule
-LLM, no retrieval & 4/16 & -- & 7 dose-like$^{*}$\\
-Version 1 (RAG) & 14/16 & 15/24 & 1\\
-Version 2 (pilot, 20 new Qs) & 10/10 & 8/10 & 0\\
+LLM, no retrieval & 4/16 & -- & -- & 7 dose-like$^{*}$\\
+Version 1 (RAG) & 14/16 & 15/24 & 29/40 (57--84\%) & 1\\
+Version 2, same 40 & 15/16 & 21/24 & 36/40 (77--96\%) & 0\\
+\midrule
+V2 pilot 1 (15 rec.) & 10/10 & 8/10 & 18/20 (70--97\%) & 0\\
+V2 pilot 2 (50 rec.) & 3/3 & 6/7 & 9/10 (60--98\%) & 0\\
 \bottomrule
 \end{tabular}\\[2pt]
 {\footnotesize $^{*}$Answers to should-refuse questions containing a number and unit;
-correctness not assessed.}
+correctness not assessed. Rows above the line use the same 40 questions.}
 \end{table}
 
-\textit{Version 2.} A team member confirmed 15 of the 90 records against the printed pages
-(seed rate, manure, NPK, fertiliser timing, setts, planting, irrigation, drought; none about
-pesticides). On 20 new questions written by a team member with AI assistance (so expected answers
-were checked against the page excerpts rather than trusted), version~2
-made 18 correct decisions with no wrong dose. All 10 should-refuse questions were refused,
-including two pesticide-dose questions (no pesticide record is confirmed yet). The 2 errors
-were answerable questions refused because their wording (``seed cane or buds'', ``how to
-choose setts'') was not in the keyword lists; the lists were not changed before reporting.
-In two answered questions the writer's expected answer differed from the book, and the
-system's answer matched the verbatim page excerpt. With $n$ questions and no failure, the
-rule of three~\cite{hanley1983zero} bounds the failure rate below about $3/n$ (15\% for $n=20$), so the
-pilot shows that the design works as intended, not that it is safe in general.
+\textit{Version 2: review.} A team member reviewed 52 of the 90 records against the printed
+pages in three rounds; 50 are confirmed and usable. Each ``registered'' answer was
+cross-checked in the CIB\&RC lists~\cite{cibrc2026mup}: chlorpyrifos (early shoot borer; termite soil
+treatment), chlorantraniliprole 0.4\% GR, fipronil 0.3\% GR and atrazine 50\% WP have
+sugarcane entries, but carbendazim, recommended in both books for sett treatment, has none
+(only sugar beet). Both sett-treatment records were held as UNSURE and are refused: a dose
+printed in an official book but not supported by the current registration list.
+
+\textit{Version 2: pilot 1} (15 records). On 20 new questions written by a team member with
+AI assistance (so expected answers were checked against the page excerpts rather than
+trusted), version~2 made 18 correct decisions with no wrong dose. All 10 should-refuse
+questions were refused, including two pesticide-dose questions (no pesticide record was
+confirmed yet). The 2 errors were answerable questions refused because their wording
+(``seed cane or buds'', ``how to choose setts'') was not in the keyword lists; the lists
+were not changed before reporting. In two answered questions the writer's expected answer
+differed from the book, and the system's answer matched the verbatim page excerpt.
+
+\textit{Version 2: pilot 2} (50 records). Ten questions on the newly confirmed pest, weed
+and striga topics gave 9 correct decisions: the 3 unknown pests (fall armyworm, whitefly,
+nematode) were refused, and 6 of 7 answerable questions were answered from the right records.
+The miss asked about \emph{stem} borer while expecting the \emph{early shoot} borer answer;
+stem borer has no record, so the system refused it, which is the intended behaviour. This
+writer had seen the records, so the pilot is less independent.
+
+Across both pilots, 27 of 30 decisions were correct (95\% Wilson interval 74--97\%) and no
+answer gave a wrong dose. By the
+rule of three~\cite{hanley1983zero}, zero failures in $n$ questions bounds the failure rate
+below about $3/n$, here 10\%: the pilots show that the design works as intended, not that it
+is safe in general.
 
 The 10 should-refuse questions covered an unlisted pest (armyworm), a disease without a
 confirmed record (brown spot), two other crops (paddy, maize), two price questions,
@@ -395,7 +578,10 @@ weather, a machinery subsidy, and two pesticide-dose questions (early shoot bore
 termites). After the run, the two missing phrases were added to the keyword lists, with a
 test that the new seed-rate phrase does not hide the internode borer's Kannada name, which
 shares the word for ``node''; a re-run then answered all 20 correctly, but this is not a
-held-out result. Table~\ref{tab:examples} shows four real responses.
+held-out result. Table~\ref{tab:examples} shows four real version~2 responses, translated
+to English: one answered question, with the dose, split schedule and printed page numbers,
+and three refusals of different kinds (an unknown pest, another crop, and a price
+question). Each response ends with the KCC line.
 
 \begin{table}[t]
 \centering
@@ -439,26 +625,51 @@ have hidden it (Table~\ref{tab:overdose}).
 
 % =========================================================
 \section{Conclusion}
+\label{sec:conclusion}
 \textbf{Problem:} a Kannada assistant for sugarcane farmers must never give a wrong
 chemical or dose. \textbf{Solution:} we built a RAG pipeline, found and fixed the failures
 that silently reduced its safety, measured it with metrics that count correct refusals, and
 replaced its answer path with person-confirmed fact records and deterministic matching.
 \textbf{Achieved:} evidence that common text metrics fail on Kannada advisory answers, a
 held-out evaluation of 29/40 with one wrong-pest failure that both answer checks missed, and
-a design that removes that failure by construction. \textbf{Drawbacks:} version~2 covers only
+a design that removes that failure by construction and made 36/40 correct decisions on the
+same questions with no wrong dose. \textbf{Drawbacks:} version~2 covers only
 confirmed records from two sugarcane chapters; questions in unexpected wording are refused;
 review so far is by the team, not an expert; the pilot is small; and the held-out questions
 were written with partial AI assistance, so results are indicative.
 
-\textbf{Future work.} (1) Complete confirmation of all 90 records, especially the 32
-unconfirmed records that name a chemical, each with its current CIB\&RC registration for
-sugarcane checked by a person. (2) Expand the evaluation set with real farmer questions:
-Kisan Call Centre query logs for Karnataka sugarcane and transcriptions of real Kannada calls
-or village extension workers' conversations, labelled by experts. (3) Hybrid middle grounds:
-an LLM used solely for query canonicalisation or intent extraction, with constrained
-grammar decoding so it can output only a known subject or topic identifier or ``none'',
-while the deterministic table lookup remains the only source of doses; its key test is that
-an unknown pest maps to ``none'' rather than to the nearest known pest.
+\textbf{Future work.} (1) Complete confirmation of the remaining 40 records, including 23
+that name a chemical, each with its current CIB\&RC registration checked by a person, and a
+registration source for carbendazim. (2) Expand the evaluation set with real farmer
+questions: Kisan Call Centre query logs for Karnataka sugarcane and transcriptions of real
+Kannada calls or village extension workers' conversations, labelled by experts. (3) Hybrid
+middle grounds: we have implemented an optional canonicaliser in which an LLM is used solely
+for intent extraction, constrained by a JSON-schema enumeration to the 40 topic labels that
+lead to no pest or disease record, consulted only when the keyword matcher finds nothing,
+and validated strictly, so it can never reach a dose; 34 tests with a simulated model pin
+these properties. In one live probe (gpt-oss-20b, structured output) on 19
+developer-written questions that the keyword lists miss, it chose the right topic for 9 of
+10 and answered ``none'' for all 9 that must be refused (rats, wild boar, symptoms, loans);
+all replies were valid. It remains to evaluate it on real farmer questions.
+
+\section*{Data and Code Availability}
+The source code, fact records, review sheet, question sets, evaluation scripts and the
+per-question results of every run reported here (each file named with the hash of its
+question set and review sheet) are available at
+\url{https://github.com/Ranjitha-nidnalli/major_project}. The source books and registration
+lists are not redistributed; their download locations and SHA-256 hashes are listed in the
+repository (\texttt{backend/corpus/SOURCES.md}).
+
+\section*{Acknowledgment}
+\textit{Use of AI tools.} In line with IEEE policy on AI-generated content, we disclose the
+following. Claude Code (Anthropic, Claude Opus models) was used to write and test most of the
+software and evaluation scripts, to compute the reported statistics from the stored run
+files, and to draft and edit the text of all sections, the tables and the TikZ figures
+(Figs.~1--4); the authors directed this work and checked the text and every reported
+number against the run files. Some held-out and pilot questions were written with AI
+assistance (\todo{name the tool}), as stated in Section~\ref{sec:results}. No AI tool was used
+to confirm any fact record: every CONFIRMED record was checked by a person against the
+printed page. \todo{Confirm this list is complete; add any thanks, e.g. guide, department.}
 
 \bibliographystyle{IEEEtran}
 \bibliography{references}

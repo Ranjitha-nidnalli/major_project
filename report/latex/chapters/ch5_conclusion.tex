@@ -31,18 +31,25 @@ Everything else is refused, with the Kisan Call Centre number.
     faithfulness judge cannot detect an answer about the wrong pest.
   \item A version~2 design in which that failure cannot occur by construction: an unknown
     pest name is refused, and no text is generated.
-  \item 131 automated tests that protect these properties.
-  \item A version~2 pilot on 20 new questions with 15 confirmed records: 18 correct
-    decisions, all 10 should-refuse questions refused, and no wrong dose. Both errors were
-    refusals caused by uncovered wording.
+  \item 165 automated tests that protect these properties.
+  \item Human review of 52 of the 90 records against the printed pages: 50 confirmed and
+    usable, including early shoot borer, termite and weed-control pesticide records, and 2
+    held because the registration check found carbendazim has no sugarcane entry in the
+    CIB\&RC fungicide list.
+  \item Two version~2 pilots with 30 new questions in total: 27 correct decisions, all 13
+    should-refuse questions refused, and no wrong dose. The three errors were refusals: two
+    from uncovered wording (since fixed) and one for a pest with no record.
+  \item A verification label under every answer in place of an invented confidence score,
+    and a prototype of the hybrid middle ground: an optional, tested query canonicaliser in
+    which a language model can choose only a topic label and never reach a dose.
 \end{itemize}
 
 \section{Limitations}
 \begin{itemize}
   \item \textbf{Coverage.} Version~2 can answer only what the two sugarcane chapters
-    contain and only records a person has confirmed. 15 of 90 records were confirmed
-    at the time of writing, none of them about pests, diseases or pesticides; all others
-    are refused.
+    contain and only records a person has confirmed. 50 of 90 records were confirmed
+    at the time of writing; the other 40, including 17 pest and disease records, are
+    refused.
   \item \textbf{Review.} The fact records were checked by the project team, not yet by an
     agricultural expert. Pesticide records remain blocked until their CIB\&RC registration
     is confirmed.
@@ -50,8 +57,9 @@ Everything else is refused, with the Kisan Call Centre number.
     do not cover are refused (the safe direction), and symptom-based questions are refused
     by design. The Kannada keyword lists and messages need review by more Kannada speakers
     and by farmers.
-  \item \textbf{Evaluation size.} The version~2 pilot has 20 questions; with no failures this
-    bounds the failure rate only below about 15\%. The version~1 held-out questions were
+  \item \textbf{Evaluation size.} The two version~2 pilots have 30 questions; with no wrong
+    dose this bounds the wrong-dose rate only below about 10\%. The second pilot's writer had
+    seen the records. The version~1 held-out questions were
     written with partial expert input and some AI assistance, and the development labels
     were assigned by the team, so all results are indicative.
   \item \textbf{Version~1 thresholds} were never calibrated; the development data showed that
@@ -62,9 +70,10 @@ Everything else is refused, with the Kisan Call Centre number.
 
 \section{Future work}
 \begin{itemize}
-  \item \textbf{Complete confirmation of all 90 records.} 75 records are still unconfirmed,
-    including all 21 pest and 10 disease records; 32 of the 75 name a chemical product
-    (14 chemicals in all). Each needs a person to check it against the printed page and to
+  \item \textbf{Complete confirmation of all 90 records.} 40 records are still unconfirmed,
+    including 10 pest and 7 disease records; 23 of the 40 name a chemical product
+    (12 chemicals in all), and carbendazim needs a registration source before its two
+    sett-treatment records can be used. Each needs a person to check it against the printed page and to
     confirm its current CIB\&RC registration for sugarcane and that pest. The registration
     helper already lists, for each chemical, its sugarcane entries in the CIB\&RC lists and
     any banned or restricted-use entries; the entries found so far restrict use on other
@@ -86,8 +95,11 @@ Everything else is refused, with the Kisan Call Centre number.
     registration check and refusal rules stay unchanged, so the model can cause a refusal or
     select the wrong topic but can never write a dose. Its key safety test is that an
     unknown pest must map to ``none'' and be refused, never to the nearest known pest (the
-    version~1 failure). This would recover wordings such as the two pilot misses without
-    hand-written keywords.
+    version~1 failure). A first version of (a) and (b) is implemented, tested with a
+    simulated model (Section~\ref{sec:canonicalizer}), and probed once with a live model on 19
+    developer-written questions: 9 of 10 topics right and 9 of 9 must-refuse questions refused
+    (Section~\ref{sec:canonprobe}). The next step is to evaluate it on real farmer questions
+    the keyword lists miss, over repeated runs.
   \item Voice input and output in Kannada, and a WhatsApp channel, since many farmers use
     voice and messaging more than typed web chat.
   \item Re-evaluating the reranker and the RAG path on a larger, multi-crop collection, where
