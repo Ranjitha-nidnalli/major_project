@@ -1,5 +1,54 @@
 # Krishi Mitra — Complete TODO List
 
+## ▶ Phase plan from the design doc (2026-11-25): one product, four crops, field pilot
+
+Decisions (owner, 2026-11-25): one farmer-facing product, not "v1/v2". Crops: sugarcane, paddy,
+ragi, tomato. Confirmers: project owner + a friend at UAS Mandya (faculty/KVK spot check wanted).
+Pilot users: family farmers first. Budget: free tier first, up to 10,000 rupees. Target: IEEE
+venue (to be chosen). Existing `ANSWER_MODE=facts` (v2) and `ANSWER_MODE=rag` (v1) stay in the code
+as the tiered product's building block and as ablation baselines for the paper.
+
+Answer policy (three tiers, one `answer()`): A = verified records only (dose, pesticide, rates; no
+LLM writes numbers); B = retrieval with abstention gate and numeric check (general advice, cited);
+C = refuse and give KCC 1800-180-1551 (out of scope, unconfirmed, or any dependency failure).
+
+Written 2026-11-25 (docs only, no code changed):
+- [x] `backend/knowledge/CROP_SOURCES.md`: source status for paddy/ragi/tomato. The easy-to-find UAS
+  Bengaluru files are annual "new technologies" addenda, NOT the full Package of Practices.
+- [x] `backend/knowledge/CONFIRMATION_PROTOCOL.md`: what "confirmed" means, two reviewers, agreement.
+- [x] `backend/eval/GOLDEN_SET_GUIDE.md`: golden set mix, schema (keeps `unanswerable`), freezing.
+
+Phase 0, foundations (about 2 weeks). Gate: baseline numbers recorded.
+- [ ] Merge `ANSWER_MODE` into one `answer()` with tiers A/B/C; add `crop` and `region` to records.
+- [ ] CI: run `cd backend && pytest` and the refusal smoke test on every pull request.
+- [ ] Freeze the golden set (see GOLDEN_SET_GUIDE.md) with its SHA-256; keep a development split.
+- [ ] Add a plain dense-retrieval baseline with no gate for the paper.
+- [ ] Update CLAUDE.md and ARCHITECTURE.md (currently "sugarcane only") once crops are added.
+
+Phase 1, channel MVP (about 3 weeks). Gate: 10 internal testers, no blockers.
+- [ ] Telegram bot and WhatsApp (sandbox first) adapters calling the same `/ask` service.
+- [ ] Consent message, hashed phone numbers, retention period, delete-my-data path.
+- [ ] Feedback buttons and answer logging (record ID or document, version, date).
+
+Phase 2, knowledge expansion (about 4 weeks; can start in parallel). Gate: records confirmed and audited.
+- [ ] HUMAN: obtain the full Package of Practices for paddy, ragi (UAS Bengaluru) and tomato (horticulture volume).
+- [ ] HUMAN: draft and confirm 60-90 records per crop under CONFIRMATION_PROTOCOL.md.
+- [ ] HUMAN: CIB&RC check for every pesticide record; re-check yearly and before each evaluation run.
+- [ ] HUMAN: faculty/KVK spot check of 10-15 records.
+
+Phase 3, live data and voice (about 3 weeks). Gate: accuracy measured on 30 real voice notes.
+- [ ] Dated lookups for mandi price and weather (never stored as advice).
+- [ ] Test Kannada speech-to-text on 30 real voice notes before adopting it; text stays the default.
+
+Phase 4, field pilot (about 4 weeks). Gate: safety and usage report written.
+- [ ] Collect 50+ real questions from family farmers (use the Farmer Question Log sheet); ask permission first.
+- [ ] 10-20 family/neighbour farmers use the bot; weekly audit of a random sample of live answers.
+- [ ] Paper: report counts and intervals; say plainly that the pilot is small, one region, not independent.
+
+Human tasks stay human (CLAUDE.md rules): gold labels, dosage verification, source selection,
+Kannada quality ratings.
+
+
 ## ▶ v2 (2026-09-30, supersedes the day-by-day table below): small, correct, usable bot
 
 Owner decision: deadline can move; build a bot farmers can use, small scope, must be correct.
