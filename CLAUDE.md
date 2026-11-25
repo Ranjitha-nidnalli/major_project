@@ -1,7 +1,11 @@
 # Krishi Mitra
 
-Kannada RAG chatbot for sugarcane farmers in Karnataka. Safety-critical domain: a wrong
-pesticide dose can destroy a crop or harm a person. Refusing is always better than guessing.
+Kannada question-answering assistant for Karnataka farmers: one product, three answer tiers
+(A verified records, B cited general advice, C refuse + Kisan Call Centre), four target crops
+(sugarcane, paddy, ragi, tomato; docs/design plan in `TODO.md`). TODAY only sugarcane has
+confirmed records; the other three crops are refused until their records are confirmed.
+Safety-critical domain: a wrong pesticide dose can destroy a crop or harm a person. Refusing is
+always better than guessing.
 
 Read `ARCHITECTURE.md` first. It is the source of truth for design decisions and the
 phase roadmap. This file holds current facts and working rules only.
