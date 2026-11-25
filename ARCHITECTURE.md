@@ -304,6 +304,16 @@ UAS table where the granules belong to early shoot borer) and letting an LLM wri
   North are never merged), page citations, the pesticide-safety line, and the KCC number.
 - No LLM call anywhere in this path. v1 (`ANSWER_MODE=rag`) is kept for comparison runs only.
 
+**Crops (K-008).** Each source file header carries `crop` (and `region`); it is not a hashed
+field, so adding it voids no confirmation. `intents.json` `crops{name: aliases}` lists the crops
+that have records; crops without records stay in `other_crops` and are refused. A question
+naming a crop gets only that crop's records, and one naming none is about sugarcane. Moving a
+crop from `other_crops` to `crops` is part of adding its records (a test checks they don't overlap).
+
+**Fail closed (K-010).** Any error in the fact lookup or in Tier B returns Tier C with the KCC
+number; a chat-history save error does not lose the answer. An optional classifier can only add
+Tier B blockers and is never consulted before Tier A (K-009).
+
 **Tiered policy (K-007, `ANSWER_MODE=tiered`, now the default).** One `answer()` in
 `services/tiers.py`; `rag_service._answer_tiered` wires it up.
 - Tier A: the facts path above, always first, so no router or classifier can make a confirmed
