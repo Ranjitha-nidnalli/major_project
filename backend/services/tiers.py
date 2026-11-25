@@ -30,7 +30,7 @@ in async functions, so the policy is unit-testable with fakes.
 """
 import re
 
-from services.fact_answer import KCC_LINE, normalize
+from services.fact_answer import KCC_LINE, MSG_NOT_VERIFIED, normalize
 
 TIER_A = "A"
 TIER_B = "B"
@@ -147,14 +147,26 @@ def _with_kcc(text):
     return text if KCC_NUMBER in text else f"{text}\n\n{KCC_LINE}"
 
 
-async def answer_tiered(query, *, facts_fn, rag_fn, tier_b_enabled=False):
+async def answer_tiered(query, *, facts_fn, rag_fn, tier_b_enabled=False, classify_fn=None):
     """
     The one policy. `facts_fn` is `async () -> dict` shaped like
     services.fact_answer.answer(); `rag_fn` is `async () -> dict` shaped like
     the v1 pipeline result (answer, refused, category, source_payloads).
+    `classify_fn` (optional, `async (query) -> category | None`, e.g. a small
+    LLM) is consulted only after Tier A refused and Tier B is otherwise
+    allowed. It can only tighten: a pest/disease/fertilizer/price category, or
+    any error, sends the question to Tier C. It can never reach Tier A.
+    Fail closed (K-010): if the fact lookup itself raises, the answer is
+    Tier C with the KCC line, never an exception.
     Returns {"tier", "tier_reason", "answer", "citations", "facts", "rag"}.
     """
-    facts = await facts_fn()
+    try:
+        facts = await facts_fn()
+    except Exception as exc:  # knowledge files, canonicaliser or sheet unavailable
+        facts = {"status": "error", "answer": MSG_NOT_VERIFIED, "record_ids": [],
+                 "citations": [], "match": {}}
+        return {"tier": TIER_C, "tier_reason": f"facts_error:{type(exc).__name__}",
+                "answer": _with_kcc(facts["answer"]), "citations": [], "facts": facts, "rag": None}
     if facts.get("status") == "answered":
         return {"tier": TIER_A, "tier_reason": "confirmed_records",
                 "answer": facts["answer"], "citations": facts.get("citations", []),
@@ -169,6 +181,14 @@ async def answer_tiered(query, *, facts_fn, rag_fn, tier_b_enabled=False):
         return tier_c(";".join(blockers))
     if not tier_b_enabled:
         return tier_c("tier_b_disabled")
+    if classify_fn is not None:
+        try:
+            category = await classify_fn(query)
+        except Exception as exc:
+            return tier_c(f"classifier_error:{type(exc).__name__}")
+        extra = tier_b_blockers(query, facts.get("match"), category)
+        if extra:
+            return tier_c(";".join(extra))
 
     try:
         rag = await rag_fn()
