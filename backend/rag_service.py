@@ -366,7 +366,8 @@ def _is_refusal_text(ans):
             or ans.startswith(TIMEOUT_MESSAGE) or NOT_IN_CONTEXT_PHRASE in ans)
 
 
-async def _answer_tiered(user_query, session_id, return_context, interactive):
+async def _answer_tiered(user_query, session_id, return_context, interactive,
+                         tier_b_enabled=None, save_history=True):
     """One answer() policy (services/tiers.py): A confirmed records, B cited retrieval, C refuse."""
     async def rag_fn():
         # save_to_db=False: Tier B text is saved only after the tier checks pass.
@@ -375,10 +376,10 @@ async def _answer_tiered(user_query, session_id, return_context, interactive):
 
     out = await answer_tiered(
         user_query, facts_fn=lambda: _facts_result(user_query), rag_fn=rag_fn,
-        tier_b_enabled=TIER_B_ENABLED,
+        tier_b_enabled=TIER_B_ENABLED if tier_b_enabled is None else tier_b_enabled,
     )
     print(f"🧭 tier {out['tier']} ({out['tier_reason']})")
-    if interactive:
+    if interactive and save_history:
         try:   # history is a convenience: a database outage must not lose the answer
             await save_chat_message(session_id, "user", user_query)
             await save_chat_message(session_id, "assistant", out["answer"])
@@ -417,9 +418,13 @@ async def _answer_from_facts(user_query, session_id, return_context, interactive
     }
 
 
-async def get_sugarcane_answer(user_query: str, session_id: str, return_context: bool = False, interactive: bool = True):
+async def get_sugarcane_answer(user_query: str, session_id: str, return_context: bool = False,
+                               interactive: bool = True, tier_b_enabled=None, save_history: bool = True):
+    """tier_b_enabled / save_history apply to ANSWER_MODE=tiered: the channels pass a per-request
+    Tier B switch (daily cost ceiling) and save_history=False (their own store keeps the log)."""
     if ANSWER_MODE == "tiered":
-        return await _answer_tiered(user_query, session_id, return_context, interactive)
+        return await _answer_tiered(user_query, session_id, return_context, interactive,
+                                    tier_b_enabled=tier_b_enabled, save_history=save_history)
     if ANSWER_MODE == "facts":
         return await _answer_from_facts(user_query, session_id, return_context, interactive)
     return await _answer_rag(user_query, session_id, return_context, interactive)

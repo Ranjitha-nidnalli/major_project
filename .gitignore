@@ -43,3 +43,7 @@ backend/corpus/converted/
 
 # Overleaf upload zips (made from report/latex and paper/latex)
 *.zip
+
+# Local channel database (consent, answer log); never commit
+backend/data/
+*.db
