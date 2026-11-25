@@ -11,17 +11,28 @@ interface ChatMessageProps {
   sources?: string[];
   factsStatus?: string | null;
   recordIds?: string[] | null;
+  tier?: string | null;
 }
-
-// v2 only. Measured on the 2026-10-13 pilot (backend/eval/runs/facts_pilot/);
-// update this line if the evaluation is re-run on new questions.
-const PILOT_RESULT = "Pilot test (20 new questions): 18/20 correct decisions · 0 wrong doses";
 
 const REFUSAL_REASONS: Record<string, string> = {
   refused_unknown_pest: "Refused: pest or disease not in the verified records",
   refused_out_of_scope: "Refused: outside the sugarcane topics covered",
   refused_not_verified: "Refused: no person-confirmed record for this yet",
 };
+
+const KCC_NUMBER = "1800-180-1551";
+
+// Tier A: person-confirmed records. Tier B: general advice from cited documents. Tier C: refusal.
+function getTierBadge(tier: string | null | undefined) {
+  if (tier === "B") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+        ℹ️ General advice (not a dose) · source shown below
+      </span>
+    );
+  }
+  return null;
+}
 
 function getVerificationBadge(status: string | null | undefined, recordIds: string[] | null | undefined) {
   if (!status) return null;
@@ -72,6 +83,7 @@ export default function ChatMessage({
   sources,
   factsStatus,
   recordIds,
+  tier,
 }: ChatMessageProps) {
   const [showSources, setShowSources] = useState(false);
   const isUser = role === "user";
@@ -94,6 +106,7 @@ export default function ChatMessage({
             {/* Confidence & faithfulness badges */}
             <div className="flex flex-wrap gap-2">
               {getVerificationBadge(factsStatus, recordIds)}
+              {getTierBadge(tier)}
               {getConfidenceBadge(searchScore)}
               {accuracyScore != null && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
@@ -102,6 +115,21 @@ export default function ChatMessage({
                 </span>
               )}
             </div>
+
+            {/* Source line: always visible for verified (A) and general (B) answers */}
+            {(tier === "A" || tier === "B") && sources && sources.length > 0 && (
+              <p className="text-xs text-gray-700">
+                <span className="font-semibold">Source:</span>{" "}
+                {Array.from(new Set(sources.map((s) => s.replace(/\s*\[[^\]]*\]\s*$/, "")))).join("; ")}
+              </p>
+            )}
+
+            {/* A refusal always shows the Kisan Call Centre number, even if the text is cut */}
+            {tier === "C" && (
+              <p className="rounded-lg bg-amber-50 p-2 text-xs font-medium text-amber-900">
+                📞 Kisan Call Centre: <a className="underline" href={`tel:${KCC_NUMBER}`}>{KCC_NUMBER}</a> (toll-free)
+              </p>
+            )}
 
             {/* Sources expander */}
             {sources && sources.length > 0 && (
@@ -127,7 +155,6 @@ export default function ChatMessage({
               </div>
             )}
 
-            {factsStatus && <p className="text-[11px] text-gray-500">{PILOT_RESULT}</p>}
           </div>
         )}
       </div>

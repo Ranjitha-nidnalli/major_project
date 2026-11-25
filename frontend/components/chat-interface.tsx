@@ -29,6 +29,7 @@ interface Message {
   sources?: string[];  // NEW: sources from backend
   factsStatus?: string | null;
   recordIds?: string[] | null;
+  tier?: string | null;
 }
 
 interface ChatSession {
@@ -271,6 +272,7 @@ export function ChatInterface() {
         sources: data.sources,  // NEW: pass sources from backend
         factsStatus: data.facts_status,
         recordIds: data.record_ids,
+        tier: data.tier,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -524,6 +526,7 @@ export function ChatInterface() {
                   sources={message.sources}
                   factsStatus={message.factsStatus}
                   recordIds={message.recordIds}
+                  tier={message.tier}
                 />
               ))}
 

@@ -310,6 +310,19 @@ that have records; crops without records stay in `other_crops` and are refused. 
 naming a crop gets only that crop's records, and one naming none is about sugarcane. Moving a
 crop from `other_crops` to `crops` is part of adding its records (a test checks they don't overlap).
 
+**Channels (K-036 to K-048).** `services/chat_core.handle_message` is the one path for `/ask`,
+Telegram (`channels/telegram.py`, webhook `/telegram/webhook`) and WhatsApp (`channels/whatsapp.py`,
+Meta Cloud API, webhook `/whatsapp/webhook`). Consent comes first and nothing is stored before an
+explicit yes; people are keyed by a salted HMAC (`PRIVACY_SALT`), the raw phone number or chat ID is
+never stored; `ಅಳಿಸಿ` deletes everything about a person; answers are kept `RETENTION_DAYS` (90) with
+record IDs, document, page and date. Per-person daily limit and a daily Tier B ceiling (at the
+ceiling: Tier A or refuse). Feedback buttons (useful / not useful / report) feed a review queue;
+`python -m eval.weekly_audit sample` writes the weekly review sheet. Local state is one SQLite file
+(`KM_DB_PATH`, default `backend/data/krishi.db`, git-ignored). Env vars, none committed:
+`PRIVACY_SALT`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `WHATSAPP_VERIFY_TOKEN`,
+`WHATSAPP_APP_SECRET`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`.
+The consent text and other bot messages were written by Claude and need a Kannada speaker's review.
+
 **Fail closed (K-010).** Any error in the fact lookup or in Tier B returns Tier C with the KCC
 number; a chat-history save error does not lose the answer. An optional classifier can only add
 Tier B blockers and is never consulted before Tier A (K-009).
