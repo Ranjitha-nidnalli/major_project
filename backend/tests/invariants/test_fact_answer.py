@@ -210,3 +210,57 @@ def test_bud_keyword_does_not_swallow_internode_borer():
     m = match(K, "ಕಬ್ಬಿಗೆ ಗಿಣ್ಣು ಕೊರಕ ಬಂದಿದೆ, ಏನು ಮಾಡಬೇಕು?")
     assert "seed_rate" not in m["intents"]
     assert m["subjects"], "the internode borer alias must still match"
+
+
+# --- crop on every record (K-008) ---------------------------------------------
+
+def _two_crop_knowledge():
+    """The real records, with the South source relabelled as a second crop."""
+    sources = {k: dict(v) for k, v in K.sources.items()}
+    sources["uasb2025"]["crop"] = "paddy"
+    intents = json.loads(json.dumps(K.intents))
+    intents["crops"]["paddy"] = ["ಭತ್ತ"]
+    intents["other_crops"] = [w for w in intents["other_crops"] if w != "ಭತ್ತ"]
+    return Knowledge(K.records, sources, intents, {})
+
+
+def test_every_source_declares_its_crop_and_region():
+    for key, src in K.sources.items():
+        assert src.get("crop") == "sugarcane", key
+        assert src.get("region") in ("south_karnataka", "north_karnataka"), key
+    assert all(K.crop_of(r) == "sugarcane" for r in K.records)
+
+
+def test_adding_crop_did_not_change_any_record_hash():
+    # The crop lives in the source header, not in a hashed field.
+    from services.fact_answer import HASHED_FIELDS
+    assert "crop" not in HASHED_FIELDS
+    assert all("crop" not in rec for rec in K.records.values())
+
+
+def test_a_named_crop_only_gets_that_crops_records():
+    K2 = _two_crop_knowledge()
+    paddy = answer(K2, "ಭತ್ತದ ತಳಿಗಳು", include_drafts=True)
+    cane = answer(K2, "ಕಬ್ಬಿನ ತಳಿಗಳು", include_drafts=True)
+    assert paddy["status"] == "answered"
+    assert paddy["record_ids"] and all(K2.crop_of(r) == "paddy" for r in paddy["record_ids"])
+    assert cane["record_ids"] and all(K2.crop_of(r) == "sugarcane" for r in cane["record_ids"])
+
+
+def test_no_crop_named_means_the_default_crop():
+    K2 = _two_crop_knowledge()
+    r = answer(K2, "ತಳಿಗಳು", include_drafts=True)
+    assert r["record_ids"] and all(K2.crop_of(r_) == "sugarcane" for r_ in r["record_ids"])
+
+
+def test_a_crop_with_no_records_is_refused_not_answered_from_another_crop():
+    K2 = _two_crop_knowledge()
+    K2.records = {k: v for k, v in K2.records.items() if k.startswith("uasd-")}   # paddy source emptied
+    r = answer(K2, "ಭತ್ತದ ತಳಿಗಳು", include_drafts=True)
+    assert r["status"] != "answered"
+
+
+def test_crop_aliases_and_unsupported_crops_do_not_overlap():
+    other = {normalize(w.lstrip("=")) for w in K.intents["other_crops"]}
+    own = {normalize(w.lstrip("=")) for a in K.intents["crops"].values() for w in a}
+    assert not (own & other)
