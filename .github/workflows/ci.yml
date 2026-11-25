@@ -1,0 +1,35 @@
+name: tests
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: backend/requirements.lock
+      - name: Install from the lock file
+        run: pip install -r backend/requirements.lock
+      # Pure invariant tests: no network, no LLM, no database. They include the
+      # refusal smoke tests (tests/invariants/test_tiers.py, test_fact_answer.py).
+      - name: pytest
+        working-directory: backend
+        run: python -m pytest -q
+      # Release gate (K-021). Active once a frozen golden set and its baseline summary are
+      # committed under backend/eval/golden/ (golden_set_FROZEN.jsonl, baseline_summary.json).
+      - name: release gate
+        working-directory: backend
+        run: |
+          if [ -f eval/golden/golden_set_FROZEN.jsonl ] && [ -f eval/golden/baseline_summary.json ]; then
+            python -m eval.tier_eval eval/golden/golden_set_FROZEN.jsonl --out /tmp/gate_run
+            python -m eval.release_gate eval/golden/baseline_summary.json "$(ls -d /tmp/gate_run/tier_*/ | head -1)summary.json"
+          else
+            echo "no frozen golden set yet: gate skipped"
+          fi
