@@ -37,6 +37,8 @@ class ChatResponse(BaseModel):
     # v2 (ANSWER_MODE=facts) only: answered | refused_* and the confirmed records shown
     facts_status: Optional[str] = None
     record_ids: Optional[List[str]] = None
+    tier: Optional[str] = None
+    tier_reason: Optional[str] = None
 
 
 @app.on_event("startup")
@@ -71,6 +73,8 @@ async def chat(req: ChatRequest):
         sources=sources,
         facts_status=result.get("facts_status"),
         record_ids=result.get("record_ids"),
+        tier=result.get("tier"),
+        tier_reason=result.get("tier_reason"),
     )
 
 

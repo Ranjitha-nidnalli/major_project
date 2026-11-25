@@ -304,6 +304,20 @@ UAS table where the granules belong to early shoot borer) and letting an LLM wri
   North are never merged), page citations, the pesticide-safety line, and the KCC number.
 - No LLM call anywhere in this path. v1 (`ANSWER_MODE=rag`) is kept for comparison runs only.
 
+**Tiered policy (K-007, `ANSWER_MODE=tiered`, now the default).** One `answer()` in
+`services/tiers.py`; `rag_service._answer_tiered` wires it up.
+- Tier A: the facts path above, always first, so no router or classifier can make a confirmed
+  record unreachable.
+- Tier B: v1 retrieval + gate + numeric check, general advice only. Considered only after A
+  refused, and only if the question names no pest/disease/topic/other crop, has no dose,
+  pesticide, fertiliser or rate wording, and neither the router nor the retrieved chunks say
+  pest/disease/fertilizer/price. The answer must contain no dose-like number and every chunk used
+  must have a `source` field (the current corpus has none, so Tier B refuses today). Off unless
+  `TIER_B_ENABLED=true`.
+- Tier C: refuse + KCC 1800-180-1551; also the result of any error in Tier B.
+- With Tier B off, `tiered` answers exactly what `facts` answers. `facts` and `rag` stay
+  selectable for ablation runs. `/chat` returns `tier` and `tier_reason`.
+
 **Known limits.** Coverage is only what the two chapters contain; phrasing outside the keyword
 lists is refused (safe direction, measurable on new questions); symptom-based questions are
 refused; the Kannada UI strings in `fact_answer.py` and the keyword lists need a Kannada

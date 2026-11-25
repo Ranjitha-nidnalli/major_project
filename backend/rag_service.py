@@ -21,6 +21,7 @@ from services.entity_match import (
 from services.judge_parse import parse_judge_score
 from services.router_parse import parse_router_category
 from services.fact_answer import Knowledge, answer as answer_from_facts, match as match_facts, topic_labels
+from services.tiers import answer_tiered
 from services.canonicalizer import canonicalize
 from indic_preprocess import normalize_kannada
 from bm25_retriever import BM25Retriever, load_chunks_from_qdrant_upsert
@@ -140,7 +141,14 @@ ENABLE_RERANKER = os.getenv("ENABLE_RERANKER", "false").lower() == "true"
 # the v1 pipeline below, kept for comparison runs. FACTS_INCLUDE_DRAFTS
 # shows unconfirmed records under a DRAFT banner for local preview only;
 # never enable it where farmers can see the bot.
-ANSWER_MODE = os.getenv("ANSWER_MODE", "facts").lower()
+# "tiered" (default since K-007) is the one policy in services/tiers.py: Tier A
+# = the facts path above, Tier B = the v1 pipeline for general advice only
+# (off unless TIER_B_ENABLED=true, and it refuses unless every chunk it used
+# has a citable `source`), Tier C = refuse + KCC number. "facts" and "rag"
+# remain selectable for ablation runs. With TIER_B_ENABLED unset, "tiered"
+# answers exactly what "facts" answers and refuses everything else.
+ANSWER_MODE = os.getenv("ANSWER_MODE", "tiered").lower()
+TIER_B_ENABLED = os.getenv("TIER_B_ENABLED", "false").lower() == "true"
 FACTS_INCLUDE_DRAFTS = os.getenv("FACTS_INCLUDE_DRAFTS", "false").lower() == "true"
 # Optional LLM query canonicaliser for the facts path (services/canonicalizer.py).
 # Off by default; it can only pick topic ids, never a pest/disease or a dose.
@@ -335,7 +343,8 @@ async def _canonical_topics(knowledge, user_query):
     return await canonicalize(knowledge, labels, user_query, _call)
 
 
-async def _answer_from_facts(user_query, session_id, return_context, interactive):
+async def _facts_result(user_query):
+    """Tier A lookup: the confirmed-record answer (or refusal) for one question."""
     # Reloaded per request (92 records, a few ms) so a newly saved review
     # sheet takes effect without restarting the server.
     knowledge = Knowledge.load()
@@ -347,6 +356,49 @@ async def _answer_from_facts(user_query, session_id, return_context, interactive
     result = answer_from_facts(knowledge, user_query, include_drafts=FACTS_INCLUDE_DRAFTS,
                                topic_fallback=fallback)
     print(f"📗 facts: {result['status']} records={result['record_ids']} match={result['match']}")
+    return result
+
+
+def _is_refusal_text(ans):
+    """True for the canned refusal, timeout and empty-answer messages of the v1 path."""
+    return (not ans or ans.startswith(HARD_REFUSAL_MESSAGE)
+            or ans.startswith(EMPTY_ANSWER_FALLBACK_MESSAGE)
+            or ans.startswith(TIMEOUT_MESSAGE) or NOT_IN_CONTEXT_PHRASE in ans)
+
+
+async def _answer_tiered(user_query, session_id, return_context, interactive):
+    """One answer() policy (services/tiers.py): A confirmed records, B cited retrieval, C refuse."""
+    async def rag_fn():
+        # save_to_db=False: Tier B text is saved only after the tier checks pass.
+        return await _answer_rag(user_query, session_id, return_context=True,
+                                 interactive=True, save_to_db=False)
+
+    out = await answer_tiered(
+        user_query, facts_fn=lambda: _facts_result(user_query), rag_fn=rag_fn,
+        tier_b_enabled=TIER_B_ENABLED,
+    )
+    print(f"🧭 tier {out['tier']} ({out['tier_reason']})")
+    if interactive:
+        await save_chat_message(session_id, "user", user_query)
+        await save_chat_message(session_id, "assistant", out["answer"])
+    facts, rag = out["facts"], out["rag"] or {}
+    chunks = out["citations"] if out["tier"] in ("A", "B") else []
+    return {
+        "answer": out["answer"],
+        "tier": out["tier"],
+        "tier_reason": out["tier_reason"],
+        "search_score": rag.get("search_score") if out["tier"] == "B" else None,
+        "relevance": rag.get("relevance") if out["tier"] == "B" else None,
+        "accuracy_score": rag.get("accuracy_score") if out["tier"] == "B" else None,
+        "facts_status": facts["status"],
+        "record_ids": facts["record_ids"] if out["tier"] == "A" else [],
+        "context": "\n".join(chunks) if return_context else None,
+        "source_chunks": chunks if return_context else None,
+    }
+
+
+async def _answer_from_facts(user_query, session_id, return_context, interactive):
+    result = await _facts_result(user_query)
     if interactive:
         await save_chat_message(session_id, "user", user_query)
         await save_chat_message(session_id, "assistant", result["answer"])
@@ -363,8 +415,16 @@ async def _answer_from_facts(user_query, session_id, return_context, interactive
 
 
 async def get_sugarcane_answer(user_query: str, session_id: str, return_context: bool = False, interactive: bool = True):
+    if ANSWER_MODE == "tiered":
+        return await _answer_tiered(user_query, session_id, return_context, interactive)
     if ANSWER_MODE == "facts":
         return await _answer_from_facts(user_query, session_id, return_context, interactive)
+    return await _answer_rag(user_query, session_id, return_context, interactive)
+
+
+async def _answer_rag(user_query: str, session_id: str, return_context: bool = False,
+                      interactive: bool = True, save_to_db: bool = True):
+    """The v1 pipeline (ANSWER_MODE=rag, and Tier B of the tiered policy)."""
 
     # ==========================================
     # 1. THE SWITCHBOARD (Router)
@@ -577,6 +637,9 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
             "accuracy_score": 0.0,
             "context": "\n\n".join(docs) if return_context else None,
             "source_chunks": docs if return_context else None,
+            "category": category,
+            "refused": True,
+            "source_payloads": [],
         }
 
     print(f"🟢 DB Hit! Relevance (dense cosine): {dense_relevance:.2f} | RRF score (telemetry only): {search_score:.2f}")
@@ -605,7 +668,8 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
         gen_result = await asyncio.wait_for(
             generate_from_context(
                 user_query, context_text, session_id,
-                run_judge=interactive, max_predict_tokens=max_tokens
+                run_judge=interactive, max_predict_tokens=max_tokens,
+                save_to_db=save_to_db,
             ),
             timeout=timeout
         )
@@ -668,6 +732,11 @@ async def get_sugarcane_answer(user_query: str, session_id: str, return_context:
         "answer": ans,
         "search_score": search_score,
         "accuracy_score": accuracy_score,
+        # Extra keys for the tiered policy (services/tiers.py). Payloads are
+        # only those chunks whose text actually went into the prompt.
+        "category": category,
+        "refused": _is_refusal_text(ans),
+        "source_payloads": [p["payload"] for p in top_chunks if p["payload"].get("text") in docs],
     }
 
     # Include numeric check details in debug/return mode

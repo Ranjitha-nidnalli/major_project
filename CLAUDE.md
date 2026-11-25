@@ -31,7 +31,11 @@ phase roadmap. This file holds current facts and working rules only.
 - Tests: `cd backend && pytest` (pure invariant tests, no live services needed)
 
 ## Pipeline (`rag_service.get_sugarcane_answer`)
-`ANSWER_MODE=facts` (default, v2, since 2026-09-30): `services/fact_answer.py` matches the
+`ANSWER_MODE=tiered` (default since K-007, `services/tiers.py`): Tier A = the facts path below, always
+first; Tier B (retrieval, general advice, cited) is off unless `TIER_B_ENABLED=true` and refuses
+without chunk sources; Tier C = refuse + KCC. With Tier B off it behaves exactly like `facts`.
+
+`ANSWER_MODE=facts` (v2, default 2026-09-30 to K-007): `services/fact_answer.py` matches the
 question against `knowledge/intents.json` and answers ONLY from fact records a person marked
 CONFIRMED in `knowledge/review_sheet_REVIEWED.csv` (no LLM); everything else is refused with
 the KCC number. Records: `knowledge/facts_*.json`, drafted from UAS Bengaluru POP 2025 and UAS
