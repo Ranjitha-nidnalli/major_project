@@ -1034,9 +1034,11 @@
     "chilli",
     "=ragi"
   ],
-  "own_crop": [
-    "ಕಬ್ಬ",
-    "sugarcane",
-    "=cane"
-  ]
+  "crops": {
+    "sugarcane": [
+      "ಕಬ್ಬ",
+      "sugarcane",
+      "=cane"
+    ]
+  }
 }

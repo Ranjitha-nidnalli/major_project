@@ -53,6 +53,8 @@ MSG_DRAFT_BANNER = (
 )
 MSG_MISSING_SUBJECT = "ಈ ಕೀಟ/ರೋಗದ ಬಗ್ಗೆ ಪರಿಶೀಲಿತ ಮಾಹಿತಿ ಇಲ್ಲ: {names}."
 
+# A question that names no crop is about this one (the product was sugarcane-only).
+DEFAULT_CROP = "sugarcane"
 SAFETY_RECORD_ID = "uasd-pesticide-safety"
 HASHED_FIELDS = ("text_kn", "product_kn", "per_litre", "per_acre", "water_per_acre", "printed_page", "subject_kn")
 
@@ -109,7 +111,8 @@ class Knowledge:
         entries += [(w, "organism", None) for w in self.intents["organism_words"]]
         entries += [(w, "neutral", None) for w in self.intents["neutral_phrases"]]
         entries += [(w, "other_crop", None) for w in self.intents.get("other_crops", [])]
-        entries += [(w, "own_crop", None) for w in self.intents.get("own_crop", [])]
+        for crop, aliases in self.intents.get("crops", {}).items():
+            entries += [(w, "crop", crop) for w in aliases]
         compiled = []
         for kw, kind, owner in entries:
             whole = kw.startswith("=")
@@ -120,6 +123,12 @@ class Knowledge:
             compiled.append((len(text), re.compile(pattern), kind, owner))
         compiled.sort(key=lambda e: -e[0])     # longest phrase first
         return compiled
+
+    def crop_of(self, record_id):
+        """The crop a record is about: set once in its source file header, so
+        it is not a hashed field and adding it voids no confirmation."""
+        rec = self.records.get(record_id)
+        return self.sources[rec["_source"]].get("crop", DEFAULT_CROP) if rec else None
 
     def usable(self, record_id, include_drafts=False):
         """True if a person confirmed this exact record (and its product is registered)."""
@@ -170,7 +179,7 @@ def match(knowledge, query):
     """
     q = normalize(query)
     taken = [False] * len(q)
-    subjects, intents, organism, other_crop, own_crop = [], [], False, False, False
+    subjects, intents, organism, other_crop, crops = [], [], False, False, []
     for _, pattern, kind, owner in knowledge._entries:
         for m in pattern.finditer(q):
             if any(taken[m.start():m.end()]):
@@ -185,15 +194,16 @@ def match(knowledge, query):
                 organism = True
             elif kind == "other_crop":
                 other_crop = True
-            elif kind == "own_crop":
-                own_crop = True
+            elif kind == "crop" and owner not in crops:
+                crops.append(owner)
     intents = resolve_intents(knowledge, intents)
     region = None
     for reg, names in knowledge.intents["regions"].items():
         if any(normalize(n) in q for n in names):
             region = reg if region is None else "both"
     return {"subjects": subjects, "intents": intents, "organism_word": organism,
-            "other_crop": other_crop and not own_crop,
+            "other_crop": other_crop and not crops,
+            "crop": crops[0] if len(crops) == 1 else None,
             "region": None if region == "both" else region}
 
 
@@ -244,6 +254,8 @@ def answer(knowledge, query, region=None, include_drafts=False, topic_fallback=N
         return _refusal(MSG_OUT_OF_SCOPE, "refused_out_of_scope", m)
 
     usable = [r for r in _dedupe(wanted) if knowledge.usable(r, include_drafts)]
+    crop = m["crop"] or DEFAULT_CROP
+    usable = [r for r in usable if knowledge.crop_of(r) == crop]   # never another crop's record
     if region in ("south_karnataka", "north_karnataka"):
         usable = [r for r in usable
                   if knowledge.sources[knowledge.records[r]["_source"]]["region"] == region]
