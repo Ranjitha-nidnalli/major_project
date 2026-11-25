@@ -178,3 +178,81 @@ def test_module_stays_pure():
     src = open(t.__file__, encoding="utf-8").read()
     for heavy in ("torch", "qdrant", "llm_client", "chat_db", "vector_db", "rag_service"):
         assert f"import {heavy}" not in src and f"from {heavy}" not in src
+
+
+# ---- K-010: fail closed when a dependency is down ---------------------------------
+
+def test_facts_lookup_error_is_tier_c_with_kcc_line():
+    async def broken():
+        raise FileNotFoundError("knowledge file missing")
+    r = run(GENERAL_Q, broken, rag_must_not_run())
+    assert r["tier"] == TIER_C and r["tier_reason"].startswith("facts_error")
+    assert KCC_NUMBER in r["answer"]
+
+
+def test_every_tier_b_dependency_failure_is_tier_c():
+    for exc in (RuntimeError("llm"), ConnectionError("qdrant"), TimeoutError()):
+        async def boom(e=exc):
+            raise e
+        r = run(GENERAL_Q, facts_refused(), boom)
+        assert r["tier"] == TIER_C and KCC_NUMBER in r["answer"]
+
+
+# ---- K-009: a classifier can only tighten -------------------------------------------
+
+def classifier(category=None, error=None):
+    async def fn(_q):
+        if error:
+            raise error
+        return category
+    return fn
+
+
+def run_c(query, facts_fn, rag_fn, classify_fn):
+    return asyncio.run(answer_tiered(query, facts_fn=facts_fn, rag_fn=rag_fn,
+                                     tier_b_enabled=True, classify_fn=classify_fn))
+
+
+def test_classifier_cannot_make_a_record_unreachable():
+    # Tier A answers before the classifier is even consulted.
+    called = []
+
+    async def spy(_q):
+        called.append(1)
+        return "pest"
+    r = run_c(GENERAL_Q, facts_answered(), rag_must_not_run(), spy)
+    assert r["tier"] == TIER_A and not called
+
+
+def test_classifier_pest_label_sends_tier_b_candidate_to_tier_c():
+    for cat in ("pest", "disease", "fertilizer", "price"):
+        r = run_c(GENERAL_Q, facts_refused(), rag_must_not_run(), classifier(cat))
+        assert r["tier"] == TIER_C and f"category:{cat}" in r["tier_reason"]
+
+
+def test_classifier_general_label_cannot_unblock_dose_wording():
+    r = run_c(DOSE_Q, facts_refused(), rag_must_not_run(), classifier("general"))
+    assert r["tier"] == TIER_C
+
+
+def test_classifier_error_or_general_label():
+    r = run_c(GENERAL_Q, facts_refused(), rag_must_not_run(), classifier(error=RuntimeError("llm down")))
+    assert r["tier"] == TIER_C and r["tier_reason"].startswith("classifier_error")
+    r = run_c(GENERAL_Q, facts_refused(), rag_returns(), classifier("general"))
+    assert r["tier"] == TIER_B
+
+
+def test_no_dose_question_in_the_confirmed_topics_is_blocked_from_tier_a():
+    # Every topic keyword with dose wording added still reaches Tier A when records answer it.
+    from services.fact_answer import Knowledge, answer as facts_answer
+    K = Knowledge.load(reviewed_sheet="__no_such_file__")
+    for key, intent in list(K.intents["intents"].items())[:12]:
+        if intent.get("refuse") or not intent.get("keywords"):
+            continue
+        q = f"{intent['keywords'][0].lstrip('=')} ಎಷ್ಟು ಕೆ.ಜಿ ಎಕರೆಗೆ"
+        base = facts_answer(K, q, include_drafts=True)
+
+        async def facts(b=base):
+            return b
+        r = run(q, facts, rag_must_not_run())
+        assert r["tier"] == (TIER_A if base["status"] == "answered" else TIER_C), key

@@ -379,8 +379,11 @@ async def _answer_tiered(user_query, session_id, return_context, interactive):
     )
     print(f"🧭 tier {out['tier']} ({out['tier_reason']})")
     if interactive:
-        await save_chat_message(session_id, "user", user_query)
-        await save_chat_message(session_id, "assistant", out["answer"])
+        try:   # history is a convenience: a database outage must not lose the answer
+            await save_chat_message(session_id, "user", user_query)
+            await save_chat_message(session_id, "assistant", out["answer"])
+        except Exception as exc:
+            print(f"⚠️ chat history not saved: {exc}")
     facts, rag = out["facts"], out["rag"] or {}
     chunks = out["citations"] if out["tier"] in ("A", "B") else []
     return {
