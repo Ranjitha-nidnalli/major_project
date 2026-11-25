@@ -22,3 +22,14 @@ jobs:
       - name: pytest
         working-directory: backend
         run: python -m pytest -q
+      # Release gate (K-021). Active once a frozen golden set and its baseline summary are
+      # committed under backend/eval/golden/ (golden_set_FROZEN.jsonl, baseline_summary.json).
+      - name: release gate
+        working-directory: backend
+        run: |
+          if [ -f eval/golden/golden_set_FROZEN.jsonl ] && [ -f eval/golden/baseline_summary.json ]; then
+            python -m eval.tier_eval eval/golden/golden_set_FROZEN.jsonl --out /tmp/gate_run
+            python -m eval.release_gate eval/golden/baseline_summary.json "$(ls -d /tmp/gate_run/tier_*/ | head -1)summary.json"
+          else
+            echo "no frozen golden set yet: gate skipped"
+          fi
